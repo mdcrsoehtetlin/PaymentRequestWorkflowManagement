@@ -246,10 +246,28 @@ main (protected)
  └── release/v1.0.0 (tagged release)
 ```
 
+#### 3.1.1 Active Developer Feature Branches
+
+Each role module is assigned a dedicated feature branch for the current development sprint. Developers must only commit to their assigned branch.
+
+| Role Module | Feature Branch | Scope |
+| :--- | :--- | :--- |
+| Applicant | `feature/applicant-soehtetlin` | Applicant dashboard, draft CRUD, submission, receipt upload |
+| Manager | `feature/manager-ayethandarmoe` | Manager verification queue, verify/reject actions |
+| Final Approver | `feature/approver-khaingthinthinwin` | Approver dashboard, final approval/rejection actions |
+| Accounting | `feature/accounting-shinminthant` | Accounting payment processing queue, Mandalay branch alerts |
+| Admin | `feature/admin-yemaungmaung` | Admin panel, user CRUD, master data management, audit logs |
+
+**Branch Isolation Rules:**
+* Each developer works **exclusively** on their assigned feature branch.
+* Cross-branch commits (e.g., an Applicant developer committing to the Manager branch) are a **blocking PR violation**.
+* All feature branches are created from `master` and will be merged back via Pull Request after review.
+
 **Branch Naming Rules:**
 
 | Branch Type | Pattern | Example |
 | :--- | :--- | :--- |
+| Feature (role-based) | `feature/{role}-{developer}` | `feature/applicant-soehtetlin` |
 | Feature (screen-based) | `feature/screen-[A-E]-{description}` | `feature/screen-A-draft-save` |
 | Feature (task-based) | `feature/task-{id}-{description}` | `feature/task-102-migration` |
 | Bug Fix | `fix/{description}` | `fix/totalAmount-precision-rounding` |
