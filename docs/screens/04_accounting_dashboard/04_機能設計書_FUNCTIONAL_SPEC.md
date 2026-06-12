@@ -1,258 +1,255 @@
-System Name           :  Payment Request Workflow Management System (ငွေပေးချေမှု တောင်းဆိုချက် လုပ်ငန်းစဉ် စီမံခန့်ခွဲမှု စနစ်)  
-System Classification :  Accounting Processing (စာရင်းကိုင် ဆောင်ရွက်မှုအပိုင်း)  
-Function Name         :  Accounting Dashboard (စာရင်းကိုင် ဒက်ရှ်ဘုတ်)  
+System Name           :  Payment Request Workflow Management System  
+System Classification :  Accounting Processing  
+Function Name         :  Accounting Dashboard  
 
-# ***Accounting Dashboard Functional Design Specification (စာရင်းကိုင် ဒက်ရှ်ဘုတ် လုပ်ဆောင်ချက် ပုံစံထုတ်လုပ်ခြင်း ဆိုင်ရာ သတ်မှတ်ချက်များ)***  
+# ***Accounting Dashboard Functional Design Specification***  
 
-## မာတိကာ (Table of Contents)  
+## Table of Contents  
 
-- [***Accounting Dashboard Functional Design Specification (စာရင်းကိုင် ဒက်ရှ်ဘုတ် လုပ်ဆောင်ချက် ပုံစံထုတ်လုပ်ခြင်း ဆိုင်ရာ သတ်မှတ်ချက်များ)***](#accounting-dashboard-functional-design-specification-စာရင်းကိုင်-ဒက်ရှ်ဘုတ်-လုပ်ဆောင်ချက်-ပုံစံထုတ်လုပ်ခြင်း-ဆိုင်ရာ-သတ်မှတ်ချက်များ)
-  - [မာတိကာ (Table of Contents)](#မာတိကာ-table-of-contents)
-  - [၁။ ခြုံငုံသုံးသပ်ချက် (Overview)](#၁-ခြုံငုံသုံးသပ်ချက်-overview)
-    - [၁.၁။ ရည်ရွယ်ချက် (Purpose)](#၁၁-ရည်ရွယ်ချက်-purpose)
-    - [၁.၂။ အခြားသော လုပ်ဆောင်ချက်များနှင့် ပတ်ဝန်းကျင် စနစ်များအကြား ဆက်စပ်မှု (Relationships with Other Functions and Peripheral Systems)](#၁၂-အခြားသော-လုပ်ဆောင်ချက်များနှင့်-ပတ်ဝန်းကျင်-စနစ်များအကြား-ဆက်စပ်မှု-relationships-with-other-functions-and-peripheral-systems)
-    - [၁.၃။ အဝင်နှင့် အထွက် အချက်အလက်များ (Inputs/Outputs)](#၁၃-အဝင်နှင့်-အထွက်-အချက်အလက်များ-inputsoutputs)
-    - [၁.၄။ ဆက်စပ် စာရွက်စာတမ်းများ (Related Documents)](#၁၄-ဆက်စပ်-စာရွက်စာတမ်းများ-related-documents)
-  - [၂။ မျက်နှာပြင် ကူးပြောင်းမှုများ (Screen Transitions)](#၂-မျက်နှာပြင်-ကူးပြောင်းမှုများ-screen-transitions)
-  - [၃။ လုပ်ဆောင်ချက် ဆောင်ရွက်မှု အသေးစိတ် (Processing Details)](#၃-လုပ်ဆောင်ချက်-ဆောင်ရွက်မှု-အသေးစိတ်-processing-details)
-    - [၃.၁။ လုပ်ဆောင်ချက် မလုပ်ဆောင်မီ ကြိုတင်လိုအပ်ချက်များ (Functional Prerequisites)](#၃၁-လုပ်ဆောင်ချက်-မလုပ်ဆောင်မီ-ကြိုတင်လိုအပ်ချက်များ-functional-prerequisites)
-    - [၃.၂။ လုပ်ဆောင်ချက် ဆောင်ရွက်မှုများ (Processing)](#၃၂-လုပ်ဆောင်ချက်-ဆောင်ရွက်မှုများ-processing)
-      - [၃.၂.၁။ စတင် မျက်နှာပြင်ပြသခြင်း (Initial Display)](#၃၂၁-စတင်-မျက်နှာပြင်ပြသခြင်း-initial-display)
-      - [၃.၂.၂။ အသေးစိတ်ပြသသည့် မော်ဒယ်ဝင်းဒိုး ပြသခြင်း (Detail Modal Display)](#၃၂၂-အသေးစိတ်ပြသသည့်-မော်ဒယ်ဝင်းဒိုး-ပြသခြင်း-detail-modal-display)
-      - [၃.၂.၃။ ငွေပေးချေမှု ပြီးမြောက်အောင် ဆောင်ရွက်ခြင်း (Payment Completion Process)](#၃၂၃-ငွေပေးချေမှု-ပြီးမြောက်အောင်-ဆောင်ရွက်ခြင်း-payment-completion-process)
-      - [၃.၂.၄။ WebSocket ဖြင့် အချိန်နှင့်တစ်ပြေးညီ စင့်ခ်လုပ်ခြင်း (WebSocket Synchronization)](#၃၂၄-websocket-ဖြင့်-အချိန်နှင့်တစ်ပြေးညီ-စင့်ခ်လုပ်ခြင်း-websocket-synchronization)
-    - [၃.၃။ ပြသရမည့် အစီအစဉ် (Display Order)](#၃၃-ပြသရမည့်-အစီအစဉ်-display-order)
-  - [၄။ ပြင်ပမှ ပြင်ဆင်သတ်မှတ်နိုင်သော အချက်များ (Configurable Items)](#၄-ပြင်ပမှ-ပြင်ဆင်သတ်မှတ်နိုင်သော-အချက်များ-configurable-items)
+- [***Accounting Dashboard Functional Design Specification***](#accounting-dashboard-functional-design-specification)
+  - [Table of Contents](#table-of-contents)
+  - [1. Overview](#1-overview)
+    - [1.1. Purpose](#11-purpose)
+    - [1.2. Relationships with Other Functions and Peripheral Systems](#12-relationships-with-other-functions-and-peripheral-systems)
+    - [1.3. Inputs/Outputs](#13-inputsoutputs)
+    - [1.4. Related Documents](#14-related-documents)
+  - [2. Screen Transitions](#2-screen-transitions)
+  - [3. Processing Details](#3-processing-details)
+    - [3.1. Functional Prerequisites](#31-functional-prerequisites)
+    - [3.2. Processing](#32-processing)
+      - [3.2.1. Initial Display](#321-initial-display)
+      - [3.2.2. Detail Modal Display](#322-detail-modal-display)
+      - [3.2.3. Payment Completion Process](#323-payment-completion-process)
+      - [3.2.4. WebSocket Synchronization](#324-websocket-synchronization)
+    - [3.3. Display Order](#33-display-order)
+  - [4. Configurable Items (External Definitions)](#4-configurable-items-external-definitions)
 
 ---
 
-## ၁။ ခြုံငုံသုံးသပ်ချက် (Overview)  
+## 1. Overview  
 
-### ၁.၁။ ရည်ရွယ်ချက် (Purpose)
+### 1.1. Purpose
 
-စာရင်းကိုင် ဒက်ရှ်ဘုတ် (Accounting Dashboard) ၏ ရည်ရွယ်ချက်မှာ စာရင်းကိုင်အဖွဲ့ (Accounting Team) အတွက် နောက်ဆုံးအတည်ပြုချက် ရရှိထားသော (`APPROVED` အခြေအနေရှိသည့်) ငွေပေးချေမှု တောင်းဆိုချက်များအားလုံးကို ကြည့်ရှုရန်၊ ရှာဖွေရန်၊ စိစစ်ရန်နှင့် လုပ်ဆောင်ရန်အတွက် လုံခြုံစိတ်ချရပြီး ဗဟိုချုပ်ကိုင်မှုရှိသော အသုံးပြုသူမျက်နှာပြင် (User Interface) ကို ပံ့ပိုးပေးရန်ဖြစ်သည်။ ၎င်းမှတစ်ဆင့် စာရင်းကိုင်ဝန်ထမ်းများသည် ပြေစာများကို စိစစ်ခြင်း၊ သက်ဆိုင်ရာ ဌာနခွဲအလိုက် ငွေပေးချေမှုဆိုင်ရာ သတိပေးချက်များကို ကိုင်တွယ်ခြင်း၊ စာရင်းကိုင်မှတ်စုများ ထည့်သွင်းခြင်းနှင့် တောင်းဆိုချက်၏ သက်တမ်းကို အဆုံးသတ်စေမည့် "ငွေပေးချေပြီးစီးသည်" (Paid - Completed) အဖြစ် သတ်မှတ်ခြင်းတို့ကို လုပ်ဆောင်နိုင်မည်ဖြစ်သည်။
+The purpose of the Accounting Dashboard is to provide the accounting team with a secure and centralized user interface to view, search, review, and process all payment requests that have received final approval (`APPROVED` status). This allows accounting personnel to verify receipts, handle branch-specific payment alerts, input payment notes, and mark requests as "Paid (Completed)", ending the request lifecycle.
 
-### ၁.၂။ အခြားသော လုပ်ဆောင်ချက်များနှင့် ပတ်ဝန်းကျင် စနစ်များအကြား ဆက်စပ်မှု (Relationships with Other Functions and Peripheral Systems)
+### 1.2. Relationships with Other Functions and Peripheral Systems
 
-ဒက်ရှ်ဘုတ်သည် အောက်ပါအတိုင်း အသုံးပြုသူအခန်းကဏ္ဍများ၊ အခြေအနေပြောင်းလဲမှုများ၊ ဖိုင်ဆာဗာနှင့် စစ်ဆေးမှုမှတ်တမ်း (Audit Logs) တို့နှင့် ဆက်သွယ်ဆောင်ရွက်သည်-
+The dashboard interacts with user roles, status triggers, the physical file server, and audit logs as described below:
 
 ```text
 ┌──────────────────────┐      ┌─────────────────────────────────┐
-│  နောက်ဆုံးအတည်ပြုသူ   │      │   ငွေပေးချေမှု တောင်းဆိုချက် DB   │
-│ (အတည်ပြုချက် ဆောင်ရွက်မှု)├─────►│ Status -> APPROVED (8) သတ်မှတ်သည်│
+│    Final Approver    │      │      Payment Requests DB        │
+│   (Approve Action)   ├─────►│  Sets status to APPROVED (8)    │
 └──────────────────────┘      └──────────────┬──────────────────┘
                                              │ Query
                                              ▼
                                   ┌────────────────────┐
-                                  │စာရင်းကိုင် ဒက်ရှ်ဘုတ်│
                                   │Accounting Dashboard│
                                   └──────────┬─────────┘
-                                             │ Status Update
+                                             │ Update status
                                              ▼
 ┌──────────────────────┐      ┌─────────────────────────────────┐
-│   တောင်းဆိုသူ အသုံးပြုသူ │      │   ငွေပေးချေမှု တောင်းဆိုချက် DB   │
-│ ဒက်ရှ်ဘုတ် အကြောင်းကြားချက်│◄────┤ Status -> PAID (10) သတ်မှတ်သည်   │
+│    Applicant User    │      │      Payment Requests DB        │
+│ Dashboard Notification│◄────┤  Sets status to PAID (10)       │
 └──────────────────────┘      └─────────────────────────────────┘
 ```
 
-* **အထက်ပိုင်း လှုံ့ဆော်မှုများ (Upstream Triggers)**: `APPROVED` အခြေအနေကို နောက်ဆုံးအတည်ပြုသူ၏ ဆောင်ရွက်ချက်မှ သတ်မှတ်သည်။ အတည်ပြုပြီးပါက ၎င်းတောင်းဆိုချက်သည် စာရင်းကိုင်၏ လုပ်ဆောင်ရန်စာရင်းထဲသို့ အလိုအလျောက် ရောက်ရှိလာမည်ဖြစ်သည်။
-* **အောက်ပိုင်း ဖြစ်ရပ်များ (Downstream Events)**: တောင်းဆိုချက်တစ်ခုကို `PAID` အဖြစ် ပြောင်းလဲလိုက်ပါက ၎င်းတောင်းဆိုချက်ကို နောက်နောင်ပြင်ဆင်ခွင့်မရှိစေရန် ပိတ်ပင်လိုက်မည်ဖြစ်ပြီး တောင်းဆိုသူထံ WebSockets မှတစ်ဆင့် အကြောင်းကြားစာပေးပို့ကာ စစ်ဆေးမှုမှတ်တမ်းထဲတွင် အမြဲတမ်းမှတ်တမ်းအဖြစ် သိမ်းဆည်းမည်ဖြစ်သည်။
-* **ပြင်ပ သိမ်းဆည်းမှု (External Storage)**: ဤလုပ်ဆောင်ချက်သည် ဆာဗာ၏ ဖိုင်သိမ်းဆည်းမှုစနစ်တွင် သိမ်းဆည်းထားသော ပြေစာဖိုင်များကို လင့်ခ်အဖြစ် အသေးစိတ်ဝင်းဒိုးတွင် ပြသရန် မေးမြန်းဖတ်ရှုသည်။
+* **Upstream Triggers**: The `APPROVED` status is set by the Final Approver action. Once approved, the request is automatically routed to this function's work queue.
+* **Downstream Events**: Transitioning a request to `PAID` locks the request from future alterations, notifies the applicant via WebSockets, and writes a permanent log in the audit trail.
+* **External Storage**: The function queries physical receipts stored on the server's local file abstraction layer to render links in the detail window.
 
 ---
 
-### ၁.၃။ အဝင်နှင့် အထွက် အချက်အလက်များ (Inputs/Outputs)
+### 1.3. Inputs/Outputs
 
-| အဝင် အချက်အလက် (Input) | အချက်အလက် အမျိုးအစား (Data Category) | ရင်းမြစ် / ရှင်းလင်းချက် (Source / Description) |
+| Input Information | Data Category | Source / Description |
 | :--- | :--- | :--- |
-| `payment_requests` | Database Table | status_id = 8 (`APPROVED`) နှင့် is_deleted = false ဖြစ်သော အဓိက ငွေပေးချေမှုမှတ်တမ်း။ |
-| `users` | Database Table | တောင်းဆိုသူ (ဌာနခွဲအမည်ကို စစ်ဆေးရန်)၊ မန်နေဂျာနှင့် အတည်ပြုသူတို့၏ အသုံးပြုသူ ကိုယ်ရေးအချက်အလက်များ။ |
-| `payment_breakdown_items` | Database Table | စုစုပေါင်း ငွေပေးချေမှုပမာဏသို့ ပံ့ပိုးပေးသော အသေးစိတ် အချက်အလက်များ။ |
-| `receipt_files` | Database Table | ငွေပေးချေမှု တောင်းဆိုချက်နှင့် ချိတ်ဆက်ထားသော သိမ်းဆည်းမှုလမ်းကြောင်းဆိုင်ရာ အချက်အလက်များ။ |
-| `approval_logs` | Database Table | ယခင် စိစစ်မှုမှတ်တမ်းများနှင့် မှတ်ချက်များ။ |
-| Filters & Search Parameters | User Input UI | မျက်နှာပြင်မှ ရွေးချယ်စရာ စာရင်းများနှင့် သော့ချက်စာလုံးများ။ |
+| `payment_requests` | Database Table | Primary transaction record where status_id = 8 (`APPROVED`) and is_deleted = false. |
+| `users` | Database Table | User profiles for applicant (checks branch name), manager, and approver. |
+| `payment_breakdown_items` | Database Table | Detailed items contributing to the total payment amount. |
+| `receipt_files` | Database Table | Storage metadata paths associated with the payment request. |
+| `approval_logs` | Database Table | Prior verification log logs and comments. |
+| Filters & Search Parameters | User Input UI | Dropdown selections and keyword text. |
 
-| အထွက် အချက်အလက် (Output) | အချက်အလက် အမျိုးအစား (Data Category) | ဦးတည်ရာ / ရှင်းလင်းချက် (Destination / Description) |
+| Output Information | Data Category | Destination / Description |
 | :--- | :--- | :--- |
-| Updated `payment_requests` | Database Table | အခြေအနေကို `PAID` (status_id = 10) သို့ အပ်ဒိတ်လုပ်ပြီး `payment_completed_date` ကို သတ်မှတ်သည်။ |
-| Created `approval_logs` | Database Table | Action Code `PAYMENT_COMPLETED` (10)၊ ကူးပြောင်းမှုအသေးစိတ်နှင့် မှတ်ချက်တို့ပါဝင်သော ဇယားကွက်အသစ်ကို ထည့်သွင်းသည်။ |
-| WebSocket Event | Network Message | တောင်းဆိုချက်များစာရင်းနှင့် တောင်းဆိုသူ၏ ဒက်ရှ်ဘုတ်များကို တစ်ပြေးညီဖြစ်စေရန် သက်ဆိုင်ရာ အသုံးပြုသူများထံ အချက်အလက်များကို ပေးပို့သည်။ |
-| Dashboard Toast / UI List | UI Display | စောင့်ဆိုင်းစာရင်း ဇယားမှ processed လုပ်ပြီးသား တန်း (row) ကို ဖယ်ရှားပြီး အောင်မြင်ကြောင်း အကြောင်းကြားချက် ပြသသည်။ |
+| Updated `payment_requests` | Database Table | Status updated to `PAID` (status_id = 10) and `payment_completed_date` set. |
+| Created `approval_logs` | Database Table | New row inserted with Action Code `PAYMENT_COMPLETED` (10), transition details, and comment. |
+| WebSocket Event | Network Message | Pushes payload to candidate users to synchronize queue lists and applicant dashboards. |
+| Dashboard Toast / UI List | UI Display | Queue table row removed; success notification generated. |
 
 ---
   
-### ၁.၄။ ဆက်စပ် စာရွက်စာတမ်းများ (Related Documents)
+### 1.4. Related Documents
 
-| နံပါတ် | စာရွက်စာတမ်း ကုဒ် | စာရွက်စာတမ်း အမည် | လမ်းကြောင်း / ကိုးကား | မှတ်ချက် |
+| No. | Document ID | Document Name | File Path / Reference | Remarks |
 | :-- | :--- | :--- | :--- | :--- |
-| ၁ | RD-01 | Requirements Definition | [REQUIREMENT_DEFINITION.md](file:///c:/work/AI/documents/Kinoskill/REQUIREMENT_DEFINITION.md) | Section 3.4.4, Section 4.3 |
-| ၂ | DS-01 | Database Design Specification | [DATABASE_DESIGN_SPECIFICATION.md](file:///c:/work/AI/documents/Kinoskill/DATABASE_DESIGN_SPECIFICATION.md) | ဇယားတည်ဆောက်ပုံ၊ အညွှန်းကိန်းများ၊ ကက်ရှ် ကီးများ |
+| 1 | RD-01 | Requirements Definition | [REQUIREMENT_DEFINITION.md](file:///c:/work/AI/documents/Kinoskill/REQUIREMENT_DEFINITION.md) | Section 3.4.4, Section 4.3 |
+| 2 | DS-01 | Database Design Specification | [DATABASE_DESIGN_SPECIFICATION.md](file:///c:/work/AI/documents/Kinoskill/DATABASE_DESIGN_SPECIFICATION.md) | Table structures, indexes, cache keys |
 
 ---
 
-## ၂။ မျက်နှာပြင် ကူးပြောင်းမှုများ (Screen Transitions)
+## 2. Screen Transitions
 
-စနစ်ထဲသို့ ဝင်ရောက်ခြင်းမှစ၍ စောင့်ဆိုင်းစာရင်းကို စစ်ဆေးခြင်းနှင့် ငွေပေးချေမှုကို အတည်ပြုပြီးစီးခြင်းအထိ လုပ်ငန်းစဉ်များအား အောက်ပါအတိုင်း ပုံစံထုတ်ထားသည်-
+The flow from authentication to list inspection and transaction execution is designed as follows:
 
 ```text
 ┌──────────────────────────┐
-│      စာရင်းကိုင် ဝင်ရောက်ခြင်း     │
+│     Accounting Login     │
 └────────────┬─────────────┘
-             │ အောင်မြင်စွာ စစ်ဆေးပြီးစီးခြင်း (အဆင့်အတန်း: ACCOUNTING)
+             │ Successful Authentication (Role: ACCOUNTING)
              ▼
 ┌──────────────────────────┐
-│   စာရင်းကိုင် ဒက်ရှ်ဘုတ်   │◄───────────────────────────────────┐
-│     (လုပ်ဆောင်ရန်စာရင်း)    │                                    │
+│   Accounting Dashboard   │◄───────────────────────────────────┐
+│     (Queue Active)       │                                    │
 └────────────┬─────────────┘                                    │
-             │ တောင်းဆိုချက် နံပါတ် သို့မဟုတ် [လုပ်ဆောင်မည်] ကို နှိပ်ခြင်း   │
-             ▼                                                  │ ပယ်ဖျက်မည်
-┌──────────────────────────┐                                    │ သို့မဟုတ်
-│   ငွေပေးချေမှု အသေးစိတ် မော်ဒယ်  ├────────────────────────────────────┤ ပိတ်မည်
-│ (ALR-01/ALR-02 ပြသမှုပုံစံ)│                                    │
+             │ Click Request No. or [Process] Button            │
+             ▼                                                  │ Cancel
+┌──────────────────────────┐                                    │ or Close
+│   Payment Detail Modal   ├────────────────────────────────────┤
+│ (ALR-01/ALR-02 Rendering)│                                    │
 └────────────┬─────────────┘                                    │
-             │ [ငွေပေးချေပြီးအဖြစ် သတ်မှတ်ရန်] ကို နှိပ်ခြင်း           │
+             │ Click [Mark as Paid]                             │
              ▼                                                  │
 ┌──────────────────────────┐                                    │
-│   အတည်ပြုချက် တောင်းခံသည့် ဝင်းဒိုး  │                                    │
+│   Confirmation Dialog    │                                    │
 └────────────┬─────────────┘                                    │
-             │ အတည်ပြုသည် (ဒေတာဘေ့စ်တွင် သိမ်းဆည်းသည်)                │
+             │ Confirm (Commit DB Transaction)                  │
              └──────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ၃။ လုပ်ဆောင်ချက် ဆောင်ရွက်မှု အသေးစိတ် (Processing Details)
+## 3. Processing Details
 
-### ၃.၁။ လုပ်ဆောင်ချက် မလုပ်ဆောင်မီ ကြိုတင်လိုအပ်ချက်များ (Functional Prerequisites)
+### 3.1. Functional Prerequisites
 
-* **အခန်းကဏ္ဍအလိုက် ဝင်ရောက်ခွင့် ထိန်းချုပ်ခြင်း (RBAC)**: ဝင်ရောက်ခွင့်ကို တင်းကျပ်စွာ ထိန်းချုပ်ထားသည်။ `ACCOUNTING` အဆင့်အတန်း (role_id referencing `user_roles.role_code` = 'ACCOUNTING') သတ်မှတ်ထားသော အသုံးပြုသူများသာ ဤလုပ်ဆောင်ချက်ကို စတင်နိုင်သည်။ အခြားအဆင့်အတန်းရှိသူများ ဝင်ရောက်ရန် ကြိုးပမ်းပါက `403 Forbidden` တုံ့ပြန်မှုဖြင့် ပိတ်ပင်မည်ဖြစ်သည်။
-* **စစ်ထုတ်မှု ကန့်သတ်ချက် (Filter Constraint)**: ဤစာရင်းတွင် အခြေအနေ ကုဒ် `APPROVED` (status_id = 8) ရှိသော လုပ်ဆောင်ချက်များကိုသာ သီးသန့် ရှာဖွေပြသမည်ဖြစ်သည်။ ဆော့ဖ်ဝဲလ်စနစ်မှ ဖျက်သိမ်းထားသော မှတ်တမ်းများ (`is_deleted` = true) ကို သီးခြားဖယ်ထုတ်ထားရမည်။
-* **ဌာနခွဲအလိုက် လုပ်ငန်းစဉ်လမ်းကြောင်း (Branch Logic Routing)**: စနစ်သည် တောင်းဆိုသူ၏ ဌာနခွဲ အရည်အချင်းကို အချိန်နှင့်တပြေးညီ စစ်ဆေးမည်ဖြစ်သည်။ ဌာနခွဲအမည်သည် "Mandalay" နှင့် ကိုက်ညီပါက ပုံမှန်ဘဏ်ငွေလွှဲခြင်းအစား ငွေသားဖြင့် ပေးချေရန် သတိပေးချက်များကို အသက်သွင်းရမည်။
+* **Role-Based Access Control (RBAC)**: Access is strictly controlled. Only users assigned the `ACCOUNTING` role (role_id referencing `user_roles.role_code` = 'ACCOUNTING') can initialize this function. Other roles attempting to access the page are blocked with a `403 Forbidden` response.
+* **Filter Constraint**: The queue exclusively queries transactions with status code `APPROVED` (status_id = 8). Soft-deleted records (`is_deleted` = true) must be explicitly excluded.
+* **Branch Logic Routing**: The system checks the applicant's corporate branch attribute dynamically. If the branch matches the key name "Mandalay", specific warning alerts must be activated to override default bank transfer handling.
 
-### ၃.၂။ လုပ်ဆောင်ချက် ဆောင်ရွက်မှုများ (Processing)
+### 3.2. Processing
 
-#### ၃.၂.၁။ စတင် မျက်နှာပြင်ပြသခြင်း (Initial Display)
+#### 3.2.1. Initial Display
 
-1. **ရည်ရွယ်ချက် (Purpose)**  
-   * ငွေပေးချေမှု ဆောင်ရွက်ရန် စောင့်ဆိုင်းနေသော အတည်ပြုပြီးသား ငွေပေးချေမှုတောင်းဆိုချက်များ၏ လုပ်ဆောင်ရန်စာရင်းကို ပြသရန်။
-2. **အသေးစိတ် (Details)**  
-   1. **အသုံးပြုသူ စစ်ဆေးခြင်း (Authentication Check)**
-      * လက်ရှိ အသုံးပြုသူ၏ ဆက်ရှင် (session) ကို စစ်ဆေးပါ။ ဆက်ရှင် သက်တမ်းကုန်ဆုံးသွားပါက သို့မဟုတ် အသုံးပြုသူသည် စနစ်ထဲသို့ ဝင်ရောက်ထားခြင်းမရှိပါက လော့ဂ်အင်မျက်နှာပြင်သို့ ပြန်လည်ညွှန်းပို့ပါ။
-      * အသုံးပြုသူ၏ အဆင့်အတန်းကို စစ်ဆေးပါ။ အကယ်၍ အဆင့်အတန်းကုဒ်သည် `ACCOUNTING` မဟုတ်ပါက၊ မျက်နှာပြင် ပြသခြင်းကို ရပ်ဆိုင်းပြီး `403 Forbidden` အမှားစာမျက်နှာကို ပြန်ပေးပါ။
-   2. **စာရင်း အချက်အလက်များ ရယူခြင်း (Queue Data Retrieval)**
-      * `payment_requests` ဇယားမှ အသက်ဝင်နေသော မှတ်တမ်းများကို မေးမြန်းပါ (Query လုပ်ပါ)။
+1. **Purpose**  
+   * Load the active worklist of approved payment requests awaiting payment processing.
+2. **Details**  
+   1. **Authentication Check**
+      * Verify the active user session. If the session has expired or the user is not authenticated, redirect to the login screen with the return URL query parameter.
+      * Validate the user's role. If the role code is not `ACCOUNTING`, abort page loading and return a `403 Forbidden` error page.
+   2. **Queue Data Retrieval**
+      * Query active records from the `payment_requests` table.
         * **SQL Condition**: `WHERE status_id = 8 AND is_deleted = FALSE`
-      * တောင်းဆိုသူ၊ ငွေကြေးအမျိုးအစားနှင့် ငွေပေးချေမှုစနစ် အသေးစိတ်များကို ရယူရန် ဆက်စပ်ဇယားများနှင့် ချိတ်ဆက်ပါ (Join လုပ်ပါ)-
-        * တောင်းဆိုသူ၏ အမည် (`full_name`) နှင့် ဌာနခွဲ (`branch`) ကို ရယူရန် `applicant_user_id` ကို အသုံးပြု၍ `users` (တောင်းဆိုသူ ကိုယ်ရေးအချက်အလက်) နှင့် Left join လုပ်ပါ။
-        * `currency_code` ကို ရယူရန် `currency_id` ကို အသုံးပြု၍ `currencies` နှင့် Left join လုပ်ပါ။
-        * `payment_method_name` ကို ရယူရန် `payment_method_id` ကို အသုံးပြု၍ `payment_methods` နှင့် Left join လုပ်ပါ။
-      * Sort လုပ်ထားသော ရလဒ်များကို အပိုင်း ၃.၃ တွင် သတ်မှတ်ထားသော ပြသရမည့် အစီအစဉ်အတိုင်း စီစဉ်ပါ။
-   3. **UI တွင် ဖြည့်သွင်းခြင်း (UI Population)**
-      * စစ်ထုတ်သည့် Dropdown များကို ၎င်းတို့၏ မူလတန်ဖိုးများ ("All") သို့ သတ်မှတ်ပါ။
-      * ဇယားကွက်စာရင်းကို ပြသပါ။ အကယ်၍ မှတ်တမ်းမရှိပါက အောက်ပါအတိုင်း ပြသပါ- *"အတည်ပြုပြီးသား ငွေပေးချေမှု တောင်းဆိုချက်များ မရှိပါ။"*
-      * အထက်ပိုင်းမှ အတည်ပြုချက်များကို အချိန်နှင့်တပြေးညီ နားထောင်ရန် `"Accounting"` WebSocket အခန်းသို့ ဝင်ရောက်ပါ။
+      * Join with relational tables to extract applicant, currency, and payment method details:
+        * Left join `users` (applicant profile) using `applicant_user_id` to retrieve the applicant's name (`full_name`) and branch (`branch`).
+        * Left join `currencies` using `currency_id` to get `currency_code`.
+        * Left join `payment_methods` using `payment_method_id` to get `payment_method_name`.
+      * Sort the results based on the display order logic specified in Section 3.3.
+   3. **UI Population**
+      * Set filter dropdowns to their default values ("All").
+      * Load the table queue list. If zero rows are returned, display the empty state message: *"No approved payment requests found."*
+      * Join the `"Accounting"` WebSocket room to listen for real-time upstream approvals.
 
-#### ၃.၂.၂။ အသေးစိတ်ပြသသည့် မော်ဒယ်ဝင်းဒိုး ပြသခြင်း (Detail Modal Display)
+#### 3.2.2. Detail Modal Display
 
-1. **ရည်ရွယ်ချက် (Purpose)**  
-   * ငွေပေးချေမှု မဆောင်ရွက်မီ တိကျသေချာစေရန် စာရင်းကိုင်များအနေဖြင့် အချက်အလက်များနှင့် ဖိုင်များကို စစ်ဆေးနိုင်ရန်အတွက် ရွေးချယ်ထားသော ငွေပေးချေမှုတောင်းဆိုချက်၏ အပြည့်အစုံကို ပြသရန်။
-2. **အသေးစိတ် (Details)**  
-   1. **စတင်ရန် လှုံ့ဆော်မှု (Trigger)**
-      * အသုံးပြုသူသည် ဇယားစာရင်းရှိ တောင်းဆိုချက်နံပါတ်လင့်ခ် (COL-01) သို့မဟုတ် "လုပ်ဆောင်မည်" (Process) ခလုတ် (COL-07) ကို နှိပ်သည့်အခါ စတင်သည်။
-   2. **ဒေတာ ရယူခြင်း (Data Acquisition)**
-      * ရွေးချယ်ထားသော `payment_request_id` ကို မေးမြန်းခြင်းဖြင့် တောင်းဆိုချက်အသေးစိတ်ကို ရယူပါ-
-        * ခေါင်းစဉ်အချက်အလက်များ၊ ဘဏ်စာရင်းအချက်အလက်များ (`bank_account_info`)၊ အသေးစိတ်တောင်းဆိုချက် အကြောင်းအရာ (`request_content`) နှင့် ပြေစာပါရှိမှု အခြေအနေ (`has_receipt`) တို့ကို ရယူပါ။
-        * ခွဲခြမ်းစိတ်ဖြာထားသော အချက်အလက်များ ရယူခြင်း- `payment_breakdown_items` ဇယားမှ `payment_request_id = :id` ဖြစ်သော အချက်အလက်များကို မေးမြန်းပါ။
-        * ပြေစာဖိုင်များ ရယူခြင်း- အသက်ဝင်နေပြီး မဖျက်ရသေးသော ပြေစာဖိုင်မှတ်တမ်းများကို မေးမြန်းပါ (`WHERE payment_request_id = :id AND is_deleted = FALSE` in `receipt_files`)။
-        * လုပ်ဆောင်မှုမှတ်တမ်းများ ရယူခြင်း- `approval_logs` မှ `payment_request_id = :id` ကို `timestamp` အလိုက် အစဉ်လိုက် မေးမြန်းပါ။
-   3. **သတိပေးချက်များကို အချိန်နှင့်တပြေးညီ တွက်ချက်ခြင်း (Dynamic Alert Evaluation)**
-      * ဌာနခွဲအလိုက် လုပ်ဆောင်ရမည့် စည်းမျဉ်းများကို ဆောင်ရွက်ရန် တောင်းဆိုသူ၏ ဌာနခွဲ အရည်အချင်းကို စစ်ဆေးပါ-
-        * **အခြေအနေ က (မန္တလေး)**: အကယ်၍ `users.branch` == "Mandalay" ဖြစ်ပါက၊ `ALR-01` ကို သတိပေးချက် ပုံစံဖြင့် (အနီရောင်နောက်ခံ၊ စာလုံးအကြီး) ပြသပါ- *"⚠️ အရေးကြီးသည်: ငွေသားပေးချေမှုအတွက် ကိုတိုးဆန်းနှင့် ညှိနှိုင်းဆောင်ရွက်ပါ"*.
-        * **အခြေအနေ ခ (အခြားဌာနခွဲများ)**: အကယ်၍ `users.branch` != "Mandalay" ဖြစ်ပါက၊ `ALR-02` ကို ပုံမှန်ပုံစံဖြင့် (အပြာရောင်နောက်ခံ) ပြသပါ- *"ပုံမှန် ဘဏ်ငွေလွှဲစနစ်ဖြင့် ဆောင်ရွက်ခြင်း"*.
-   4. **UI ပြသမှု ဆောင်ရွက်ခြင်း (UI Render Processing)**
-      * တောင်းဆိုသူ အချက်အလက်၊ ဘဏ်အချက်အလက်နှင့် အသေးစိတ်များကို ပြသပါ။
-      * ခွဲခြမ်းစိတ်ဖြာထားသော ဇယားကို ရက်စွဲ၊ အကြောင်းအရာနှင့် ငွေပမာဏတို့ဖြင့် ပြသပါ။
-      * ခွဲခြမ်းစိတ်ဖြာထားသော ဇယားရှိ စုစုပေါင်းငွေပမာဏကို တွက်ချက်ပါ။ အကယ်၍ ၎င်းသည် ခေါင်းစဉ်ရှိ `total_amount` နှင့် မကိုက်ညီပါက မော်ဒယ်ဝင်းဒိုးတွင် သတိပေးချက် ပြသပါ။
-      * ပူးတွဲတင်ပြထားသော ပြေစာများကို လင့်ခ်များအဖြစ် ပြသပါ။ ပြေစာတစ်ခုချင်းစီအတွက် `[original_file_name]` ကို နှိပ်ပါက `file_storage_path` သို့ ညွှန်းဆိုပေးပါ။
-      * တောင်းဆိုချက်၏ သက်တမ်းတစ်လျှောက် ဆောင်ရွက်ခဲ့သော အဆင့်ဆင့်မှတ်တမ်းကို ပြသပါ။
-      * စာရင်းကိုင်မှတ်စုများ ရေးသားရန်အတွက် အလွတ် မှတ်ချက်ပေးသည့်နေရာ (TXT-01) ကို ပြင်ဆင်ထားပါ။
+1. **Purpose**  
+   * Display detailed information of a selected payment request to allow accountants to audit values and files before completing payment.
+2. **Details**  
+   1. **Trigger**
+      * Triggered when the user clicks a Request Number link (COL-01) or the "Process" button (COL-07) in the table list.
+   2. **Data Acquisition**
+      * Fetch the complete request details by querying the selected `payment_request_id`:
+        * Get header data, bank account information (`bank_account_info`), detailed request content (`request_content`), and receipt flag (`has_receipt`).
+        * Fetch breakdown items: Query `payment_breakdown_items` where `payment_request_id = :id`.
+        * Fetch receipts: Query active `receipt_files` records where `payment_request_id = :id AND is_deleted = FALSE`.
+        * Fetch timeline logs: Query `approval_logs` where `payment_request_id = :id` ordered by `timestamp` ascending.
+   3. **Dynamic Alert Evaluation**
+      * Evaluate the applicant's branch property to execute branch routing rules:
+        * **Condition A (Mandalay)**: If `users.branch` == "Mandalay", display `ALR-01` in warning style (red background, bold font): *"⚠️ IMPORTANT: Coordinate with Toe San for Cash Payment"*.
+        * **Condition B (Other Branches)**: If `users.branch` != "Mandalay", display `ALR-02` in neutral style (blue background): *"Standard Bank Transfer Processing"*.
+   4. **UI Render Processing**
+      * Display applicant information, bank info, and details.
+      * Render the breakdown items table, displaying dates, descriptions, and line amounts.
+      * Calculate the sum of all breakdown line amounts. If the sum does not match the header's `total_amount`, display a warning flag in the modal.
+      * Render receipt attachments as hyperlinks. For each receipt, output the clickable file link: `[original_file_name]` pointing to `file_storage_path`.
+      * Show the chronological history log of the request's lifecycle.
+      * Initialize an empty comment textarea (TXT-01) for optional accounting notes.
 
-#### ၃.၂.၃။ ငွေပေးချေမှု ပြီးမြောက်အောင် ဆောင်ရွက်ခြင်း (Payment Completion Process)
-
-1. **ရည်ရွယ်ချက် (Purpose)**  
-   * လုပ်ငန်းစဉ် အခြေအနေကို အပ်ဒိတ်လုပ်ခြင်း၊ အချိန်မှတ်တမ်းများ ရေးသွင်းခြင်းနှင့် စစ်ဆေးမှုမှတ်တမ်းများ ရေးသားခြင်းတို့ဖြင့် ငွေပေးချေမှု လုပ်ငန်းစဉ်ကို ပြီးမြောက်စေရန်။
-2. **အသေးစိတ် (Details)**  
-   1. **စတင်ရန် လှုံ့ဆော်မှု (Trigger)**
-      * အသေးစိတ် မော်ဒယ်ဝင်းဒိုးရှိ "ငွေပေးချေပြီးစီးသည်အဖြစ် သတ်မှတ်ရန်" ခလုတ် (BTN-03) ကို နှိပ်သည့်အခါ စတင်သည်။
-   2. **အဆင့် ၁: အတည်ပြုချက် ရယူခြင်း (Modal Confirmation)**
-      * အောက်ပါအတိုင်း အတည်ပြုချက်တောင်းသည့် ဝင်းဒိုးကို ပြသပါ- *"ငွေပေးချေမှု တောင်းဆိုချက် [Request Number] ကို ငွေပေးချေပြီးအဖြစ် သတ်မှတ်ရန် သေချာပါသလား? ဤလုပ်ဆောင်ချက်ကို ပြန်လည်ပြင်ဆင်၍ မရနိုင်ပါ။"*
-      * အကယ်၍ အသုံးပြုသူက "ပယ်ဖျက်မည်" (Cancel) ကို နှိပ်ပါက အတည်ပြုချက်ဝင်းဒိုးကို ပိတ်ပြီး ယခင်အတိုင်း ဆက်လက်ပြသပါ။ အကယ်၍ "အတည်ပြုသည်" (Confirm) ကို နှိပ်ပါက ဒေတာဘေ့စ်တွင် အပ်ဒိတ်လုပ်ခြင်းများကို ဆောင်ရွက်ပါ။
-   3. **အဆင့် block: ဒေတာဘေ့စ် အပ်ဒိတ်လုပ်ခြင်း (Atomic Transaction)**
-      * ဒေတာဘေ့စ် ဆောင်ရွက်ချက်အားလုံးကို တစ်ခုတည်းသော transaction အတွင်း လုပ်ဆောင်ပါ။ တစ်ခုခု ပျက်ကွက်ပါက transaction ကို rollback လုပ်ပါ။
-      * **ငွေပေးချေမှု တောင်းဆိုချက်ကို အပ်ဒိတ်လုပ်ခြင်း (Update Payment Request)**:
+#### 3.2.3. Payment Completion Process
+1. **Purpose**  
+   * Complete payment processing by updating workflow status, updating timestamps, and logging audit details.
+2. **Details**  
+   1. **Trigger**
+      * Click the "Mark as Paid" button (BTN-03) in the detail modal.
+   2. **Step 1: Modal Confirmation**
+      * Show a modal confirmation box asking: *"Are you sure you want to mark payment request [Request Number] as Paid? This action cannot be undone."*
+      * If the user clicks "Cancel", close the confirmation box and remain on the detail modal. If they click "Confirm", execute the database updates.
+   3. **Step 2: Database Update (Atomic Transaction)**
+      * Execute updates inside a single database transaction. If any query fails, rollback the transaction.
+      * **Update Payment Request**:
         ```sql
         UPDATE payment_requests 
-        SET status_id = 10,  -- 'PAID' အတွက် ကုဒ်
+        SET status_id = 10,  -- Code for 'PAID'
             payment_completed_date = CURRENT_TIMESTAMP,
             accounting_user_id = :currentUserId,
             modified_date = CURRENT_TIMESTAMP
         WHERE payment_request_id = :targetRequestId 
-          AND status_id = 8; -- Optimistic lock check (APPROVED ဖြစ်ရမည်)
+          AND status_id = 8; -- Optimistic lock check (must be APPROVED)
         ```
-      * **မှတ်တမ်း ရေးသွင်းခြင်း (Create Log Record)**:
-        * `approval_logs` ဇယားထဲသို့ မှတ်တမ်းအသစ်တစ်ခု ထည့်သွင်းပါ-
+      * **Create Log Record**:
+        * Insert a record into the `approval_logs` table:
           * `payment_request_id` = :targetRequestId
           * `action_taken_by_user_id` = :currentUserId
-          * `action_type_id` = 10 (`PAYMENT_COMPLETED` အတွက် ကုဒ်)
+          * `action_type_id` = 10 (Action Code for `PAYMENT_COMPLETED`)
           * `previous_status_id` = 8 (`APPROVED`)
           * `new_status_id` = 10 (`PAID`)
-          * `comment` = မှတ်ချက်နေရာ (TXT-01) တွင် ရေးသားထားသော စာသား။ အကယ်၍ မရှိပါက NULL ဟု ရေးသွင်းပါ။
-          * `ip_address` = အသုံးပြုသူ၏ IP လိပ်စာ။
-          * `user_agent` = အသုံးပြုသူ၏ ဘရောက်ဇာ အချက်အလက်။
+          * `comment` = Text entered in comment box (TXT-01). If empty, write NULL.
+          * `ip_address` = User's request client IP address.
+          * `user_agent` = User's browser User Agent string.
           * `timestamp` = CURRENT_TIMESTAMP
-      * **Transaction ကို အတည်ပြုသိမ်းဆည်းခြင်း (Commit Transaction)**: အပြောင်းအလဲများကို ဒေတာဘေ့စ်တွင် သိမ်းဆည်းပါ။
-   4. **အဆင့် ၃: ကက်ရှ် ဖယ်ရှားခြင်းနှင့် အကြောင်းကြားချက် ပေးပို့ခြင်း (Cache Invalidation & Event Dispatching)**
-      * Redis ကက်ရှ်မှ သက်ဆိုင်ရာ တောင်းဆိုချက် ဒေတာကို ဖယ်ရှားပါ-
+      * **Commit Transaction**: Commit changes to database.
+   4. **Step 3: Cache Invalidation & Event Dispatching**
+      * Delete the corresponding request view payload from the Redis cache:
         * **Command**: `DEL payment_request:payload:<targetRequestId>`
-      * မျက်နှာပြင်များကို တစ်ပြေးညီဖြစ်စေရန် WebSocket ဖြစ်ရပ်များကို ပေးပို့ပါ-
-        * တောင်းဆိုသူ၏ ဒက်ရှ်ဘုတ်အခြေအနေကို အပ်ဒိတ်လုပ်ရန် တောင်းဆိုသူထံ အကြောင်းကြားချက် ပေးပို့ပါ (WebSocket room: `websocket:user:<applicantId>:sockets`)။
-        * အခြားသော အသက်ဝင်နေသည့် စာရင်းကိုင် ဒက်ရှ်ဘုတ်များမှ ဤတန်း (row) ကို ဖယ်ရှားရန် `"Accounting"` WebSocket အခန်းသို့ `row-removed` မက်ဆေ့ဂျ် ပေးပို့ပါ။
-   5. **အဆင့် ၄: UI ရှင်းလင်းခြင်း (UI Cleanup)**
-      * အသေးစိတ် မော်ဒယ်ဝင်းဒိုးကို ပိတ်ပါ။
-      * ဆောင်ရွက်ပြီးသွားသော တောင်းဆိုချက်ကို ဇယားစာရင်းမှ ဖယ်ရှားပါ။
-      * အောင်မြင်ကြောင်း အသိပေးချက် (Toast notification) ပြသပါ- *"ငွေပေးချေမှု တောင်းဆိုချက် [Request Number] ကို ငွေပေးချေပြီးအဖြစ် သတ်မှတ်ပြီးပါပြီ။"*
+      * Broadcast WebSocket events to synchronize views:
+        * Send update notification to the applicant (WebSocket room: `websocket:user:<applicantId>:sockets`) to refresh their dashboard state.
+        * Broadcast a `row-removed` message to the `"Accounting"` WebSocket room to remove this row from all other active accounting dashboard instances.
+   5. **Step 4: UI Cleanup**
+      * Close the Detail Modal.
+      * Remove the processed request row from the active table list.
+      * Display a success Toast notification: *"Payment request [Request Number] successfully marked as Paid."*
 
-#### ၃.၂.၄။ WebSocket ဖြင့် အချိန်နှင့်တစ်ပြေးညီ စင့်ခ်လုပ်ခြင်း (WebSocket Synchronization)
-
-1. **ရည်ရွယ်ချက် (Purpose)**  
-   * အခြားအသုံးပြုသူများ (ဥပမာ- နောက်ဆုံးအတည်ပြုသူ) မှ ငွေပေးချေမှုများကို အတည်ပြုသည့်အခါ စာရင်းကိုင် ဒက်ရှ်ဘုတ်ရှိ လုပ်ဆောင်ရန်စာရင်းကို အလိုအလျောက် အချိန်နှင့်တစ်ပြေးညီ အပ်ဒိတ်ဖြစ်စေရန်။
-2. **အသေးစိတ် (Details)**  
-   1. အခြားအသုံးပြုသူတစ်ဦးက တောင်းဆိုချက်တစ်ခုကို အတည်ပြုလိုက်သည့်အခါ ဆာဗာသည် သက်ဆိုင်ရာ ဒေတာကို `"Accounting"` WebSocket အခန်းသို့ ပေးပို့သည်။
-   2. ၎င်းကို လက်ခံရရှိသည့်အခါ စာရင်းကိုင် ဒက်ရှ်ဘုတ်သည်-
-      * ဇယား၏ ထိပ်ဆုံးတွင် တန်းအသစ် (new row) ကို ထည့်သွင်းသည်။
-      * စုစုပေါင်း လုပ်ဆောင်ရန်စာရင်း အရေအတွက်ကို တိုးမြှင့်သည်။
-      * ဇယား၏ ပြသရမည့် အစီအစဉ်ကို အလိုအလျောက် ပြန်လည်တွက်ချက်သည်။
-
----
-
-### ၃.၃။ ပြသရမည့် အစီအစဉ် (Display Order)
-
-လုပ်ဆောင်ရန်စာရင်း ဇယားသည် အောက်ပါ စီစဉ်မှုစည်းမျဉ်းများအတိုင်း ပြသမည်ဖြစ်သည်-
-
-၁။ **အလိုရှိသော ငွေပေးချေရမည့်ရက်စွဲ (`desired_payment_date`)**: ငွေပေးချေရန် ပိုမိုနီးကပ်သော တောင်းဆိုချက်များကို ဦးစားပေးရန်အတွက် ရက်စွဲ အနည်းမှ အများသို့ (Ascending) စီစဉ်သည်။
-၂။ **တောင်းဆိုသည့် ရက်စွဲ (`application_date`)**: အလိုရှိသော ရက်စွဲချင်း တူညီနေပါက အရင်တောင်းဆိုသော စာရင်းကို အရင်လုပ်ဆောင်နိုင်ရန်အတွက် ရက်စွဲ အနည်းမှ အများသို့ (Ascending) စီစဉ်သည်။
-၃။ **တောင်းဆိုချက် နံပါတ် (`request_number`)**: တူညီမှုမရှိစေရန်အတွက် အက္ခရာအစဉ်လိုက် (Ascending) စီစဉ်သည်။
+#### 3.2.4. WebSocket Synchronization
+1. **Purpose**  
+   * Automatically update the queue list in real-time when new payment requests are approved by Final Approvers.
+2. **Details**  
+   1. When another user approves a request, the server emits a WebSocket event containing the request payload to the `"Accounting"` room.
+   2. On receiving the event, the client dashboard:
+      * Appends the new request row at the top of the table.
+      * Increments the total queue count.
+      * Re-evaluates active table sorting order dynamically.
 
 ---
 
-## ၄။ ပြင်ပမှ ပြင်ဆင်သတ်မှတ်နိုင်သော အချက်များ (Configurable Items)
+### 3.3. Display Order
 
-အောက်ပါ စနစ်၏ ဂုဏ်သတ္တိများကို စနစ်၏ configuration ဖိုင် (`appsettings.json` သို့မဟုတ် environment variables) တွင် ပြင်ပမှ သတ်မှတ်နိုင်ပြီး စနစ်ကို ပြန်လည်မတည်ဆောက်ဘဲ (recompile မလုပ်ဘဲ) ပြောင်းလဲနိုင်သည်-
+The active work queue table displays requests in accordance with the following sorting rules:
+
+1. **Desired Payment Date (`desired_payment_date`)**: Ascending (earliest dates first, to prioritize imminent payments).
+2. **Application Date (`application_date`)**: Ascending (oldest requests processed first in case of identical desired payment dates).
+3. **Request Number (`request_number`)**: Ascending (alphabetical string sort for unique identity consistency).
+
+---
+
+## 4. Configurable Items (External Definitions)
+
+The following system properties are defined externally in the application's configuration file (`appsettings.json` or environment variables) and can be modified without altering compilation code:
 
 | Definition Key | Parameter Classification | Default Value | Description |
 | :--- | :--- | :--- | :--- |
-| `MandalayBranchName` | System String | `"Mandalay"` | သီးခြား ငွေသားပေးချေမှု သတိပေးချက်ကို အသက်သွင်းရန် အသုံးပြုသော ဌာနခွဲအမည် သတ်မှတ်ချက်။ |
-| `MandalayContactPerson`| System String | `"Toe San"` | ငွေသားပေးချေမှု သတိပေးချက်တွင် ပြသမည့် ဆက်သွယ်ရမည့်သူအမည်။ |
-| `UploadDirectory` | Path String | `"wwwroot/uploads/"` | ပြေစာဖိုင်များ သိမ်းဆည်းထားသော လမ်းကြောင်း။ |
-| `ApprovedStatusCode` | System Integer | `8` | ဒေတာဘေ့စ်ရှိ `APPROVED` အခြေအနေကို ရည်ညွှန်းသော ကုဒ်။ |
-| `PaidStatusCode` | System Integer | `10` | ဒေတာဘေ့စ်ရှိ `PAID` အခြေအနေကို ရည်ညွှန်းသော ကုဒ်။ |
+| `MandalayBranchName` | System String | `"Mandalay"` | The branch identifier key used to activate custom payment warning logic. |
+| `MandalayContactPerson`| System String | `"Toe San"` | The contact name displayed in the cash payment alert block. |
+| `UploadDirectory` | Path String | `"wwwroot/uploads/"` | Root folder directory where physical receipts reside. |
+| `ApprovedStatusCode` | System Integer | `8` | Status ID referencing the `APPROVED` database lookup code. |
+| `PaidStatusCode` | System Integer | `10` | Status ID referencing the `PAID` database lookup code. |
