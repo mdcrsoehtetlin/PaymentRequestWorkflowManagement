@@ -249,10 +249,28 @@ main (protected) (ကာကွယ်ထားသည်)
  └── release/v1.0.0 (tagged release) (အမှတ်အသားပြုထားသော ထုတ်ပြန်ချက်)
 ```
 
+#### 3.1.1 Active Developer Feature Branches (လက်ရှိ Developer Feature Branch များ)
+
+Each role module is assigned a dedicated feature branch for the current development sprint. Developers must only commit to their assigned branch. (အခန်းကဏ္ဍ မော်ဂျူးတစ်ခုစီကို လက်ရှိ ဖွံ့ဖြိုးတိုးတက်မှု sprint အတွက် သီးသန့် feature branch တစ်ခု သတ်မှတ်ပေးထားသည်။ Developer များသည် ၎င်းတို့၏ သတ်မှတ်ထားသော branch တွင်သာ commit လုပ်ရမည်။)
+
+| Role Module (အခန်းကဏ္ဍ မော်ဂျူး) | Feature Branch | Scope (နယ်ပယ်) |
+| :--- | :--- | :--- |
+| Applicant (လျှောက်ထားသူ) | `feature/applicant-soehtetlin` | Applicant dashboard, draft CRUD, submission, receipt upload (လျှောက်ထားသူ ဒက်ရှ်ဘုတ်၊ မူကြမ်း CRUD၊ တင်ပြခြင်း၊ ပြေစာ တင်ခြင်း) |
+| Manager (မန်နေဂျာ) | `feature/manager-ayethandarmoe` | Manager verification queue, verify/reject actions (မန်နေဂျာ အတည်ပြုရေး စာရင်း၊ အတည်ပြု/ပယ်ချ လုပ်ဆောင်ချက်များ) |
+| Final Approver (ခွင့်ပြုသူ) | `feature/approver-khaingthinthinwin` | Approver dashboard, final approval/rejection actions (ခွင့်ပြုသူ ဒက်ရှ်ဘုတ်၊ အပြီးသတ် ခွင့်ပြု/ပယ်ချ လုပ်ဆောင်ချက်များ) |
+| Accounting (စာရင်းကိုင်) | `feature/accounting-shinminthant` | Accounting payment processing queue, Mandalay branch alerts (ငွေပေးချေမှု လုပ်ဆောင်ရေး စာရင်း၊ မန္တလေး ဘဏ်ခွဲ သတိပေးချက်များ) |
+| Admin (စီမံခန့်ခွဲသူ) | `feature/admin-yemaungmaung` | Admin panel, user CRUD, master data management, audit logs (စီမံခန့်ခွဲမှု ပန်နယ်၊ အသုံးပြုသူ CRUD၊ မာစတာ ဒေတာ စီမံခန့်ခွဲမှု၊ စစ်ဆေးရေး မှတ်တမ်းများ) |
+
+**Branch Isolation Rules (Branch သီးသန့်ခွဲခြားရေး စည်းမျဉ်းများ):**
+* Each developer works **exclusively** on their assigned feature branch. (Developer တစ်ဦးစီသည် ၎င်းတို့၏ သတ်မှတ်ထားသော feature branch တွင် **သီးသန့်** အလုပ်လုပ်ရမည်။)
+* Cross-branch commits (e.g., an Applicant developer committing to the Manager branch) are a **blocking PR violation**. (Branch အချင်းချင်း commit များ (ဥပမာ- Applicant developer တစ်ဦးမှ Manager branch တွင် commit လုပ်ခြင်း) သည် **PR ကို ပိတ်ပင်မည့် ချိုးဖောက်မှု** ဖြစ်သည်။)
+* All feature branches are created from `master` and will be merged back via Pull Request after review. (Feature branch များအားလုံးကို `master` မှ ဖန်တီးထားပြီး သုံးသပ်ပြီးနောက် Pull Request မှတဆင့် ပြန်လည် ပေါင်းစပ်မည်ဖြစ်သည်။)
+
 **Branch Naming Rules (Branch အမည်ပေးခြင်း စည်းမျဉ်းများ):**
 
 | Branch Type (Branch အမျိုးအစား) | Pattern (ပုံစံ) | Example (ဥပမာ) |
 | :--- | :--- | :--- |
+| Feature (role-based) (လုပ်ဆောင်ချက် - အခန်းကဏ္ဍ အခြေပြု) | `feature/{role}-{developer}` | `feature/applicant-soehtetlin` |
 | Feature (screen-based) (လုပ်ဆောင်ချက် - မျက်နှာပြင် အခြေပြု) | `feature/screen-[A-E]-{description}` | `feature/screen-A-draft-save` |
 | Feature (task-based) (လုပ်ဆောင်ချက် - တာဝန် အခြေပြု) | `feature/task-{id}-{description}` | `feature/task-102-migration` |
 | Bug Fix (အမှား ပြင်ဆင်ချက်) | `fix/{description}` | `fix/totalAmount-precision-rounding` |
