@@ -1,4 +1,4 @@
-# ဒေတာဘေ့စ် ဒီဇိုင်း သတ်မှတ်ချက် (Database Design Specification) Test
+# ဒေတာဘေ့စ် ဒီဇိုင်း သတ်မှတ်ချက် (Database Design Specification)
 
 **စနစ် (System):** ငွေပေးချေမှု တောင်းဆိုခြင်း လုပ်ငန်းအဆင့်ဆင့် စီမံခန့်ခွဲမှု စနစ် (Payment Request Workflow Management System)  
 **အဆင့် (Phase):** နည်းပညာပိုင်းဆိုင်ရာ ဒီဇိုင်း (Technical Design)  
