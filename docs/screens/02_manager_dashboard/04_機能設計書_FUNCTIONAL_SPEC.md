@@ -1,51 +1,24 @@
-# 機能設計書 (Functional Specification) - 担当マネージャーダッシュボード
+# Functional Specification - Manager Dashboard
 
-**対象画面:** 担当マネージャーダッシュボード (Manager Dashboard)  
-**バージョン:** 1.0  
-**作成日:** 2026-06-12  
-**ステータス:** 承認済み  
-
----
-
-## 1. 機能概要 (Functional Overview)
-担当マネージャー（Manager）ロールのユーザーが、自身が承認先（検証者）として指定された支払申請の一覧を確認し、内容を精査した上で「確認完了（Verify）」または「却下（差し戻し）」を行うための画面である。
+**Target Screen:** Manager Dashboard  
+**Version:** 1.0  
+**Date:** 2026-06-12  
+**Status:** Approved  
 
 ---
 
-## 2. ユースケースと業務フロー (Usecases & Workflow)
-
-### 2.1 主なユースケース
-1. **確認待ち一覧の表示:** 自身宛てに提出された `Submitted to Manager` または `Manager Reviewing` 状態の申請を一覧表示する。
-2. **申請詳細・添付ファイルのレビュー:** 申請内容、内訳明細（1〜15行）、および添付された領収書ファイルを画面上で閲覧・ダウンロードする。
-3. **確認完了（Verify OK）処理:** 申請内容に問題がない場合、確認完了を登録する。ステータスは `MANAGER_VERIFIED` に遷移し、案件は申請者に返却される。
-4. **却下（差し戻し）処理:** 内容不備や金額相違がある場合、却下コメント（必須）を入力して申請者に差し戻す。ステータスは `REJECTED_MANAGER` に遷移する。
-
-### 2.2 業務フロー（マネージャー確認）
-```
-[詳細画面を開く] ──► (自動遷移: MANAGER_REVIEWING)
-                            │
-                      (内容確認)
-                            │
-               ┌────────────┴────────────┐
-               ▼                         ▼
-        【確認完了アクション】     【却下アクション】
-               │                         │
-         (申請者に返却)            (差し戻しコメント必須)
-               │                         │
-               ▼                         ▼
-    [Manager Verified (OK)]     [Rejected by Manager]
-```
+## 1. Functional Overview
+This screen is designed for users with the **Manager** role to review the list of payment requests where they are designated as the verifier. After carefully checking the contents of the requests, they can perform either the "Verify (確認完了)" or "Reject / Return (却下/差し戻し)" actions.
 
 ---
 
-## 3. ビジネスルール (Business Rules)
-1. **画面表示時のステータス自動更新:** `Submitted to Manager` の申請をマネージャーが閲覧開始した瞬間に、システムは自動的にステータスを `Manager Reviewing` に更新する。これにより他のメンバーが「誰が現在確認中か」を把握できるようにする。
-2. **コメントの強制:** 却下（差し戻し）を行う場合、10文字以上の却下理由の入力を必須バリデーションとする。確認完了（Verify）の場合はコメント入力は任意とする。
-3. **処理権限の分離:** マネージャーは「確認者」であり、直接最終承認者へ申請を回送する権限は持たない。確認後は必ず申請者に差し戻す（戻す）処理を行う。
+## 2. Usecases & Workflow
 
----
+### 2.1 Key Usecases
+1. **Display Pending Verification Queue:** Lists payment requests submitted to them that are currently in `Submitted to Manager` or `Manager Reviewing` status.
+2. **Review Request Details & Attachments:** View request information, the breakdown table (1 to 15 lines), and view/download attached receipt files on-screen.
+3. **Verification Processing (Verify OK):** If there are no issues with the request details, register verification completion. The status transitions to `MANAGER_VERIFIED`, and the request is sent back to the applicant.
+4. **Rejection Processing (Return):** If there are defects in content or mismatches in amounts, input a mandatory rejection comment and return the request to the applicant. The status transitions to `REJECTED_MANAGER`.
 
-## 4. 権限制御 (Permission Control)
-- **要求ロール:** `MANAGER`
-- **認証方式:** JWT Bearer トークン検証
-- **認可ガード:** `RolesGuard` によるアクセス制限。自分自身が `manager_user_id` に設定されている案件のみ操作可能とする。
+### 2.2 Business Workflow (Manager Verification)
+[Open Details Screen] ──► (Auto-transition: MANAGER_REVIEWING) │ (Verify Content) │ ┌───────────────────┴───────────────────┐ ▼ ▼ 【Verify OK Action】 【Reject Action】 │ │ (Return to Applicant) (Mandatory Rejection Comment) │ │ ▼ ▼ [Manager Verified (OK)] [Rejected by Manager]
