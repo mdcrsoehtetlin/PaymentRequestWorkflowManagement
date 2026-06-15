@@ -5,15 +5,87 @@
 # [AGENT EXECUTION BLOCK]
 # Idempotent unattended installation for locked environment dependencies.
 
+$ErrorActionPreference = 'Continue'
+
+# --- Node.js Check ---
+$nodeVer = (node --version 2>$null)
+if ($nodeVer -match "v24.14.0") {
+    Write-Output "[INFO] Node.js 24.14.0 already active. Skipping provisioning."
+} elseif ($nodeVer) {
+    Write-Output "[WARNING] A conflicting version of Node.js ($nodeVer) was detected. Skipping silent override to protect local environment."
+} else {
+    Write-Output "[INFO] Installing Node.js 24.14.0..."
+    $ErrorActionPreference = 'Stop'
+    winget install --id OpenJS.NodeJS.LTS --version 24.14.0 --exact --silent --accept-source-agreements --accept-package-agreements
+    $ErrorActionPreference = 'Continue'
+}
+
+# --- Git Check ---
+$gitVer = (git --version 2>$null)
+if ($gitVer -match "2.53.0") {
+    Write-Output "[INFO] Git 2.53.0 already active. Skipping provisioning."
+} elseif ($gitVer) {
+    Write-Output "[WARNING] A conflicting version of Git ($gitVer) was detected. Skipping silent override to protect local environment."
+} else {
+    Write-Output "[INFO] Installing Git 2.53.0..."
+    $ErrorActionPreference = 'Stop'
+    winget install --id Git.Git --version 2.53.0 --exact --silent --accept-source-agreements --accept-package-agreements
+    $ErrorActionPreference = 'Continue'
+}
+
+# --- PostgreSQL Check ---
+$pgVer = (psql --version 2>$null)
+if ($pgVer -match "16.14") {
+    Write-Output "[INFO] PostgreSQL 16.14 already active. Skipping provisioning."
+} elseif ($pgVer) {
+    Write-Output "[WARNING] A conflicting version of PostgreSQL ($pgVer) was detected. Aborting silent override to protect local databases."
+} else {
+    Write-Output "[INFO] Installing PostgreSQL 16.14..."
+    $ErrorActionPreference = 'Stop'
+    winget install --id PostgreSQL.PostgreSQL.16 --version 16.14 --exact --silent --accept-source-agreements --accept-package-agreements
+    $ErrorActionPreference = 'Continue'
+}
+
+# --- Memurai Check ---
+$memuraiPing = (memurai-cli ping 2>$null)
+if ($memuraiPing -match "PONG") {
+    Write-Output "[INFO] Memurai 4.1.2 already active. Skipping provisioning."
+} elseif (Get-Command memurai-cli -ErrorAction SilentlyContinue) {
+    Write-Output "[WARNING] A conflicting version of Memurai was detected. Aborting silent override to protect local environment."
+} else {
+    Write-Output "[INFO] Installing Memurai 4.1.2..."
+    $ErrorActionPreference = 'Stop'
+    winget install --id Memurai.MemuraiDeveloper --version 4.1.2 --exact --silent --accept-source-agreements --accept-package-agreements
+    $ErrorActionPreference = 'Continue'
+}
+
+# --- npm Check ---
+$npmVer = (npm --version 2>$null)
+if ($npmVer -match "11.9.0") {
+    Write-Output "[INFO] npm 11.9.0 already active. Skipping provisioning."
+} elseif ($npmVer) {
+    Write-Output "[WARNING] A conflicting version of npm ($npmVer) was detected. Skipping silent override to protect local environment."
+} else {
+    Write-Output "[INFO] Installing npm 11.9.0..."
+    $ErrorActionPreference = 'Stop'
+    npm install -g npm@11.9.0
+    $ErrorActionPreference = 'Continue'
+}
+
+# --- Nest CLI Check ---
+$nestVer = (nest --version 2>$null)
+if ($nestVer -match "11.0.23") {
+    Write-Output "[INFO] Nest CLI 11.0.23 already active. Skipping provisioning."
+} elseif ($nestVer) {
+    Write-Output "[WARNING] A conflicting version of Nest CLI ($nestVer) was detected. Skipping silent override to protect local environment."
+} else {
+    Write-Output "[INFO] Installing Nest CLI 11.0.23..."
+    $ErrorActionPreference = 'Stop'
+    npm install -g @nestjs/cli@11.0.23
+    $ErrorActionPreference = 'Continue'
+}
+
 $ErrorActionPreference = 'Stop'
-
-winget install --id OpenJS.NodeJS.LTS --version 24.14.0 --exact --silent --accept-source-agreements --accept-package-agreements
-winget install --id Git.Git --version 2.53.0 --exact --silent --accept-source-agreements --accept-package-agreements
-winget install --id PostgreSQL.PostgreSQL.16 --version 16.14 --exact --silent --accept-source-agreements --accept-package-agreements
-winget install --id Memurai.MemuraiDeveloper --version 4.1.2 --exact --silent --accept-source-agreements --accept-package-agreements
-
-npm install -g npm@11.9.0
-npm install -g @nestjs/cli@11.0.23
 ```
 
 ## PHASE 2: HOST ENVIRONMENT BINDING
