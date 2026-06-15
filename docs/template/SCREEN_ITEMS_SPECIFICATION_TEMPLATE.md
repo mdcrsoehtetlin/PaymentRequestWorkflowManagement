@@ -139,6 +139,6 @@
 
 - **Responsive Viewport Design Boundaries:** [e.g., Layout optimized primarily for standard desktop configurations (1280px+). Panels stack gracefully into scrollable rows on tablet/mobile screens.]
 - **Accessibility Execution Rules:** [e.g., Every actionable control must be keyboard navigable via sequential `Tab` focus tracking and executable using `Enter` or `Space`.]
-- **Performance & Loading States:** [e.g., Use skeleton loaders during data fetch. Action buttons must display spinners and enter `disabled` state while asynchronous API calls are running to prevent double-submission.]
+- **Performance & Loading States:** [e.g., Use skeleton loaders during data fetch. Action buttons must display spinners and enter `disabled` state while asynchronousPI calls are running to prevent double-submission.]
 - **Security Provision (Sanitization Indicator):** [e.g., Explicitly sanitize and escape all user input fields (e.g., textareas) on both client and server sides to prevent Cross-Site Scripting (XSS) injection.]
 - **Design System Rules:** [e.g., Adhere strictly to the color palettes, fonts, and micro-animations defined in `02_開発ルール_DEVELOPMENT_RULES.md`.]
