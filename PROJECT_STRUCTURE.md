@@ -6,49 +6,127 @@
 
 ```text
 PaymentRequestWorkflowManagement/ (Root)
-├── .github/
-│   └── workflows/
-│       └── ci.yml             # Github Actions configuration for CI
-├── docs/                      # Specification နှင့် system specifications များ
-│   ├── core_ja/               # ဂျပန်ဘာသာဖြင့် ရေးသားထားသော functional spec နှင့် rules များ
-│   └── screens/               # Screen design specs များ
-├── frontend/                  # React + Vite Frontend Application
-│   ├── public/                # Static assets (images, icons)
-│   └── src/
-│       ├── assets/            # CSS, logo နှင့် images များ
-│       ├── components/        # Reusable shared UI components များ
-│       ├── context/           # Global state management providers များ (e.g., AuthContext)
-│       ├── hooks/             # Custom React Hooks (e.g., useFetch)
-│       ├── pages/             # Role-specific dashboard screen controllers များ
-│       │   ├── applicant/
-│       │   ├── manager/
-│       │   ├── approver/
-│       │   ├── accounting/
-│       │   └── admin/
-│       ├── services/          # Backend API services (HTTP request modules)
-│       ├── App.tsx            # Main application component
-│       ├── main.tsx           # React bootstrap element entry point
-│       └── index.css          # Global styling file
-├── src/                       # NestJS Backend Application Source Code
-│   ├── config/                # Environment variables configuration module
-│   ├── database/              # TypeORM database credentials နှင့် providers
-│   ├── modules/               # Core business features နှင့် modules များ
-│   │   ├── applicant/         # Applicant business logic
-│   │   ├── manager/           # Manager verification process logic
-│   │   ├── approver/          # Final approver validation logic
-│   │   ├── accounting/        # Accounting payment logic
-│   │   ├── admin/             # Admin console and log configurations
-│   │   └── shared/            # Shared features (Entities နှင့် Gateways)
-│   │       ├── entities/      # TypeORM Entity classes (Database models)
-│   │       └── websocket.gateway.ts # Real-time alerts synchronization module (Socket.io)
-│   ├── app.controller.ts      # Global routing entry point controller
-│   ├── app.module.ts          # Main configuration setup for dependencies injection
-│   ├── app.service.ts         # Server health configurations
-│   └── main.ts                # Application bootstrap entry point
-├── .env                       # Environment configuration secrets
-├── AGENTS.md                  # DevOps commit workflow automation agent rule
-├── package.json               # Package config scripts and dependencies definitions
-└── tsconfig.json              # TypeScript compilation rules compiler configuration
+├── docs/                                                # Specification နှင့် system specifications များ
+│   ├── core_ja/                                  # ဂျပန်ဘာသာဖြင့် ရေးသားထားသော functional spec နှင့် rules များ
+│   │   ├── 01_要件定義書_REQUIREMENT_SPEC.md
+│   │   ├── 02_開発ルール_DEVELOPMENT_RULES.md
+│   │   ├── 03_データベース設計書_DATABASE_SPEC.md
+│   │   └── payment_request_db_backup.sql
+│   ├── guides/
+│   │   ├── AUTOMATED_ENV_SETUP.md
+│   │   └── ENVIRONMENT_SETUP_GUIDE.md
+│   ├── screens/                                  # Screen design specs များ
+│   │   ├── 01_applicant_dashboard/
+│   │   │   ├── 04_機能設計書_FUNCTIONAL_SPEC.md
+│   │   │   ├── 05_画面項目設計書_SCREEN_ITEMS.md
+│   │   │   └── 06_詳細設計書_DETAIL_DESIGN.md
+│   │   ├── 02_manager_dashboard/
+│   │   │   ├── 04_機能設計書_FUNCTIONAL_SPEC.md
+│   │   │   ├── 05_画面項目設計書_SCREEN_ITEMS.md
+│   │   │   └── 06_詳細設計書_DETAIL_DESIGN.md
+│   │   ├── 03_approver_dashboard/
+│   │   │   ├── 04_機能設計書_FUNCTIONAL_SPEC.md
+│   │   │   ├── 05_画面項目設計書_SCREEN_ITEMS.md
+│   │   │   └── 06_詳細設計書_DETAIL_DESIGN.md
+│   │   ├── 04_accounting_dashboard/
+│   │   │   ├── 04_機能設計書_FUNCTIONAL_SPEC.md
+│   │   │   ├── 05_画面項目設計書_SCREEN_ITEMS.md
+│   │   │   └── 06_詳細設計書_DETAIL_DESIGN.md
+│   │   └── 05_admin_panel/
+│   │       ├── 04_機能設計書_FUNCTIONAL_SPEC.md
+│   │       ├── 05_画面項目設計書_SCREEN_ITEMS.md
+│   │       └── 06_詳細設計書_DETAIL_DESIGN.md
+│   └── template/
+│       └── FUNCTIONAL_SPECIFICATION_TEMPLATE.md
+├── frontend/                                        # React + Vite Frontend Application
+│   ├── public/                                    # Static assets (images, icons)
+│   │   ├── favicon.svg
+│   │   └── icons.svg
+│   ├── src/
+│   │   ├── assets/                            # CSS, logo နှင့် images များ
+│   │   │   ├── hero.png
+│   │   │   ├── react.svg
+│   │   │   └── vite.svg
+│   │   ├── pages/                              # Role-specific dashboard screen controllers များ
+│   │   │   ├── accounting/
+│   │   │   ├── admin/
+│   │   │   ├── applicant/
+│   │   │   ├── approver/
+│   │   │   └── manager/
+│   │   ├── App.tsx                            # Main application component
+│   │   ├── index.css                        # Global styling file
+│   │   └── main.tsx                          # React bootstrap element entry point
+│   ├── .gitignore
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── README.md
+│   ├── tailwind.config.js
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
+├── redis-local/                                  # Local Redis cache setup
+│   └── Memurai/
+│       ├── libcrypto-3-x64.dll
+│       ├── libssl-3-x64.dll
+│       ├── memurai-services.dll
+│       └── memurai.exe
+├── src/                                                  # NestJS Backend Application Source Code
+│   ├── config/                                    # Environment variables configuration module
+│   │   ├── config.module.ts
+│   │   └── configuration.ts
+│   ├── database/                                # TypeORM database credentials နှင့် providers
+│   │   └── migrations/
+│   │       └── README.md
+│   ├── modules/                                  # Core business features နှင့် modules များ
+│   │   ├── accounting/                    # Accounting payment logic
+│   │   │   ├── accounting.controller.ts
+│   │   │   ├── accounting.module.ts
+│   │   │   └── accounting.service.ts
+│   │   ├── admin/                              # Admin console and log configurations
+│   │   │   ├── admin.controller.ts
+│   │   │   ├── admin.module.ts
+│   │   │   └── admin.service.ts
+│   │   ├── applicant/                      # Applicant business logic
+│   │   │   ├── applicant.controller.ts
+│   │   │   ├── applicant.module.ts
+│   │   │   └── applicant.service.ts
+│   │   ├── approver/                        # Final approver validation logic
+│   │   │   ├── approver.controller.ts
+│   │   │   ├── approver.module.ts
+│   │   │   └── approver.service.ts
+│   │   ├── manager/                          # Manager verification process logic
+│   │   │   ├── manager.controller.ts
+│   │   │   ├── manager.module.ts
+│   │   │   └── manager.service.ts
+│   │   └── shared/                            # Shared features (Entities နှင့် Gateways)
+│   │       ├── entities/                # TypeORM Entity classes (Database models)
+│   │       ├── shared.module.ts
+│   │       └── websocket.gateway.ts
+│   ├── app.controller.spec.ts
+│   ├── app.controller.ts                # Global routing entry point controller
+│   ├── app.module.ts                        # Main configuration setup for dependencies injection
+│   ├── app.service.ts                      # Server health configurations
+│   └── main.ts                                    # Application bootstrap entry point
+├── test/
+│   ├── app.e2e-spec.ts
+│   └── jest-e2e.json
+├── .env                                                  # Environment configuration secrets
+├── .gitignore
+├── .prettierrc
+├── AGENTS.md                                        # DevOps commit workflow automation agent rule
+├── eslint.config.mjs
+├── nest-cli.json
+├── package-lock.json
+├── package.json                                  # Package config scripts and dependencies definitions
+├── PROJECT_STRUCTURE.md
+├── README.md
+├── tsconfig.build.json
+├── tsconfig.json                                # TypeScript compilation rules compiler configuration
+└── typeorm-cli.config.ts
 ```
 
 ---
