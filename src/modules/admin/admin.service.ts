@@ -28,8 +28,11 @@ export class AdminService {
   }
 
   async getAuditLogs(startDate?: string, endDate?: string, userId?: number) {
-    this.logger.log(`Fetching system audit logs from ${startDate} to ${endDate}`);
-    const query = this.approvalLogRepository.createQueryBuilder('log')
+    this.logger.log(
+      `Fetching system audit logs from ${startDate} to ${endDate}`,
+    );
+    const query = this.approvalLogRepository
+      .createQueryBuilder('log')
       .leftJoinAndSelect('log.paymentRequest', 'request')
       .leftJoinAndSelect('log.actionTakenByUser', 'user');
 

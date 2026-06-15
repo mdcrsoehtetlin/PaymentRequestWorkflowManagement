@@ -21,9 +21,12 @@ export default () => ({
     ttl: parseInt(process.env.REDIS_TTL || '3600', 10),
   },
   jwt: {
-    secret: process.env.JWT_SECRET || 'prwm-jwt-secret-dev-2026-change-in-production',
+    secret:
+      process.env.JWT_SECRET || 'prwm-jwt-secret-dev-2026-change-in-production',
     expiration: process.env.JWT_EXPIRATION || '3600s',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'prwm-refresh-secret-dev-2026-change-in-production',
+    refreshSecret:
+      process.env.JWT_REFRESH_SECRET ||
+      'prwm-refresh-secret-dev-2026-change-in-production',
     refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
   },
   fileUpload: {

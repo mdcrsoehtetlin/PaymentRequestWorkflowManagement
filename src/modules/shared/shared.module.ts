@@ -18,9 +18,6 @@ import { WebsocketGateway } from './websocket.gateway';
     ]),
   ],
   providers: [WebsocketGateway],
-  exports: [
-    TypeOrmModule,
-    WebsocketGateway,
-  ],
+  exports: [TypeOrmModule, WebsocketGateway],
 })
 export class SharedModule {}

@@ -14,7 +14,8 @@ export class ApplicantService {
 
   async getMyRequests(userId: number, page = 1, limit = 10, statusId?: number) {
     this.logger.log(`Fetching requests for applicant: ${userId}`);
-    const query = this.paymentRequestRepository.createQueryBuilder('request')
+    const query = this.paymentRequestRepository
+      .createQueryBuilder('request')
       .where('request.applicantUserId = :userId', { userId })
       .andWhere('request.isDeleted = false');
 
@@ -42,13 +43,17 @@ export class ApplicantService {
   }
 
   async submitToManager(id: number, userId: number, managerId: number) {
-    this.logger.log(`Submitting request ${id} to manager ${managerId} from user ${userId}`);
+    this.logger.log(
+      `Submitting request ${id} to manager ${managerId} from user ${userId}`,
+    );
     // Update logic placeholder
     return { success: true, message: 'Submitted to manager successfully' };
   }
 
   async submitToApprover(id: number, userId: number) {
-    this.logger.log(`Submitting request ${id} to final approver from user ${userId}`);
+    this.logger.log(
+      `Submitting request ${id} to final approver from user ${userId}`,
+    );
     // Update logic placeholder
     return { success: true, message: 'Submitted to approver successfully' };
   }

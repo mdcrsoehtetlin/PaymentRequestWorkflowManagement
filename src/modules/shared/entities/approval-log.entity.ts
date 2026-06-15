@@ -17,14 +17,20 @@ export class ApprovalLog {
   @Column({ name: 'payment_request_id' })
   paymentRequestId: number;
 
-  @ManyToOne(() => PaymentRequest, (request) => request.approvalLogs, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+  @ManyToOne(() => PaymentRequest, (request) => request.approvalLogs, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
   @JoinColumn({ name: 'payment_request_id' })
   paymentRequest: PaymentRequest;
 
   @Column({ name: 'action_taken_by_user_id' })
   actionTakenByUserId: number;
 
-  @ManyToOne(() => User, (user) => user.approvalLogs, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.approvalLogs, {
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE',
+  })
   @JoinColumn({ name: 'action_taken_by_user_id' })
   actionTakenByUser: User;
 

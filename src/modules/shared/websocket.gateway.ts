@@ -15,7 +15,9 @@ import { Logger } from '@nestjs/common';
     origin: '*',
   },
 })
-export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class WebsocketGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -38,7 +40,9 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     client.join(payload.role);
     // Join room based on individual userId
     client.join(`user:${payload.userId}`);
-    this.logger.log(`User ${payload.userId} with role ${payload.role} joined rooms.`);
+    this.logger.log(
+      `User ${payload.userId} with role ${payload.role} joined rooms.`,
+    );
     return { status: 'joined' };
   }
 

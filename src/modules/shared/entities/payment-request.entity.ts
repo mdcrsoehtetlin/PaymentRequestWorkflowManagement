@@ -24,35 +24,54 @@ export class PaymentRequest {
   @Column({ name: 'applicant_user_id' })
   applicantUserId: number;
 
-  @ManyToOne(() => User, (user) => user.paymentRequestsAsApplicant, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.paymentRequestsAsApplicant, {
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE',
+  })
   @JoinColumn({ name: 'applicant_user_id' })
   applicant: User;
 
   @Column({ name: 'manager_user_id', nullable: true })
   managerUserId: number;
 
-  @ManyToOne(() => User, (user) => user.paymentRequestsAsManager, { onDelete: 'SET NULL', onUpdate: 'CASCADE', nullable: true })
+  @ManyToOne(() => User, (user) => user.paymentRequestsAsManager, {
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+    nullable: true,
+  })
   @JoinColumn({ name: 'manager_user_id' })
   manager: User;
 
   @Column({ name: 'final_approver_user_id', nullable: true })
   finalApproverUserId: number;
 
-  @ManyToOne(() => User, (user) => user.paymentRequestsAsApprover, { onDelete: 'SET NULL', onUpdate: 'CASCADE', nullable: true })
+  @ManyToOne(() => User, (user) => user.paymentRequestsAsApprover, {
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+    nullable: true,
+  })
   @JoinColumn({ name: 'final_approver_user_id' })
   finalApprover: User;
 
   @Column({ name: 'accounting_user_id', nullable: true })
   accountingUserId: number;
 
-  @ManyToOne(() => User, (user) => user.paymentRequestsAsAccounting, { onDelete: 'SET NULL', onUpdate: 'CASCADE', nullable: true })
+  @ManyToOne(() => User, (user) => user.paymentRequestsAsAccounting, {
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+    nullable: true,
+  })
   @JoinColumn({ name: 'accounting_user_id' })
   accounting: User;
 
   @Column({ name: 'current_assigned_to_user_id', nullable: true })
   currentAssignedToUserId: number;
 
-  @ManyToOne(() => User, (user) => user.assignedPaymentRequests, { onDelete: 'SET NULL', onUpdate: 'CASCADE', nullable: true })
+  @ManyToOne(() => User, (user) => user.assignedPaymentRequests, {
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+    nullable: true,
+  })
   @JoinColumn({ name: 'current_assigned_to_user_id' })
   currentAssignedTo: User;
 
@@ -89,19 +108,39 @@ export class PaymentRequest {
   @Column({ name: 'status_id' })
   statusId: number;
 
-  @Column({ name: 'submitted_to_manager_date', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'submitted_to_manager_date',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   submittedToManagerDate: Date;
 
-  @Column({ name: 'manager_verification_date', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'manager_verification_date',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   managerVerificationDate: Date;
 
-  @Column({ name: 'submitted_to_approver_date', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'submitted_to_approver_date',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   submittedToApproverDate: Date;
 
-  @Column({ name: 'approval_date', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'approval_date',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   approvalDate: Date;
 
-  @Column({ name: 'payment_completed_date', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'payment_completed_date',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   paymentCompletedDate: Date;
 
   @CreateDateColumn({ name: 'created_date', type: 'timestamp with time zone' })
@@ -113,7 +152,9 @@ export class PaymentRequest {
   @Column({ name: 'is_deleted', default: false })
   isDeleted: boolean;
 
-  @OneToMany(() => PaymentBreakdownItem, (item) => item.paymentRequest, { cascade: true })
+  @OneToMany(() => PaymentBreakdownItem, (item) => item.paymentRequest, {
+    cascade: true,
+  })
   breakdownItems: PaymentBreakdownItem[];
 
   @OneToMany(() => ApprovalLog, (log) => log.paymentRequest)

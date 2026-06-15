@@ -21,7 +21,9 @@ export class AccountingService {
   }
 
   async completePayment(id: number, accountingId: number, comment?: string) {
-    this.logger.log(`Completing payment ${id} by accounting user ${accountingId} with comment: ${comment}`);
+    this.logger.log(
+      `Completing payment ${id} by accounting user ${accountingId} with comment: ${comment}`,
+    );
     // Update status to PAID (10)
     return { success: true, message: 'Payment completed successfully' };
   }
