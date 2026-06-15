@@ -8,6 +8,11 @@
 **Status:** Approved  
 **Classification:** Internal — Engineering Division  
 
+### Related Screen Reference Files
+- User Management screen mockup: [docs/screens/05_admin_panel/SCR_005_A_USER_MGMT.txt.txt](docs/screens/05_admin_panel/SCR_005_A_USER_MGMT.txt.txt)
+- Master Data Configuration screen mockup: [docs/screens/05_admin_panel/SCR_005_B_MASTER_CONFIG.txt](docs/screens/05_admin_panel/SCR_005_B_MASTER_CONFIG.txt)
+- Audit Logs screen mockup: [docs/screens/05_admin_panel/SCR_005_C_AUDIT_LOGS.txt](docs/screens/05_admin_panel/SCR_005_C_AUDIT_LOGS.txt)
+
 ---
 
 ## 1. Screen Layout & Navigation Architecture

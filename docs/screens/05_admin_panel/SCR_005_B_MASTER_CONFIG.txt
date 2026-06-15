@@ -1,0 +1,35 @@
+========================================================================================
+[Admin Console] PRWM System                                              |  User Profile
+========================================================================================
+ MENU NAVIGATION         |  DASHBOARD WORKSPACE (TAB CONTENTS)
+ -----------------------+---------------------------------------------------------------
+ ( ) USER MANAGEMENT     |  MASTER DATA CONFIGURATION
+ (*) MASTER DATA CONFIG  |  Maintain global lookup values, payment rules, and currencies.
+ ( ) AUDIT LOGS          | 
+                         |  [ Select Master Table Category ] --------------------------
+                         |  ( ) Branches  ( ) System Roles  (o) Payment Types  ( ) Methods  ( ) Currencies
+                         | 
+                         |  PAYMENT TYPES CONFIGURATION (支払タイプマスタ)
+                         |  +-------------+--------------------+------------------------+----------+----------+
+                         |  | ID (Serial) | Type Code          | Type Name              | Status   | Actions  |
+                         |  +-------------+--------------------+------------------------+----------+----------+
+                         |  | 1           | EXPENSE_REIMBURSE  | Expense Reimbursement  | [Active] | (Edit)   |
+                         |  | 2           | SERVICE_PAYMENT    | Service Payment        | [Active] | (Edit)   |
+                         |  | 3           | ADVANCE_PAYMENT    | Advance Payment        | [Active] | (Edit)   |
+                         |  | 4           | OTHER              | Other                  | [Active] | (Edit)   |
+                         |  +-------------+--------------------+------------------------+----------+----------+
+                         |  | Total Records: 4 Items                                [[ + Add New Entry ]]
+                         |
+                         |  ------------------------------------------------------------
+                         |  [MODAL POPUP: ADD / EDIT ENTRY]
+                         |  ------------------------------------------------------------
+                         |  |  Category Context: Payment Types
+                         |  |  
+                         |  |  Item Code:   [ EXPENSE_REIMBURSE          ] * Max 30 chars, Unique
+                         |  |  Item Name:   [ Expense Reimbursement      ] * Max 100 chars, Unique
+                         |  |  
+                         |  |  Status Flag: (o) Enabled (is_active = TRUE)
+                         |  |               ( ) Disabled (is_active = FALSE)
+                         |  | 
+                         |  |  [ Cancel ]                                   [[ Save Entry ]]
+                         |  ------------------------------------------------------------

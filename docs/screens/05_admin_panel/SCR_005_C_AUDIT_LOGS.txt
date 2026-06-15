@@ -1,0 +1,32 @@
+========================================================================================
+[Admin Console] PRWM System                                              |  User Profile
+========================================================================================
+ MENU NAVIGATION         |  DASHBOARD WORKSPACE (TAB CONTENTS)
+ -----------------------+---------------------------------------------------------------
+ ( ) USER MANAGEMENT     |  AUDIT LOG HISTORY
+ ( ) MASTER DATA CONFIG  |  Review the immutable tracking log of system events, state changes,
+ (*) AUDIT LOGS          |  and authorization adjustments.
+                         | _____________________________________________________________
+                         | | Search Filters:                                            |
+                         | | Start Date: [ 2026-06-01 ] * End Date: [ 2026-06-15 ] * |
+                         | |                                                            |
+                         | | Target Actor: [ All Users                |▼]   [[ Fetch ]] |
+                         | |____________________________________________________________|
+                         | 
+                         |  AUDIT TRANSACTIONS GRID
+                         |  +-----+---------------+------------+--------+------------+------------+---------------------+
+                         |  | ID  | Request No    | Actor Name | Action | Prev State | New State  | Timestamp (UTC)     |
+                         |  +-----+---------------+------------+--------+------------+------------+---------------------+
+                         |  | 104 | PR-202606-003 | Jane Smith | VERIFY | VP_PENDING | AP_PENDING | 2026-06-15 03:12:10 |
+                         |  | 103 | PR-202606-003 | John Doe   | SUBMIT | DRAFT      | VP_PENDING | 2026-06-14 18:45:22 |
+                         |  | 102 | PR-202606-001 | Alice Vance| APPROV | AP_PENDING | APPROVED   | 2026-06-13 09:22:15 |
+                         |  | 101 | PR-202606-001 | Jane Smith | VERIFY | VP_PENDING | AP_PENDING | 2026-06-12 14:05:01 |
+                         |  +-----+---------------+------------+--------+------------+------------+---------------------+
+                         |  | Page 1 of 12 (Showing 1-20 of 234)           < Prev  [1] 2 3 .. 12  Next >  |
+                         |  +-------------------------------------------------------------------------------------------+
+                         | 
+                         |  [ Selected Item Metadata Detail Panel ] -------------------
+                         |  Log ID Reference: #104
+                         |  IP Address:       192.168.4.112
+                         |  User Agent:       Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/125.0.0.0
+                         |  Action Comment:   "Verified matching line breakdown items against attached invoice PDF."
