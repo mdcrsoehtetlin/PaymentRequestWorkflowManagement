@@ -1,20 +1,26 @@
-# Database Design Specification
-
-**System:** Payment Request Workflow Management System  
-**Phase:** Technical Design  
-**Version:** 1.1  
-**Date:** 2026-06-11  
-**Author:** Lead Database Engineer  
-**Status:** Released (承認済み)
+# Database Design Specification (データベース設計書)
 
 ---
 
-## Document History
+## Document Control (ドキュメント管理)
 
-| Version | Date | Author | Changes |
+| Attribute | Value |
+| :--- | :--- |
+| **Document ID** | PRWM-DBS-001 |
+| **System** | Payment Request Workflow Management System (支払申請ワークフロー管理システム) |
+| **Phase** | Technical Design |
+| **Version** | 1.1 |
+| **Created** | 2026-06-10 |
+| **Last Updated** | 2026-06-11 |
+| **Author** | Lead Database Engineer |
+| **Status** | Released (承認済み) |
+
+### Document Revision History
+
+| Version | Date | Author | Description of Changes |
 | :--- | :--- | :--- | :--- |
-| 1.1 | 2026-06-11 | Lead Database Engineer | Updated schemas for dynamic line manager selection and draft soft-deletion capabilities. (動的ラインマネージャー選択機能および下書き状態における論理削除機能追加に伴うスキーマ改定) |
 | 1.0 | 2026-06-10 | Senior Database Architect & Lead Backend Engineer | Initial technical design specification (新規作成) |
+| 1.1 | 2026-06-11 | Lead Database Engineer | Updated schemas for dynamic line manager selection and draft soft-deletion capabilities. (動的ラインマネージャー選択機能および下書き状態における論理削除機能追加に伴うスキーマ改定) |
 
 ---
 

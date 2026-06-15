@@ -1,11 +1,25 @@
-# REQUIREMENT_DEFINITION.md
+# Requirements Definition (要件定義)
 
-# Payment Request Workflow Management System
+---
 
-**Requirements Definition (要件定義)**  
-**Version:** 1.0  
-**Date:** 2026-06-10  
-**Status:** Released (承認済み)
+## Document Control (ドキュメント管理)
+
+| Attribute | Value |
+| :--- | :--- |
+| **Document ID** | PRWM-REQ-001 |
+| **System** | Payment Request Workflow Management System (支払申請ワークフロー管理システム) |
+| **Version** | 1.1 |
+| **Created** | 2026-06-10 |
+| **Last Updated** | 2026-06-10 |
+| **Author** | Software Architect |
+| **Status** | Released (承認済み) |
+
+### Document Revision History
+
+| Version | Date | Author | Description of Changes |
+| :--- | :--- | :--- | :--- |
+| 1.0 | 2026-06-10 | Software Architect | Initial requirements definition |
+| 1.1 | 2026-06-10 | Software Architect | Updated with Payment Request Form Template (支払申請書) details and form field specifications |
 
 ---
 
@@ -749,14 +763,7 @@ The form includes the following important notes that have been incorporated as b
    - English: "Paper receipts should be submitted to Accounting after payment or after request submission."
    - Implementation: REQ-032A, Rule 4.1.7
 
----
 
-## Document History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-06-10 | Software Architect | Initial requirements definition |
-| 1.1 | 2026-06-10 | Software Architect | Updated with Payment Request Form Template (支払申請書) details and form field specifications |
 
 ---
 
