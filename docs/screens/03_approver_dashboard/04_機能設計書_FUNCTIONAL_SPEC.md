@@ -3,7 +3,7 @@
 **System Name:** Payment Request Workflow Management System (支払申請ワークフロー管理システム)  
 **Function Name:** Final Approver Workflow (最終承認者ワークフロー)  
 **Function ID:** FN-3.4.3  
-**Version:** 1.0.1  
+**Version:** 1.0.0  
 **Date:** 2026-06-12  
 
 ---
@@ -41,29 +41,36 @@ This function defines the final approval phase within the payment request lifecy
 | **REQ-016** | Generation of Audit Log (ApprovalLog) | Action Execution (Approve / Reject). | Upon performing either an "Approve" or "Reject" action, the system must write a record to the `ApprovalLog` table detailing the action, comment, operator ID, transition status, timestamp, and IP address. | - Inserted record in `ApprovalLog` table. |
 
 ## 6. Process Flow (プロセスフロー)
+Textual Steps
+Final approver navigates to pending requests list.
+Final approver opens a request with status "Submitted to Approver".
+System updates Request.Status → "Approver Reviewing".
+UI displays full request details and ApprovalLog.
+Final approver chooses action:
+Approve → system: create ApprovalLog(Action="Approve"), set Request.Status="Approved", enqueue to Accounting Pending queue, send accounting notification.
+Reject → UI requires non-empty comment; on submit, system: create ApprovalLog(Action="Reject", Comment), set Request.Status="Rejected by Approver", notify applicant, return to applicant workflow queue.
+System confirms action and displays success message to final approver.
+Diagram (linear)
+Submitted to Approver --(final approver opens)--> Approver Reviewing --(approve)--> Approved --> Accounting Pending
+--(reject + comment)--> Rejected by Approver --> Applicant
 
-### 6.1 Textual Steps
+## 7. Input / Output Specification (入出力定義)
+
+### 7.1 Input Specification (入力定義)
+### Textual Steps
 1. Final approver navigates to pending requests list.
 2. Final approver opens a request with status "Submitted to Approver".
 3. System updates `Request.Status` → "Approver Reviewing".
 4. UI displays full request details and `ApprovalLog`.
 5. Final approver chooses action:
-   - **Approve** → System creates `ApprovalLog`(Action="Approve"), sets `Request.Status`="Approved", enqueue to Accounting Pending queue, send accounting notification.
-   - **Reject** → UI requires non-empty comment; on submit, system: create `ApprovalLog`(Action="Reject", Comment), set `Request.Status`="Rejected by Approver", notify applicant, return to applicant workflow queue.
+   - Approve → system: create `ApprovalLog`(Action="Approve"), set `Request.Status`="Approved", enqueue to Accounting Pending queue, send accounting notification.
+   - Reject → UI requires non-empty comment; on submit, system: create `ApprovalLog`(Action="Reject", Comment), set `Request.Status`="Rejected by Approver", notify applicant, return to applicant workflow queue.
 6. System confirms action and displays success message to final approver.
 
-### 6.2 Process Flow Diagram (Linear)
-```
+### Diagram (linear)
+
 Submitted to Approver --(final approver opens)--> Approver Reviewing --(approve)--> Approved --> Accounting Pending
-                                                     └──(reject + comment)--> Rejected by Approver --> Applicant
-```
-
-## 7. Input / Output Specification (入出力定義)
-
-### 7.1 Input Specification (入力定義)
-| Field Name (English) | Field Name (Japanese) | Control Type | Format / Constraints | Required / Optional | Description |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Approval Comment** | コメント | Text Area | Min 10 characters, Max 1000 characters. Supports Myanmar Unicode character inputs. | Mandatory only if the Reject action is selected. Optional for Approve action. | Input field for rejection feedback, approval notes, or query responses. |
+                                                     \--(reject + comment)--> Rejected by Approver --> Applicant
 
 ### 7.2 Output Specification (出力定義)
 The Final Approver view displays the following read-only fields:
@@ -72,8 +79,8 @@ The Final Approver view displays the following read-only fields:
 - **Request Number (申請番号):** Auto-generated unique format (e.g., "PRF-2026-001")
 - **Application Date (申請日):** YYYY-MM-DD format
 - **Employee Number (社員番号):** String (10 characters)
-- **Employee Name (氏名):** String (100 characters) - Supports Myanmar Unicode characters.
-- **Branch (ブランチ):** Applicant's branch name (e.g., Yangon, Mandalay, Naypyidaw)
+- **Employee Name (氏名):** String (100 characters)
+- **Branch (ブランチ):** Applicant's branch name
 
 #### 7.2.2 Payment Information Section
 - **Total Payment Amount (支払金額):** Decimal format (12,2) with currency prefix (e.g. MMK, USD, JPY)
@@ -81,11 +88,11 @@ The Final Approver view displays the following read-only fields:
 - **Currency Type (通貨選択):** Dropdown select (e.g., MMK, USD, JPY)
 - **Payment Type (支払タイプ):** Category identifier (e.g., Expense Reimbursement, Service Payment)
 - **Payment Method (支払方法):** Bank Transfer / Cash / Check
-- **Purpose/Usage (用途):** Detail description text - Supports Myanmar Unicode characters.
+- **Purpose/Usage (用途):** Detail description text
 - **Bank Account / Phone Info (銀行口座・口座名/電話番号):** Conditional account details
 
 #### 7.2.3 Request Content & Attachments
-- **Payment Request Content (支払申請内容):** Descriptive text block - Supports Myanmar Unicode characters.
+- **Payment Request Content (支払申請内容):** Descriptive text block
 - **Receipt Present (領収書の有無):** Yes/No indication
 - **Receipt Files (添付ファイル):** Hyperlinks to download stored digital attachments
 
@@ -93,7 +100,7 @@ The Final Approver view displays the following read-only fields:
 A grid containing the following columns:
 - **No (行番号):** Line number 1-15
 - **Date (日付):** Expense date
-- **Description (内容):** Specific expense description - Supports Myanmar Unicode characters.
+- **Description (内容):** Specific expense description
 - **Amount (金額):** Item amount
 
 #### 7.2.5 Approval History (承認履歴)
@@ -101,12 +108,12 @@ Timeline component rendering all previous audit logs:
 - **Date/Time (日時):** Timestamp (UTC)
 - **User (担当者):** Verifier/Approver full name
 - **Action (アクション):** Action code (e.g. Created, Submitted, ManagerReview, ManagerVerified, ManagerRejected, ApproverReview, Approved, ApproverRejected, PaymentCompleted, Edited)
-- **Comment (コメント):** Rejection reasons or remarks - Supports Myanmar Unicode characters.
+- **Comment (コメント):** Rejection reasons or remarks
 
 ## 8. Business Rules (業務ルール)
 - BR-01: Status transitions must follow allowed transitions only. From "Submitted to Approver" opening → "Approver Reviewing". Approve can transition from "Approver Reviewing" or "Submitted to Approver" to "Approved". Reject transitions to "Rejected by Approver".
 - BR-02: Only users with `Role` = `FinalApprover` may perform approve/reject actions at this stage.
-- BR-03: Reject action requires a non-empty `Comment` (minimum 10 characters); system must enforce validation.
+- BR-03: Reject action requires a non-empty `Comment`; system must enforce validation.
 - BR-04: `ApprovalLog` entries are immutable once written; each final approver action must generate one `ApprovalLog` entry.
 - BR-05: Routing: On approve, request must be placed in "Accounting Pending" queue and visible to Accounting processors.
 - BR-06: Notifications must be sent reliably; notification failures must be logged and retried per system retry policy.
@@ -122,9 +129,10 @@ Timeline component rendering all previous audit logs:
 | **ERR-APP-004** | Database failure or connection loss during approval execution. | The system rolls back the transaction, retains the original request status, and prints a generic system error log. | "A system error occurred while saving approval details. Please try again or contact your administrator." |
 
 ## 10. Notes (特記事項)
-- **Real-Time Notification Event:** Use consistent status naming as defined in field-level definitions; update central status enumeration if new statuses added.
+- **Real-Time Notification Event:** - Use consistent status naming as defined in field-level definitions; update central status enumeration if new statuses added.
 - `ApprovalLog` must be queryable by `RequestID` and ordered by `Timestamp` for display.
 - UI should fetch `ApprovalLog` on request open; display entries with Actor `DisplayName`, `Action` label, `Timestamp`, and `Comment`.
 - Retention and archive policy for `ApprovalLog` follows organizational audit policy (not specified here).
 - Timezone: display times in user's local timezone, store as UTC.
 - Security: actions must be authorized and auditable; ensure transport encryption and access control.
+- Localization: UI text for action labels and statuses should support localization; backend stores canonical status values as defined above.
