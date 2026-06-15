@@ -24,13 +24,17 @@ export class ManagerService {
   }
 
   async verifyRequest(id: number, managerId: number, comment?: string) {
-    this.logger.log(`Verifying request ${id} by manager ${managerId} with comment: ${comment}`);
+    this.logger.log(
+      `Verifying request ${id} by manager ${managerId} with comment: ${comment}`,
+    );
     // Update status to MANAGER_VERIFIED (4)
     return { success: true, message: 'Request verified successfully' };
   }
 
   async rejectRequest(id: number, managerId: number, comment: string) {
-    this.logger.log(`Rejecting request ${id} by manager ${managerId} with comment: ${comment}`);
+    this.logger.log(
+      `Rejecting request ${id} by manager ${managerId} with comment: ${comment}`,
+    );
     // Update status to REJECTED_MANAGER (5)
     return { success: true, message: 'Request rejected successfully' };
   }

@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule as NestConfigModule, ConfigService } from '@nestjs/config';
+import {
+  ConfigModule as NestConfigModule,
+  ConfigService,
+} from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from './config/config.module';
 import { SharedModule } from './modules/shared/shared.module';
@@ -25,7 +28,9 @@ import { AdminModule } from './modules/admin/admin.module';
         autoLoadEntities: true,
         synchronize: configService.get<boolean>('database.synchronize'),
         logging: configService.get<boolean>('database.logging'),
-        ssl: configService.get<boolean>('database.ssl') ? { rejectUnauthorized: false } : false,
+        ssl: configService.get<boolean>('database.ssl')
+          ? { rejectUnauthorized: false }
+          : false,
       }),
     }),
     SharedModule,

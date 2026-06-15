@@ -17,7 +17,10 @@ export class ReceiptFile {
   @Column({ name: 'payment_request_id' })
   paymentRequestId: number;
 
-  @ManyToOne(() => PaymentRequest, (request) => request.receiptFiles, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+  @ManyToOne(() => PaymentRequest, (request) => request.receiptFiles, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
   @JoinColumn({ name: 'payment_request_id' })
   paymentRequest: PaymentRequest;
 
@@ -39,7 +42,10 @@ export class ReceiptFile {
   @Column({ name: 'uploaded_by_user_id' })
   uploadedByUserId: number;
 
-  @ManyToOne(() => User, (user) => user.uploadedReceipts, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.uploadedReceipts, {
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE',
+  })
   @JoinColumn({ name: 'uploaded_by_user_id' })
   uploadedByUser: User;
 

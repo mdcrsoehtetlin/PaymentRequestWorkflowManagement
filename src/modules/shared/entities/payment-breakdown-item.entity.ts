@@ -17,7 +17,10 @@ export class PaymentBreakdownItem {
   @Column({ name: 'payment_request_id' })
   paymentRequestId: number;
 
-  @ManyToOne(() => PaymentRequest, (request) => request.breakdownItems, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+  @ManyToOne(() => PaymentRequest, (request) => request.breakdownItems, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
   @JoinColumn({ name: 'payment_request_id' })
   paymentRequest: PaymentRequest;
 
@@ -33,7 +36,13 @@ export class PaymentBreakdownItem {
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   amount: string; // Map to string in NestJS to prevent precision loss
 
-  @Column({ type: 'numeric', precision: 10, scale: 2, default: '1.00', nullable: true })
+  @Column({
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    default: '1.00',
+    nullable: true,
+  })
   quantity: string;
 
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })

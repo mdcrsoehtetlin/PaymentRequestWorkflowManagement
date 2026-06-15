@@ -45,7 +45,11 @@ export class User {
   @UpdateDateColumn({ name: 'modified_date', type: 'timestamp with time zone' })
   modifiedDate: Date;
 
-  @Column({ name: 'last_login_date', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'last_login_date',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   lastLoginDate: Date;
 
   @OneToMany(() => PaymentRequest, (request) => request.applicant)

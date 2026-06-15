@@ -24,13 +24,17 @@ export class ApproverService {
   }
 
   async approveRequest(id: number, approverId: number, comment?: string) {
-    this.logger.log(`Approving request ${id} by approver ${approverId} with comment: ${comment}`);
+    this.logger.log(
+      `Approving request ${id} by approver ${approverId} with comment: ${comment}`,
+    );
     // Update status to APPROVED (8)
     return { success: true, message: 'Request approved successfully' };
   }
 
   async rejectRequest(id: number, approverId: number, comment: string) {
-    this.logger.log(`Rejecting request ${id} by approver ${approverId} with comment: ${comment}`);
+    this.logger.log(
+      `Rejecting request ${id} by approver ${approverId} with comment: ${comment}`,
+    );
     // Update status to REJECTED_APPROVER (9)
     return { success: true, message: 'Request rejected by final approver' };
   }
