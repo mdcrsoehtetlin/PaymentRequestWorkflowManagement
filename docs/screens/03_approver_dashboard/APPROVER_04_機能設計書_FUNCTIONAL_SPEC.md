@@ -17,7 +17,7 @@
 
 | Version | Date | Author | Description of Changes |
 | :--- | :--- | :--- | :--- |
-| 1.0 | 2026-06-15 | Senior Principal Architect | Initial release covering Final Approver Workflow, automatic status transitions, review capabilities, approval/rejection logic, comment validation, real-time WebSocket updates, and audit trail generation. Status numbers deleted for clean representation. Section 15.3 added. |
+| 1.0 | 2026-06-15 | Senior Principal Architect | Initial release covering Final Approver Workflow, automatic status transitions, review capabilities, approval/rejection logic, comment validation, real-time WebSocket updates, and audit trail generation. 
 
 ---
 
@@ -552,5 +552,3 @@ Every endpoint for final approver actions runs through:
 | PRWM-DBS-001 | Database Design Specification | `docs/core_ja/03_データベース設計書_DATABASE_SPEC.md` |
 | PRWM-DEV-001 | Development Rules | `docs/core_ja/02_開発ルール_DEVELOPMENT_RULES.md` |
 ---
-
-*End of Functional Specification — Approver Dashboard (最終承認者ダッシュボード)*
