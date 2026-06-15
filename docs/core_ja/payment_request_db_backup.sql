@@ -26,8 +26,7 @@ SET timezone = 'UTC';
 -- =============================================================================
 
 -- Drop triggers first to avoid function dependency issues
-DROP TRIGGER IF EXISTS trg_approval_logs_immutable ON approval_logs;
-DROP FUNCTION IF EXISTS protect_approval_logs_immutability();
+DROP FUNCTION IF EXISTS protect_approval_logs_immutability() CASCADE;
 
 -- Drop transactional tables (children first, then parents)
 DROP TABLE IF EXISTS receipt_files CASCADE;
