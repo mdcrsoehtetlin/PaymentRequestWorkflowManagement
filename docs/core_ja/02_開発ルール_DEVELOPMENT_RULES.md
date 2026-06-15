@@ -1,12 +1,27 @@
 # Development Rules Specification (開発ルール)
 
-**System:** Payment Request Workflow Management System (支払申請ワークフロー管理システム)  
-**Document Classification:** MANDATORY — Source of Truth for All Developers and AI Agents  
-**Version:** 2.0  
-**Created:** 2026-06-12  
-**Author:** Lead UI/UX Director & Enterprise Software Architect  
-**Status:** Released (承認済み)  
-**Compliance Level:** All rules in this document are BINDING. Non-compliance will result in automatic PR rejection.
+---
+
+## Document Control (ドキュメント管理)
+
+| Attribute | Value |
+| :--- | :--- |
+| **Document ID** | PRWM-DEV-001 |
+| **System** | Payment Request Workflow Management System (支払申請ワークフロー管理システム) |
+| **Document Classification** | MANDATORY — Source of Truth for All Developers and AI Agents |
+| **Version** | 2.0 |
+| **Created** | 2026-06-12 |
+| **Last Updated** | 2026-06-12 |
+| **Author** | Lead UI/UX Director & Enterprise Software Architect |
+| **Status** | Released (承認済み) |
+| **Compliance Level** | All rules in this document are BINDING. Non-compliance will result in automatic PR rejection. |
+
+### Document Revision History
+
+| Version | Date | Author | Description of Changes |
+| :--- | :--- | :--- | :--- |
+| 1.0 | 2026-06-12 | Lead Architect | Initial release — naming conventions, directory isolation, Git rules, AI guardrails, basic UI/UX design system |
+| 2.0 | 2026-06-12 | Lead Architect | Complete production rewrite — added security standards, error handling, testing strategy, API design, full component specifications, performance targets, environment configuration, accessibility requirements |
 
 ---
 
@@ -1302,11 +1317,4 @@ src/config/
 * Database credentials, JWT secrets, and API keys must never appear in source code, documentation, or commit messages.
 * Log output must never contain passwords, tokens, or full credit card numbers.
 
----
 
-## 12. Document Revision History
-
-| Version | Date | Author | Changes |
-| :--- | :--- | :--- | :--- |
-| 1.0 | 2026-06-12 | Lead Architect | Initial release — naming conventions, directory isolation, Git rules, AI guardrails, basic UI/UX design system |
-| 2.0 | 2026-06-12 | Lead Architect | Complete production rewrite — added security standards, error handling, testing strategy, API design, full component specifications, performance targets, environment configuration, accessibility requirements |
