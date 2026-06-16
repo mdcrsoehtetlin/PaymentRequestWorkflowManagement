@@ -72,12 +72,12 @@ The Accounting Dashboard is the primary operational portal for users assigned th
 │          │                                                                           │
 │ Sidebar  │  ┌────────────────────────────────────────────────────────────────────┐   │
 │ (w-64)   │  │ [B] SUMMARY CARDS                                                  │   │
-│          │  │   [Total Approved]  [Pending Today]  [Mandalay Alerts]           │   │
+│          │  │   [Total Approved]  [Total Pending]  [Mandalay Alerts]             │   │
 │          │  └────────────────────────────────────────────────────────────────────┘   │
 │ - Logo   │                                                                           │
 │ - Menu   │  ┌────────────────────────────────────────────────────────────────────┐   │
-│ - User   │  │ [C] FILTER / SEARCH BAR                                           │   │
-│          │  │   [Search Input]  [Branch Filter]  [Date Range]                   │   │
+│ - User   │  │ [C] FILTER / SEARCH BAR                                            │   │
+│          │  │   [Search Input]  [Branch Filter]  [Date Range]                    │   │
 │          │  └────────────────────────────────────────────────────────────────────┘   │
 │ - User   │  ┌────────────────────────────────────────────────────────────────────┐   │
 │          │  │ [D] APPROVED PAYMENT REQUEST QUEUE                                 │   │
