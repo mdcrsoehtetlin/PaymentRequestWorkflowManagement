@@ -1,7 +1,7 @@
 ========================================================================================
 [Admin Console] PRWM System                                              |  User Profile
 ========================================================================================
- MENU NAVIGATION         |  DASHBOARD WORKSPACE (TAB CONTENTS)
+ MENU NAVIGATION         |  DASHBOARD WORKSPACE
  -----------------------+---------------------------------------------------------------
  ( ) USER MANAGEMENT     |  MASTER DATA CONFIGURATION
  (*) MASTER DATA CONFIG  |  Maintain global lookup values, payment rules, and currencies.

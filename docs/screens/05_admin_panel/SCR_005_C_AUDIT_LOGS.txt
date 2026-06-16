@@ -1,7 +1,7 @@
 ========================================================================================
 [Admin Console] PRWM System                                              |  User Profile
 ========================================================================================
- MENU NAVIGATION         |  DASHBOARD WORKSPACE (TAB CONTENTS)
+ MENU NAVIGATION         |  DASHBOARD WORKSPACE
  -----------------------+---------------------------------------------------------------
  ( ) USER MANAGEMENT     |  AUDIT LOG HISTORY
  ( ) MASTER DATA CONFIG  |  Review the immutable tracking log of system events, state changes,

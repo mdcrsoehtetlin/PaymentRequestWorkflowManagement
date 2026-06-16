@@ -1,92 +1,254 @@
-# Screen Items Specification — Admin Panel
+# Screen Items Specification (画面項目設計書) — Admin Panel
 
-**Target Screen:** System Administrator Panel (Admin Panel)  
-**Subsystem:** User Accounts, Masters, & Audit Lifecycle Management  
-**Version:** 1.5  
-**Created Date:** 2026-06-12  
-**Updated Date:** 2026-06-15  
-**Status:** Approved  
-**Classification:** Internal — Engineering Division  
-
-### Related Screen Reference Files
-- User Management screen mockup: [docs/screens/05_admin_panel/SCR_005_A_USER_MGMT.txt.txt](docs/screens/05_admin_panel/SCR_005_A_USER_MGMT.txt.txt)
-- Master Data Configuration screen mockup: [docs/screens/05_admin_panel/SCR_005_B_MASTER_CONFIG.txt](docs/screens/05_admin_panel/SCR_005_B_MASTER_CONFIG.txt)
-- Audit Logs screen mockup: [docs/screens/05_admin_panel/SCR_005_C_AUDIT_LOGS.txt](docs/screens/05_admin_panel/SCR_005_C_AUDIT_LOGS.txt)
+**Document ID:** PRWM-SIS-SCR-005
+**Target Screen:** System Administrator Panel (Admin Panel)
+**Subsystem:** Payment Request Lifecycle — Admin Management
+**Function ID:** FN-005
+**Version:** 1.7
+**Created:** 2026-06-12
+**Last Updated:** 2026-06-16
+**Author:** Ye Maung Maung
+**Review Status:** Approved
+**Classification:** Internal — Engineering Division
 
 ---
 
-## 1. Screen Layout & Navigation Architecture
-The Admin Panel utilizes a persistent split-dashboard layout wrapper to provide an efficient and consistent system administrative environment:
-- **Left Panel (Persistent Navigation Menu):** A fixed sidebar layout containing the main module navigation context controls (`User Management`, `Master Data Config`, and `Audit Logs`).
-- **Right Panel (Main Workspace):** A dynamic main workspace container that completely replaces its layout form variables, operational data grids, and search filters based on the active selection in the left panel.
+## 1. Document Control (ドキュメント管理)
+
+### 1.1 Document Revision History
+
+| Version | Date | Author | Description of Changes |
+| :--- | :--- | :--- | :--- |
+| 1.0 | 2026-06-12 | Ye Maung Maung | Initial release. |
+| 1.5 | 2026-06-15 | Ye Maung Maung | Added admin panel field definitions and audit log workspace. |
+| 1.6 | 2026-06-16 | Ye Maung Maung | Aligned the screen layout section with the three `SCR_005` admin screen designs and persistent side-navigation shell. |
+| 1.7 | 2026-06-16 | Ye Maung Maung | Corrected broken related-document links and the user management screen mockup filename reference. |
+
+### 1.2 Related Documents
+
+| No. | Document ID | Document Name | File Path | Remarks |
+| :-- | :--- | :--- | :--- | :--- |
+| 1 | PRWM-REQ-001 | Requirements Definition | `docs/core_ja/01_要件定義書_REQUIREMENT_SPEC.md` | Business workflow logic, required fields, and rules. |
+| 2 | PRWM-DBS-001 | Database Design Specification | `docs/core_ja/03_データベース設計書_DATABASE_SPEC.md` | Table structures, constraints, and data types. |
+| 3 | PRWM-DEV-001 | Development Rules | `docs/core_ja/02_開発ルール_DEVELOPMENT_RULES.md` | Security rules, design tokens, error responses. |
+| 4 | PRWM-FSD-005 | Functional Specification — Admin Panel | `docs/screens/05_admin_panel/ADMIN_04_機能設計書_FUNCTIONAL_SPEC.md` | Use cases, state transitions, validation rules. |
 
 ---
 
-## 2. Component & Field Definitions
+## 2. Screen Overview & Purpose (画面概要・目的)
 
-### Module 1: User Management Workspace (`USER MGMT`)
-Enables system administrators to search, display, register, and update application user access, assign structural roles, and toggle operational status.
+### 2.1 Purpose (目的)
+The Admin Panel centralizes system administrator operations for managing users, master data, and audit log history within the Payment Request Workflow Management System.
 
-#### 1.1 Search Filter & Data Grid Area
-| Field Physical Name | UI Display Label | Component Type | Required | Default Value | Validation & Operational Rules |
-| :--- | :--- | :--- | :---: | :--- | :--- |
-| `search_keyword` | Search Keyword | Input Text | N | Blank | Performs partial string matching against user names or unique employee codes. |
-| `filter_role` | Role | Dropdown | N | `"All Roles"` | Dynamically populated from the live roles master database table. |
-| `filter_status` | Status | Dropdown | N | `"All"` | Contains static selectable parameters: `All`, `Active`, `Inactive`. |
-| `user_grid` | Users Data Grid | Table Grid | N | N/A | Server-side paginated data array. Truncated to a maximum of **20 rows per page view**. |
-| `grid_is_active` | Status Toggle | Toggle Switch | Y | DB State | **Security Guardrail:** The interface component is automatically **disabled** (read-only) for the row matching the active login session to prevent administrative self-lockout. |
+### 2.2 Target Users & Roles (対象ユーザーと権限)
 
-#### 1.2 User Registration & Modification Form (Modal Popup)
-| Field Physical Name | UI Display Label | Component Type | Required | Default Value | Validation & Operational Rules |
-| :--- | :--- | :--- | :---: | :--- | :--- |
-| `employee_number` | Employee Number | Input Text | Y | Blank | Must be globally unique. Enforces a maximum boundary of 20 characters. |
-| `full_name` | Full Name | Input Text | Y | Blank | Enforces a maximum length of 200 characters. |
-| `email` | Email Address | Input Email | Y | Blank | Must be unique. Validated against standard RFC domain format validations. |
-| `password` | Password | Input Password | Y/N | Blank | **Mandatory** during new registration (min 8 characters, alphanumeric required). **Optional** during profile edits (retains existing hash signature if left blank). |
-| `branch` | Branch Office | Dropdown | Y | Blank | Selectable lookup options driven by master records (e.g., `Yangon`, `Mandalay`, `Naypyidaw`). |
-| `role_id` | System Role | Dropdown | Y | Blank | Selects permission tier matching RBAC rules (`ADMIN`, `MANAGER`, `APPROVER`, `ACCOUNTING`, `APPLICANT`). |
-| `modal_is_active` | Account Status | Radio Group | Y | Enabled | Radio toggle options mapped to: `Enabled (Active)`, `Disabled (Inactive)`. |
+| Attribute | Value |
+| :--- | :--- |
+| **Primary Actor** | System Administrator (`ADMIN`) |
+| **Required Authentication** | Authenticated JWT bearer token with `ADMIN` role |
+| **Data Scope** | Full system scope for user, master data, and audit records |
+| **Access Control** | `JwtAuthGuard` → `RolesGuard` → `AdminGuard` |
+
+### 2.3 Core Functions & Basic Design Principles (主要機能・基本設計方針)
+1. **User Management** — Search, view, register, update, and activate/deactivate users with role assignment.
+2. **Master Data Configuration** — Maintain lookup tables for branches, system roles, payment types, methods, and currencies.
+3. **Audit Log Review** — Inspect historical operation records with read-only filtering and detail inspection.
 
 ---
 
-### Module 2: Master Data Configuration Workspace (`MASTERS`)
-Maintains core lookup parameters across 5 independent database tables. This section omits manual keyword search criteria, using an upper category selector bar to structuralize lists.
+## 3. Screen Layout (画面レイアウト構成)
 
-#### 2.1 Category Selection Bar & Table Grid
-| Field Physical Name | UI Display Label | Component Type | Required | Default Value | Validation & Operational Rules |
-| :--- | :--- | :--- | :---: | :--- | :--- |
-| `master_category` | Select Master Table | Radio Group | Y | Payment Types | Switches active data views between: `Branches`, `System Roles`, `Payment Types`, `Methods`, `Currencies`. |
-| `master_grid` | Master Data Grid | Table Grid | N | N/A | Displays reference properties. Since seed structures are naturally small (3–4 rows initially), items display cleanly in a unified standard view. |
+The Admin Panel uses a persistent split-dashboard shell across all `SCR_005` variants. The left sidebar provides module navigation, while the right workspace swaps content based on the active module selection.
 
-#### 2.2 Entry Configuration Sub-Form (Modal Popup Window)
-| Source Context Table | Field Physical Name | UI Display Label | Required | Data Type / Boundary Rules (DDL Aligned) |
-| :--- | :--- | :--- | :---: | :--- |
-| **All Master Tables**| `is_active` | Status Flag | Y | Toggle switch mechanism. Default: `TRUE`. Setting to `FALSE` removes option availability from user lookup menus. |
-| **Payment Types** | `payment_type_code` | Type Code | Y | Max 30 characters. Enforces unique key constraints. Alphanumeric uppercase (e.g., `EXPENSE_REIMBURSE`, `SERVICE_PAYMENT`). |
-| | `payment_type_name` | Type Name | Y | Max 100 characters. Unique name description (e.g., `Expense Reimbursement`, `Service Payment`). |
-| **Payment Methods** | `payment_method_code`| Method Code | Y | Max 20 characters. Unique configuration tag (e.g., `BANK_TRANSFER`, `CASH`, `CHECK`). |
-| | `payment_method_name`| Method Name | Y | Max 50 characters. Unique interface text representation (e.g., `Bank Transfer`, `Cash`). |
-| **Currencies** | `currency_code` | Currency Code | Y | Max 3 characters. Unique. Alpha-only upper formatting string (e.g., `MMK`, `USD`, `JPY`, `THB`). |
-| | `currency_name` | Currency Name | Y | Max 100 characters. Full descriptive asset classification (e.g., `Myanmar Kyat`, `US Dollar`). |
-| **Branches** | `branch_name` | Branch Name | Y | Max 100 characters. Unique workplace location identity string (e.g., `Yangon`, `Mandalay`). |
-| **System Roles** | `role_code` | Role Code | Y | Unique role code constraint utilized by RBAC verification filters (e.g., `APPLICANT`, `ADMIN`). |
+### 3.1 Shared Navigation Shell
+- **Sidebar Items:** `USER MANAGEMENT`, `MASTER DATA CONFIG`, and `AUDIT LOGS`.
+- **Active Indicator:** The active item is marked with `(*)` and the inactive items use `( )`.
+- **Workspace Behavior:** Only the right side changes between screens; the header and navigation shell remain consistent.
+- **Responsive Intent:** Desktop-first layout with sidebar preservation, while smaller screens may collapse the menu into a drawer.
+
+### 3.2 User Management Screen Design (`SCR_005_A_USER_MGMT.txt`)
+```
+[Admin Console] PRWM System                                              |  User Profile
+========================================================================================
+ MENU NAVIGATION         |  DASHBOARD WORKSPACE
+ -----------------------+---------------------------------------------------------------
+ (*) USER MANAGEMENT     |  USER ACCOUNT MANAGEMENT DASHBOARD
+ ( ) MASTER DATA CONFIG  |  Manage application users, assign operational roles, and toggle access permissions.
+ ( ) AUDIT LOGS          |
+                         |  Search Filter: [Keyword] [Role] [Status] [[ Search ]]
+                         |  Total Registered Users + [[ + Register New User ]]
+                         |  USERS DATA GRID
+                         |  [Emp No / Full Name / Email / Branch / Role / Status / Actions]
+                         |  Page 1 of 3  < Previous  [1] 2 3  Next >
+                         |  [MODAL POPUP: REGISTER NEW USER / EDIT DETAILS]
+```
+
+- **Layout Focus:** Search/filter row, summary/action row, paginated user grid, and modal form for register/edit.
+- **Primary Interaction:** The active sidebar item stays on `USER MANAGEMENT` while the grid and modal handle user maintenance.
+
+### 3.3 Master Data Configuration Screen Design (`SCR_005_B_MASTER_CONFIG.txt`)
+```
+[Admin Console] PRWM System                                              |  User Profile
+========================================================================================
+ MENU NAVIGATION         |  DASHBOARD WORKSPACE
+ -----------------------+---------------------------------------------------------------
+ ( ) USER MANAGEMENT     |  MASTER DATA CONFIGURATION
+ (*) MASTER DATA CONFIG  |  Maintain global lookup values, payment rules, and currencies.
+ ( ) AUDIT LOGS          |
+                         |  [ Select Master Table Category ]
+                         |  ( ) Branches  ( ) System Roles  (o) Payment Types  ( ) Methods  ( ) Currencies
+                         |  PAYMENT TYPES CONFIGURATION
+                         |  [Master Data Grid]
+                         |  Total Records + [[ + Add New Entry ]]
+                         |  [MODAL POPUP: ADD / EDIT ENTRY]
+```
+
+- **Layout Focus:** Category selector, reference data grid, total-record summary, and modal entry editor.
+- **Primary Interaction:** The selected master category changes the right workspace content without leaving the admin shell.
+
+### 3.4 Audit Log History Screen Design (`SCR_005_C_AUDIT_LOGS.txt`)
+```
+[Admin Console] PRWM System                                              |  User Profile
+========================================================================================
+ MENU NAVIGATION         |  DASHBOARD WORKSPACE
+ -----------------------+---------------------------------------------------------------
+ ( ) USER MANAGEMENT     |  AUDIT LOG HISTORY
+ ( ) MASTER DATA CONFIG  |  Review the immutable tracking log of system events, state changes,
+ (*) AUDIT LOGS          |  and authorization adjustments.
+                         |  Search Filters: [Start Date] [End Date] [Target Actor] [[ Fetch ]]
+                         |  AUDIT TRANSACTIONS GRID
+                         |  Page 1 of 12 ... Next >
+                         |  [ Selected Item Metadata Detail Panel ]
+```
+
+- **Layout Focus:** Date-range search area, actor filter, transaction grid, pagination, and docked metadata detail panel.
+- **Primary Interaction:** The audit list remains read-only and the detail panel updates from the selected row.
+
+### 3.5 Responsive Layout Breakpoints (レスポンシブ対応)
+
+| Breakpoint | Min Width | Layout Behavior |
+| :--- | :--- | :--- |
+| Mobile (default) | 0px | Single column, collapsible sidebar, stacked workspace blocks. |
+| Tablet (`md:`) | 768px | Sidebar persists, sections stack vertically with collapsible panels. |
+| Desktop (`lg:`) | 1024px | Fixed sidebar, full-width workspace content, and consistent split-shell presentation. |
 
 ---
 
-### Module 3: Audit Log History Workspace (`AUDIT LOGS`)
-Provides a read-only tracking stream recording user mutations, state modifications, and lifecycle updates.
+## 4. Item Definitions (画面項目定義)
 
-#### 3.1 Timeframe Constraints & Chronological Grid
-| Field Physical Name | UI Display Label | Component Type | Required | Default Value | Validation & Operational Rules |
-| :--- | :--- | :--- | :---: | :--- | :--- |
-| `startDate` | Start Date | Date Picker | Y | 1st day of current month | Format rule: `YYYY-MM-DD`. Boundary check prevents values greater than `endDate`. |
-| `endDate` | End Date | Date Picker | Y | Current System Date | Format rule: `YYYY-MM-DD`. Boundary check limits choices up to today (no future values). |
-| `userId` | Target Actor | Dropdown | N | `"All Users"` | Optional selection dropdown item parameters to target actions taken by a specific account ID. |
-| `audit_grid` | Audit Transactions | Table Grid | N | N/A | **Strictly read-only**. Sorted in descending chronological sequence. Paginated to **20 records per view index**. |
+### 4.1 Section [A]: Persistent Navigation & Module Selection
 
-#### 3.2 Metadata Detail Panel (Docked Footer Viewport)
-Renders internal payload parameters immediately when a tracking row item is selected within the `audit_grid` without launching independent dialog blocks:
-- `approval_log_id`: Primary execution database identity tracking key.
-- `ip_address`: Renders connection network source IP (e.g., `192.168.4.112`).
-- `user_agent`: Renders client configuration details (browser platform, version tags).
-- `comment`: Renders multi-line string logs input by users during workflow operations.
+| No. | Item ID | Item Name (Logical) | Component Type | Data Type & Max Length | Required | Initial State / Default Value | Input Constraints / Formats | Data Source / DB Mapping | Remarks / Business Rules |
+| :---: | :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
+| 1 | `nav_user_mgmt` | User Management | Sidebar Link | — | Y | Selected by default | — | N/A | Switches to User Management workspace |
+| 2 | `nav_master_data` | Master Data Config | Sidebar Link | — | Y | — | — | N/A | Switches to Master Data Configuration workspace |
+| 3 | `nav_audit_logs` | Audit Logs | Sidebar Link | — | Y | — | — | N/A | Switches to Audit Log History workspace |
+
+### 4.2 Section [B]: User Management Workspace (`USER MGMT`)
+
+| No. | Item ID | Item Name (Logical) | Component Type | Data Type & Max Length | Required | Initial State / Default Value | Input Constraints / Formats | Data Source / DB Mapping | Remarks / Business Rules |
+| :---: | :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
+| 4 | `search_keyword` | Search Keyword | Text Input | String(200) | N | Empty | Partial match search | `users.name`, `users.employee_number` | Searches names or employee codes |
+| 5 | `filter_role` | Role | Dropdown | Enum | N | `All Roles` | Select from role master | `roles` | Populated from system roles master data |
+| 6 | `filter_status` | Status | Dropdown | Enum | N | `All` | `All`, `Active`, `Inactive` | `users.status` | Filters active/inactive users |
+| 7 | `user_grid` | Users Data Grid | Table Grid | — | N | Empty | Paginated | `users` | Displays up to 20 rows per page |
+| 8 | `grid_is_active` | Status Toggle | Toggle Switch | Boolean | Y | Based on DB state | Read-only when current session user row selected | `users.is_active` | Prevents admin self-lockout |
+| 9 | `btn_open_user_modal` | Add/Edit User | Button | — | Y | Enabled | — | N/A | Opens registration/edit modal |
+
+#### 4.2.1 User Registration & Modification Form (Modal Popup)
+
+| No. | Item ID | Item Name (Logical) | Component Type | Data Type & Max Length | Required | Initial State / Default Value | Input Constraints / Formats | Data Source / DB Mapping | Remarks / Business Rules |
+| :---: | :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
+| 10 | `employee_number` | Employee Number | Text Input | String(20) | Y | Empty | Unique, max 20 chars | `users.employee_number` | Globally unique identifier |
+| 11 | `full_name` | Full Name | Text Input | String(200) | Y | Empty | Max 200 chars | `users.full_name` | Required field |
+| 12 | `email` | Email Address | Email Input | String(255) | Y | Empty | RFC-compliant email | `users.email` | Must be unique |
+| 13 | `password` | Password | Password Input | String(128) | Y for new / N for edit | Empty | Min 8 chars, alphanumeric | `users.password_hash` | Optional on edit, required on create |
+| 14 | `branch` | Branch Office | Dropdown | Enum | Y | Empty | Lookup from branch master | `branches.id` | Branch options from master data |
+| 15 | `role_id` | System Role | Dropdown | Enum | Y | Empty | Lookup from roles master | `roles.id` | Selects RBAC role |
+| 16 | `modal_is_active` | Account Status | Radio Group | Boolean | Y | Enabled | `Enabled` / `Disabled` | `users.is_active` | Controls account activation state |
+| 17 | `btn_submit_user_form` | Save User | Button | — | Y | Enabled when valid | — | N/A | Saves create/update action |
+
+### 4.3 Section [C]: Master Data Configuration Workspace (`MASTERS`)
+
+| No. | Item ID | Item Name (Logical) | Component Type | Data Type & Max Length | Required | Initial State / Default Value | Input Constraints / Formats | Data Source / DB Mapping | Remarks / Business Rules |
+| :---: | :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
+| 18 | `master_category` | Select Master Table | Radio Group | Enum | Y | `Payment Types` | `Branches`, `System Roles`, `Payment Types`, `Methods`, `Currencies` | N/A | Switches active master data view |
+| 19 | `master_grid` | Master Data Grid | Table Grid | — | N | Empty | Paginated | `master_tables` | Displays selected master data rows |
+| 20 | `btn_open_master_modal` | Add/Edit Master | Button | — | Y | Enabled | — | N/A | Opens master data modal |
+
+#### 4.3.1 Master Data Entry Configuration (Modal Popup)
+
+| No. | Source Context Table | Field Physical Name | Item Name (Logical) | Required | Data Type / Boundary Rules | Remarks |
+| :---: | :--- | :--- | :--- | :---: | :--- | :--- |
+| 21 | All Master Tables | `is_active` | Status Flag | Y | Boolean (default `TRUE`) | Controls lookup availability |
+| 22 | Payment Types | `payment_type_code` | Type Code | Y | String(30), uppercase, unique | e.g. `EXPENSE_REIMBURSE` |
+| 23 | Payment Types | `payment_type_name` | Type Name | Y | String(100), unique | e.g. `Expense Reimbursement` |
+| 24 | Payment Methods | `payment_method_code` | Method Code | Y | String(20), unique | e.g. `BANK_TRANSFER` |
+| 25 | Payment Methods | `payment_method_name` | Method Name | Y | String(50), unique | e.g. `Bank Transfer` |
+| 26 | Currencies | `currency_code` | Currency Code | Y | String(3), uppercase, unique | e.g. `MMK`, `USD` |
+| 27 | Currencies | `currency_name` | Currency Name | Y | String(100), unique | e.g. `Myanmar Kyat` |
+| 28 | Branches | `branch_name` | Branch Name | Y | String(100), unique | e.g. `Yangon` |
+| 29 | System Roles | `role_code` | Role Code | Y | String(50), unique | e.g. `APPLICANT`, `ADMIN` |
+
+### 4.4 Section [D]: Audit Log History Workspace (`AUDIT LOGS`)
+
+| No. | Item ID | Item Name (Logical) | Component Type | Data Type & Max Length | Required | Initial State / Default Value | Input Constraints / Formats | Data Source / DB Mapping | Remarks / Business Rules |
+| :---: | :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
+| 30 | `startDate` | Start Date | Date Picker | DATE | Y | 1st day of current month | `YYYY-MM-DD` | `audit_logs.timestamp` | Cannot exceed `endDate` |
+| 31 | `endDate` | End Date | Date Picker | DATE | Y | Current date | `YYYY-MM-DD` | `audit_logs.timestamp` | Cannot be in future |
+| 32 | `userId` | Target Actor | Dropdown | Enum | N | `All Users` | User lookup | `audit_logs.user_id` | Optional filter |
+| 33 | `audit_grid` | Audit Transactions | Table Grid | — | N | Empty | Paginated, descending order | `audit_logs` | Read-only audit history |
+| 34 | `audit_detail_panel` | Metadata Detail Panel | Read-only Panel | — | N | Hidden until row selected | — | `audit_logs` detail | Shows selected audit metadata |
+
+---
+
+## 5. Item Behaviors & Event Specifications (各項目における挙動・イベント仕様)
+
+### 5.1 User Search (`search_keyword` Text Input)
+- **Trigger:** User enters search criteria and confirms by pressing Enter or clicking search.
+- **Processing Logic:**
+  1. Validate keyword length and sanitize input.
+  2. Dispatch request to `/api/admin/users?keyword=<value>&role=<role>&status=<status>`.
+  3. Render returned user list in `user_grid`.
+  4. Show no-data state if no records are returned.
+- **Exception Handling:** Display inline message when the search service returns an error.
+
+### 5.2 Manage Master Table Selection (`master_category` Radio Group)
+- **Trigger:** User clicks a master category radio button.
+- **Processing Logic:**
+  1. Switch the active view to the selected category.
+  2. Fetch corresponding master rows from the backend.
+  3. Populate `master_grid` with the selected data.
+- **Exception Handling:** Show a toast or banner when master data retrieval fails.
+
+### 5.3 Audit Log Row Selection (`audit_grid`)
+- **Trigger:** User selects an audit row.
+- **Processing Logic:**
+  1. Load selected row details.
+  2. Display metadata in `audit_detail_panel`.
+  3. Keep the list scroll position stable.
+- **Exception Handling:** Display a message panel if details cannot be loaded.
+
+---
+
+## 6. Validation & Error Message Mapping (バリデーション及びエラーメッセージマッピング)
+
+| Error Code | Target Field | Condition / Evaluation Logic | UI/UX Display Presentation Style | Default Error Message Text |
+| :--- | :--- | :--- | :--- | :--- |
+| VAL-ADM-001 | `employee_number` | Empty or duplicate | Inline error text | "Employee number is required and must be unique." |
+| VAL-ADM-002 | `email` | Invalid or duplicate | Inline error text | "Please enter a valid email address." |
+| VAL-ADM-003 | `password` | Too short or missing on create | Inline error text | "Password must be at least 8 characters." |
+| ERR-ADM-401 | Full Viewport / API | JWT missing or invalid | Modal / toast | "Session expired. Please log in again." |
+| ERR-ADM-403 | Full Viewport / API | Unauthorized access | Modal / page banner | "Access Denied. You do not have permission to view this resource." |
+| ERR-ADM-409 | `user_grid` / `master_grid` | Optimistic lock conflict | Modal dialog | "This record has been modified by another user. Refresh and try again." |
+| ERR-ADM-500 | Full Viewport / API | Unhandled backend exception | Modal / toast | "An unexpected error occurred. Please contact support." |
+
+---
+
+## 7. Special UI Notes & Styling Constraints (特記事項・UI仕様)
+
+- **Responsive Design:** Desktop-first layout with stacked mobile panels for smaller viewport widths.
+- **Accessibility:** Ensure keyboard focus order and screen reader labels for all form controls.
+- **Loading States:** Use skeleton loaders and disabled button spinners during backend requests.
+- **Security:** Sanitize all user input on both client and server sides to prevent XSS.
+- **Design Tokens:** Follow the color palette, spacing, and typography rules defined in `docs/core_ja/02_開発ルール_DEVELOPMENT_RULES.md`.
