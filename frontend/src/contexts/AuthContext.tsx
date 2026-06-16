@@ -28,9 +28,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('accessToken');
     const storedUser = localStorage.getItem('user');
     
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    if (token && storedUser && storedUser !== 'undefined') {
+      try {
+        setUser(JSON.parse(storedUser));
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      } catch (e) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    } else {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     }
     setIsLoading(false);
   }, []);

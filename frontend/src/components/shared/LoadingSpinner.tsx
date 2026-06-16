@@ -14,21 +14,20 @@ export function LoadingSpinner({ variant = 'inline', size = 'md', message }: Loa
     lg: 'w-12 h-12',
   };
 
-  const spinner = <Loader2 className={`${sizeClasses[size]} animate-spin text-blue-600`} />;
+  const spinner = (
+    <div className="flex flex-col items-center justify-center gap-3">
+      <Loader2 className={`animate-spin text-blue-600 ${sizeClasses[size]}`} />
+      {message && <p className="text-sm text-slate-600 font-medium">{message}</p>}
+    </div>
+  );
 
   if (variant === 'page') {
     return (
-      <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-white/80">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-40 flex items-center justify-center">
         {spinner}
-        {message && <p className="mt-4 text-sm font-medium text-slate-600">{message}</p>}
       </div>
     );
   }
 
-  return (
-    <div className="flex items-center gap-2">
-      {spinner}
-      {message && <span className="text-sm text-slate-600">{message}</span>}
-    </div>
-  );
+  return <div className="flex justify-center p-4">{spinner}</div>;
 }
