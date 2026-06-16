@@ -7,7 +7,7 @@
 **Version:** 1.0  
 **Created:** 2026-06-15  
 **Last Updated:** 2026-06-15  
-**Author:** Senior Principal Architect  
+**Author:** Senior System Engineer  
 **Review Status:** Approved (承認済み)  
 **Classification:** Internal — Engineering Division
 
@@ -17,7 +17,7 @@
 
 | Version | Date | Author | Description of Changes |
 | :--- | :--- | :--- | :--- |
-| 1.0 | 2026-06-15 | Senior Principal Architect | Initial release covering Final Approver Workflow, automatic status transitions, review capabilities, approval/rejection logic, comment validation, real-time WebSocket updates, and audit trail generation. 
+| 1.0 | 2026-06-15 | Senior System Engineer | Initial release covering Final Approver Workflow, automatic status transitions, review capabilities, approval/rejection logic, comment validation, real-time WebSocket updates, and audit trail generation. 
 
 ---
 
