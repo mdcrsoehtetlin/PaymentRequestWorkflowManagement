@@ -8,7 +8,7 @@
 **Created:** 2026-06-15  
 **Last Updated:** 2026-06-15  
 **Author:** Senior System Engineer  
-**Review Status:** Released (承認済み)  
+**Review Status:** Approved (承認済み)  
 **Classification:** Internal — Engineering Division
 
 ---
@@ -290,6 +290,7 @@ The Applicant Dashboard is the primary operational portal for users assigned the
 - **Processing Logic:**
   1. **Client-Side Pre-Check:** Ensure user is authenticated with `APPLICANT` role.
   2. **Post-Execution UI:** Form opens with default values. Employee info auto-populated. 1 empty breakdown row initialized.
+- **Exception Handling:** Display error toast and redirect to login if authentication fails (`ERR-APP-401`).
 
 ### 5.2 Row Click / Open Request (Data Grid Row onClick)
 - **Trigger:** User clicks a row in the pending queue data grid.
@@ -297,6 +298,7 @@ The Applicant Dashboard is the primary operational portal for users assigned the
   1. **Backend Dispatch:** `GET /api/v1/applicant/payment-requests/:id`
   2. **Backend Execution:** Verify ownership (`applicant_user_id = current_user.user_id`). Fetch request details, breakdown items, and approval logs.
   3. **Post-Execution UI:** Detail view is populated. If `status_id` ∈ {1,5,9}, opens in Edit Mode. Otherwise, opens in Read-Only Detail Mode.
+- **Exception Handling:** Trigger `ERR-APP-403` if ownership verification fails.
 
 ### 5.3 Save Draft (`btnSaveDraft` onClick)
 - **Trigger:** User clicks "Save Draft" in the action bar.
@@ -305,6 +307,7 @@ The Applicant Dashboard is the primary operational portal for users assigned the
   2. **Backend Dispatch:** `POST /api/v1/applicant/payment-requests` (for new) or `PATCH /api/v1/applicant/payment-requests/:id` (for existing).
   3. **Backend Execution:** Upsert data. Append `CREATED` or `EDITED` to `approval_logs`.
   4. **Post-Execution UI:** Form remains open. Success toast: "Draft saved successfully." Request number generated.
+- **Exception Handling:** Display inline validation errors if pre-check fails. Display `ERR-APP-500` on backend failure.
 
 ### 5.4 Submit to Manager (`btnSubmitToManager` onClick)
 - **Trigger:** User clicks "Submit to Manager" in the action bar.
@@ -313,6 +316,7 @@ The Applicant Dashboard is the primary operational portal for users assigned the
   2. **Backend Dispatch:** `POST /api/v1/applicant/payment-requests/:id/submit-manager`
   3. **Backend Execution:** Validate data integrity. Update `status_id` to 2 (`SUBMITTED_MANAGER`). Append `SUBMITTED` to `approval_logs`.
   4. **Post-Execution UI:** Dispatch real-time WebSocket `statusUpdate` event to `user:{manager_id}` and `MANAGER` room. Navigate to list view and auto-refresh grid. Success toast: "Request submitted to Manager successfully."
+- **Exception Handling:** Display validation errors (`VAL-APP-*`) if pre-check fails. Trigger `ERR-APP-409` if optimistic lock fails.
 
 ### 5.5 Submit to Final Approver (`btnSubmitToApprover` onClick)
 - **Trigger:** User clicks "Submit to Final Approver" (only visible when `status_id = 4`).
@@ -320,6 +324,7 @@ The Applicant Dashboard is the primary operational portal for users assigned the
   1. **Backend Dispatch:** `POST /api/v1/applicant/payment-requests/:id/submit-approver`
   2. **Backend Execution:** Status transitions to 6 (`SUBMITTED_APPROVER`). Append `SUBMITTED` to `approval_logs`.
   3. **Post-Execution UI:** Dispatch WebSocket `statusUpdate` to `APPROVER` room. Refresh grid. Success toast: "Request submitted to Final Approver successfully."
+- **Exception Handling:** Trigger `ERR-APP-409` if optimistic lock fails. Trigger `ERR-APP-500` on backend failure.
 
 ### 5.6 Delete Draft (`btnDeleteModalConfirm` onClick)
 - **Trigger:** User clicks "Delete" inside the `mdlDeleteConfirm` modal.
@@ -327,6 +332,7 @@ The Applicant Dashboard is the primary operational portal for users assigned the
   1. **Backend Dispatch:** `DELETE /api/v1/applicant/payment-requests/:id`
   2. **Backend Execution:** Backend verifies status is 1 (`DRAFT`) and user ownership. Sets `is_deleted = TRUE` (Soft delete).
   3. **Post-Execution UI:** Close modal. Success toast: "Draft deleted successfully." Navigate back to list view and refresh.
+- **Exception Handling:** Trigger `ERR-APP-403` if ownership or status verification fails.
 
 ### 5.7 Receipt File Upload (`uplReceiptDropzone` onDrop/onChange)
 - **Trigger:** User drags & drops a file or selects one via file picker.
@@ -335,21 +341,25 @@ The Applicant Dashboard is the primary operational portal for users assigned the
   2. **Backend Dispatch:** `POST /api/v1/applicant/payment-requests/:id/receipts` (multipart/form-data)
   3. **Backend Execution:** Store physical file, insert record into `receipt_files`.
   4. **Post-Execution UI:** Add file to `lstReceiptFiles`.
+- **Exception Handling:** Display inline error `VAL-APP-008` or `VAL-APP-009` if validation fails.
 
 ### 5.8 Dynamic Field Visibility: Payment Method (`ddlPaymentMethod` onChange)
 - **Trigger:** User selects a new payment method.
 - **Processing Logic:**
   1. **Post-Execution UI:** If method is `BANK_TRANSFER` or `CASH`, set `txtBankAccountInfo` to visible and mandatory. If `CHECK`, set to hidden and optional, and clear its value.
+- **Exception Handling:** None applicable.
 
 ### 5.9 Dynamic Field Visibility: Receipt Presence (`rdoHasReceipt` onChange)
 - **Trigger:** User toggles "Receipt Present" radio button.
 - **Processing Logic:**
   1. **Post-Execution UI:** If `TRUE`, `uplReceiptDropzone` becomes visible. If `FALSE`, it hides. Existing files remain attached in DB but strict validation for receipt presence is bypassed.
+- **Exception Handling:** None applicable.
 
 ### 5.10 Dynamic Recalculation: Amount (`colAmount` onChange)
 - **Trigger:** User modifies any `colAmount` in the breakdown table.
 - **Processing Logic:**
   1. **Post-Execution UI:** Instantly sum all `colAmount` rows. Update `lblBreakdownTotal` and the main `lblTotalAmount` values.
+- **Exception Handling:** Revert to previous valid amount or display validation error `VAL-APP-007` if input is non-numeric or <= 0.
 
 ---
 
@@ -382,83 +392,3 @@ The Applicant Dashboard is the primary operational portal for users assigned the
 - **Security Provision (Sanitization Indicator):** Explicitly sanitize and escape all user input fields (specifically `txtPurpose` and `txaRequestContent`) to prevent Cross-Site Scripting (XSS) injection. Server applies `@Transform` to trim whitespace.
 - **Design System Rules:** strictly adhere to the Tailwind color palette and design guidelines established in `02_開発ルール_DEVELOPMENT_RULES.md`. Status badges use standard color mapping (Draft=gray, Submitted=amber, Approved=emerald, Rejected=red). Rejection comments display in a prominent warning banner at the top of the form view.
 
----
-
-## 8. State-Dependent Display Rules (状態別表示ルール)
-
-This section summarizes which UI elements are visible, editable, or disabled based on the current `status_id` of the payment request.
-
-### 8.1 Form Field Editability Matrix
-
-| Status ID | Status Code | Form Fields (F2–F4) | Breakdown Table (F5) | Receipt Upload (F6) | Save Draft | Submit to Mgr | Submit to Approver | Delete Draft |
-| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | `DRAFT` | Editable | Editable | Editable | Visible | Visible | Hidden | Visible |
-| 2 | `SUBMITTED_MANAGER` | Read-Only | Read-Only | Read-Only | Hidden | Hidden | Hidden | Hidden |
-| 3 | `MANAGER_REVIEWING` | Read-Only | Read-Only | Read-Only | Hidden | Hidden | Hidden | Hidden |
-| 4 | `MANAGER_VERIFIED` | Read-Only | Read-Only | Read-Only | Hidden | Hidden | **Visible** | Hidden |
-| 5 | `REJECTED_MANAGER` | Editable | Editable | Editable | Visible | Visible | Hidden | Hidden |
-| 6 | `SUBMITTED_APPROVER` | Read-Only | Read-Only | Read-Only | Hidden | Hidden | Hidden | Hidden |
-| 7 | `APPROVER_REVIEWING` | Read-Only | Read-Only | Read-Only | Hidden | Hidden | Hidden | Hidden |
-| 8 | `APPROVED` | Read-Only | Read-Only | Read-Only | Hidden | Hidden | Hidden | Hidden |
-| 9 | `REJECTED_APPROVER` | Editable | Editable | Editable | Visible | Visible | Hidden | Hidden |
-| 10 | `PAID` | Read-Only | Read-Only | Read-Only | Hidden | Hidden | Hidden | Hidden |
-
-> **Rule Reference:** Editable status set is determined by `payment_statuses.is_editable_state = TRUE` (status_id: 1, 5, 9). See Func Spec §3.3 and BR-APP-003.
-
-### 8.2 Approval History Visibility
-
-The Approval History Timeline (Section F7) is **always visible** regardless of status, but is **empty** for newly created drafts that have not yet been saved. It is populated from the first `CREATED` log entry onward.
-
-### 8.3 Rejection Comment Highlight
-
-When `status_id` ∈ {5 (`REJECTED_MANAGER`), 9 (`REJECTED_APPROVER`)}, the most recent rejection comment from the approval history shall be displayed prominently at the top of the form in a **warning banner** (red/amber background) to immediately communicate the rejection reason to the applicant.
-
----
-
-## 9. Appendix: Data Source Summary (データソース参照一覧)
-
-### 9.1 Database Table Usage Map
-
-| Database Table | Physical Columns Used by This Screen | CRUD Operations |
-| :--- | :--- | :--- |
-| `payment_requests` | `payment_request_id`, `request_number`, `applicant_user_id`, `manager_user_id`, `application_date`, `desired_payment_date`, `total_amount`, `currency_id`, `payment_type_id`, `payment_method_id`, `purpose`, `bank_account_info`, `request_content`, `has_receipt`, `status_id`, `created_date`, `is_deleted` | Create, Read, Update, Soft Delete |
-| `payment_breakdown_items` | `payment_breakdown_item_id`, `payment_request_id`, `line_number`, `item_date`, `description`, `amount`, `quantity`, `unit_price` | Create, Read, Update, Delete (cascade) |
-| `receipt_files` | `receipt_file_id`, `payment_request_id`, `original_file_name`, `file_size`, `mime_type`, `uploaded_date`, `is_deleted` | Create, Read, Soft Delete |
-| `approval_logs` | `approval_log_id`, `payment_request_id`, `action_taken_by_user_id`, `action_type_id`, `comment`, `timestamp` | Create (append-only), Read |
-| `users` | `user_id`, `full_name`, `employee_number`, `department`, `branch`, `role_id`, `is_active` | Read only |
-| `payment_statuses` | `status_id`, `status_name`, `display_order`, `is_editable_state` | Read only |
-| `currencies` | `currency_id`, `currency_code`, `is_active` | Read only |
-| `payment_types` | `payment_type_id`, `payment_type_name`, `is_active` | Read only |
-| `payment_methods` | `payment_method_id`, `payment_method_name`, `is_active` | Read only |
-| `approval_action_types` | `action_type_id`, `action_type` | Read only |
-| `user_roles` | `role_id`, `role_name` | Read only |
-
-### 9.2 Redis Cache Key References
-
-| Cache Key Pattern | Source Table | TTL | Used By (Item ID) |
-| :--- | :--- | :--- | :--- |
-| `lookup:payment_statuses` | `payment_statuses` | 24 hours | `ddlStatusFilter` (10), `colStatus` (18) |
-| `lookup:currencies` | `currencies` | 24 hours | `ddlCurrency` (31) |
-| `lookup:payment_types` | `payment_types` | 24 hours | `ddlPaymentType` (32) |
-| `lookup:payment_methods` | `payment_methods` | 24 hours | `ddlPaymentMethod` (33) |
-| `payment_request:payload:{id}` | `payment_requests` (+ joins) | 10 minutes | Detail/Edit view data population |
-| `session:{token}` | User session data | 1 hour (sliding) | Authentication across all items |
-
-### 9.3 API Endpoint Summary
-
-| HTTP Method | Endpoint | Purpose |
-| :--- | :--- | :--- |
-| `GET` | `/api/v1/applicant/payment-requests` | List all applicant's payment requests (paginated) |
-| `GET` | `/api/v1/applicant/payment-requests/:id` | Get single payment request detail |
-| `POST` | `/api/v1/applicant/payment-requests` | Create new payment request (draft) |
-| `PATCH` | `/api/v1/applicant/payment-requests/:id` | Update existing payment request |
-| `DELETE` | `/api/v1/applicant/payment-requests/:id` | Soft-delete draft payment request |
-| `POST` | `/api/v1/applicant/payment-requests/:id/receipts` | Upload receipt file |
-| `DELETE` | `/api/v1/applicant/payment-requests/:id/receipts/:fileId` | Soft-delete receipt file |
-| `POST` | `/api/v1/applicant/payment-requests/:id/submit-manager` | Submit to Manager |
-| `POST` | `/api/v1/applicant/payment-requests/:id/submit-approver` | Submit to Final Approver |
-| `GET` | `/api/v1/shared/lookups` | Retrieve cached master data |
-
----
-
-**END OF DOCUMENT**
