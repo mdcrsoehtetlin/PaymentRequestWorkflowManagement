@@ -439,31 +439,31 @@ SELECT setval('approval_action_types_action_type_id_seq', 10, true);
 
 INSERT INTO users (user_id, email, password_hash, full_name, employee_number, department, branch, role_id, is_active, created_date, modified_date, last_login_date) VALUES
 (1, 'soehtetlin@prwm.local',
-    '$2b$12$LJ3m4ys4Lz.VQy7z1zR9aeZq5g8XW3F7dRz0p3VbKMr5F.vEbXhWi',
+    '$2b$12$JcLwJQc4y/4OUIAQHnQZLeRKhjvaFJtgLanuvS/lZNBr84kUBVJBO',
     'Soe Htet Lin', 'EMP-2024-001', 'Engineering', 'Yangon',
     1, TRUE,
     '2026-01-15 03:00:00+00', '2026-06-12 04:00:00+00', '2026-06-12 07:30:00+00'),
 
 (2, 'ayethandarmoe@prwm.local',
-    '$2b$12$LJ3m4ys4Lz.VQy7z1zR9aeZq5g8XW3F7dRz0p3VbKMr5F.vEbXhWi',
+    '$2b$12$JcLwJQc4y/4OUIAQHnQZLeRKhjvaFJtgLanuvS/lZNBr84kUBVJBO',
     'Aye Thandar Moe', 'EMP-2024-002', 'Operations', 'Yangon',
     2, TRUE,
     '2026-01-15 03:00:00+00', '2026-06-10 08:00:00+00', '2026-06-11 09:00:00+00'),
 
 (3, 'khaingthinthinwin@prwm.local',
-    '$2b$12$LJ3m4ys4Lz.VQy7z1zR9aeZq5g8XW3F7dRz0p3VbKMr5F.vEbXhWi',
+    '$2b$12$JcLwJQc4y/4OUIAQHnQZLeRKhjvaFJtgLanuvS/lZNBr84kUBVJBO',
     'Khaing Thin Thin Win', 'EMP-2024-003', 'Finance', 'Naypyidaw',
     3, TRUE,
     '2026-01-15 03:00:00+00', '2026-06-09 06:00:00+00', '2026-06-11 05:00:00+00'),
 
 (4, 'shinminthant@prwm.local',
-    '$2b$12$LJ3m4ys4Lz.VQy7z1zR9aeZq5g8XW3F7dRz0p3VbKMr5F.vEbXhWi',
+    '$2b$12$JcLwJQc4y/4OUIAQHnQZLeRKhjvaFJtgLanuvS/lZNBr84kUBVJBO',
     'Shin Min Thant', 'EMP-2024-004', 'Finance', 'Mandalay',
     4, TRUE,
     '2026-01-15 03:00:00+00', '2026-06-08 07:00:00+00', '2026-06-10 08:30:00+00'),
 
 (5, 'yemaungmaung@prwm.local',
-    '$2b$12$LJ3m4ys4Lz.VQy7z1zR9aeZq5g8XW3F7dRz0p3VbKMr5F.vEbXhWi',
+    '$2b$12$JcLwJQc4y/4OUIAQHnQZLeRKhjvaFJtgLanuvS/lZNBr84kUBVJBO',
     'Ye Maung Maung', 'EMP-2024-005', 'IT Administration', 'Naypyidaw',
     5, TRUE,
     '2026-01-15 03:00:00+00', '2026-06-12 02:00:00+00', '2026-06-12 06:00:00+00');

@@ -710,18 +710,30 @@ These packages will be installed when we scaffold the NestJS project. **You do N
 | `jest` & `ts-jest` | Testing framework |
 | `eslint` & `prettier` | Linting & formatting |
 
+### Frontend Dependencies (React + Vite)
+
+| Package | Purpose |
+|---------|---------|
+| `react-router-dom` | Client-side routing for role-based dashboards |
+| `axios` | HTTP client for API requests |
+| `lucide-react` | SVG icons for the UI |
+| `clsx` & `tailwind-merge` | Utility for conditionally joining Tailwind CSS classes |
+
 ### Install Commands (for reference)
 
 ```powershell
-# Production dependencies (run after nest new)
+# Backend Production dependencies
 npm install @nestjs/typeorm typeorm pg
 npm install @nestjs/cache-manager cache-manager cache-manager-redis-store redis
 npm install @nestjs/config class-validator class-transformer joi
 npm install @nestjs/jwt @nestjs/passport passport passport-jwt passport-local bcrypt
 npm install @nestjs/websockets @nestjs/platform-socket.io socket.io
 
-# Dev dependencies
+# Backend Dev dependencies
 npm install -D @types/bcrypt @types/passport-jwt @types/passport-local @types/cache-manager-redis-store
+
+# Frontend Dependencies (run in /frontend)
+npm install react-router-dom axios lucide-react clsx tailwind-merge
 ```
 
 ---
