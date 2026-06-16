@@ -1,5 +1,4 @@
-# Define the markdown content exactly as structured in the previous response
-markdown_content = """# Screen Items Specification (画面項目設計書) — Manager Dashboard
+# Screen Items Specification (画面項目設計書) — Manager Dashboard
 
 **Document ID:** PRWM-SIS-SCR-002  
 **Target Screen:** Manager Dashboard (担当マネージャーダッシュボード)  
@@ -56,7 +55,7 @@ This screen is an integrated dashboard designed for users with the system author
 
 ## 3. Screen Layout (画面レイアウト構成)
 
-### 3.1 Overall Page Structure (全体画面構成)Code outputFile successfully created: MANAGER_05_画面項目設計書_SCREEN_ITEMS_v2.md
+### 3.1 Overall Page Structure (全体画面構成)
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
@@ -76,6 +75,8 @@ This screen is an integrated dashboard designed for users with the system author
 │ - User   │  │                               ││     - Comment Field & Action Buttons │  │
 │          │  └───────────────────────────────┘└──────────────────────────────────────┘  │
 └──────────┴──────────────────────────────────────────────────────────────────────────┘
+```
+
 ### 3.2 Responsive Layout Breakpoints (レスポンシブ対応)
 
 | Breakpoint | Min Width | Layout Behavior |
