@@ -1,13 +1,13 @@
-﻿# DD_ACCOUNTING_04 窶・DTOs and Types
+﻿# DD_ACCOUNTING_04 — DTOs and Types
 
-> **Doc ID:** PRWM-DD-ACCOUNTING-04 | **Version:** 1.0 | **Status:** Draft  
-> **Last Updated:** YYYY-MM-DD
+> **Doc ID:** PRWM-DD-ACC-04 | **Version:** 1.0 | **Status:** Released  
+> **Last Updated:** 2026-06-17
 
 ---
 
 ## 1. Overview
 
-This document specifies the Data Transfer Objects (DTOs) used by the `accounting` module's API endpoints.
+This document defines DTOs and response types used by the accounting module.
 
 - **Location:** `src/modules/accounting/dto/`
 
@@ -15,16 +15,28 @@ This document specifies the Data Transfer Objects (DTOs) used by the `accounting
 
 ## 2. Request DTOs
 
-### 2.1 `ActionaccountingDto`
-
-Used for `POST /api/v1/...`.
+### 2.1 `QueryAccountingRequestsDto`
 
 ```typescript
-import { IsString, IsOptional, MaxLength } from 'class-validator';
+export class QueryAccountingRequestsDto extends PaginationQueryDto {
+  @IsOptional()
+  @IsInt()
+  statusId?: number;
 
-export class ActionaccountingDto {
-  // Define properties, types, and validation decorators
-  
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsString()
+  branch?: string;
+}
+```
+
+### 2.2 `CompletePaymentDto`
+
+```typescript
+export class CompletePaymentDto {
   @IsOptional()
   @IsString()
   @MaxLength(500)
@@ -32,19 +44,48 @@ export class ActionaccountingDto {
 }
 ```
 
-*(Duplicate section 2.1 for each DTO in the module)*
+---
+
+## 3. Response Types
+
+### 3.1 `AccountingQueueItem`
+
+```typescript
+export interface AccountingQueueItem {
+  paymentRequestId: number;
+  requestNumber: string;
+  applicantName: string;
+  branch: string;
+  totalAmount: string;
+  currencyCode: string;
+  statusId: number;
+  applicationDate: string;
+  desiredPaymentDate: string;
+}
+```
+
+### 3.2 `AccountingDashboardSummary`
+
+```typescript
+export interface AccountingDashboardSummary {
+  approvedCount: number;
+  paidCount: number;
+  mandalayCount: number;
+  todayCompletedCount: number;
+}
+```
 
 ---
 
-## 3. Custom Response Types (If Any)
+## 4. Shared Type Reuse
 
-[Define any module-specific TypeScript interfaces returned by the API that are not already in the Shared Types document.]
+Accounting uses shared response interfaces from [DD_COMMON_03](../00_common/DD_COMMON_03_SHARED_TYPES.md):
+- `PaymentRequestDetailView`
+- `PaginatedResponse`
+- `ApprovalLogWithUser`
 
 ---
 
-## 4. Cross-References
+## 5. Validation Notes
 
-| Related Document | Purpose |
-|-----------------|---------|
-| [DD_TEMPLATE_03](./DD_TEMPLATE_03_API_ENDPOINTS.md) | Endpoints that consume these DTOs |
-| [DD_COMMON_04](../../00_common/DD_COMMON_04_SHARED_VALIDATION.md) | Base validation rules |
+DTOs follow the patterns in [DD_COMMON_04](../00_common/DD_COMMON_04_SHARED_VALIDATION.md).
