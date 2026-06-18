@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Upload, X } from 'lucide-react';
 import type { ReceiptFile } from '../../types';
 import { formatFileSize } from '../../utils/format';
-import { MAX_FILE_SIZE_BYTES, ALLOWED_FILE_TYPES } from '../../utils/constants';
+import { MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from '../../utils/constants';
 import { useToast } from '../../hooks/useToast';
 
 interface FileUploadDropzoneProps {
@@ -34,11 +34,11 @@ export function FileUploadDropzone({
   const validateAndProcessFiles = (files: FileList | File[]) => {
     const validFiles: File[] = [];
     Array.from(files).forEach((file) => {
-      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      if (!ALLOWED_MIME_TYPES.includes(file.type as any)) {
         error(`${file.name}: 許可されていないファイル形式です`);
         return;
       }
-      if (file.size > MAX_FILE_SIZE_BYTES) {
+      if (file.size > MAX_FILE_SIZE) {
         error(`${file.name}: ファイルサイズが上限（10MB）を超えています`);
         return;
       }
@@ -90,7 +90,7 @@ export function FileUploadDropzone({
           type="file"
           className="hidden"
           multiple
-          accept={ALLOWED_FILE_TYPES.join(',')}
+          accept={ALLOWED_MIME_TYPES.join(',')}
           onChange={handleChange}
           disabled={disabled}
         />

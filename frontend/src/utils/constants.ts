@@ -1,14 +1,13 @@
 // File size and upload constraints (matches backend file-validators.ts)
-export const ALLOWED_FILE_TYPES = [
+export const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'image/png',
   'image/jpeg',
   'image/jpg',
 ] as const;
 
-export const MAX_FILE_SIZE_MB = 10;
-export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-export const MAX_TOTAL_FILE_SIZE_BYTES = 50 * 1024 * 1024;
+export const MAX_FILE_SIZE = 10 * 1024 * 1024;       // 10MB per file
+export const MAX_TOTAL_FILE_SIZE = 50 * 1024 * 1024;  // 50MB per request
 
 // Breakdown item constraints (matches backend DTO validation)
 export const MAX_BREAKDOWN_ITEMS = 15;

@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { ALLOWED_FILE_MIME_TYPES, MAX_FILE_SIZE_BYTES, FILE_VALIDATION_ERRORS } from '../validators/file-validators';
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE, FILE_VALIDATION_ERRORS } from '../validators/file-validators';
 
 @Injectable()
 export class FileUploadService {
@@ -14,10 +14,10 @@ export class FileUploadService {
   }
 
   validateFile(file: any): void {
-    if (!ALLOWED_FILE_MIME_TYPES.includes(file.mimetype)) {
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       throw new BadRequestException(FILE_VALIDATION_ERRORS.INVALID_TYPE);
     }
-    if (file.size > MAX_FILE_SIZE_BYTES) {
+    if (file.size > MAX_FILE_SIZE) {
       throw new BadRequestException(FILE_VALIDATION_ERRORS.SIZE_EXCEEDED);
     }
   }

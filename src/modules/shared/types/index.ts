@@ -205,13 +205,165 @@ export interface JwtPayload {
   employeeNumber: string;
   fullName: string;
   /** Issued at (Unix timestamp) — set by JWT library at signing time */
-  iat?: number;
+  iat: number;
   /** Expiration (Unix timestamp) — set by JWT library at signing time */
-  exp?: number;
+  exp: number;
 }
 
 // ------------------------------------------------------------------
-// 4. API RESPONSE TYPES
+// 4. ENTITY INTERFACES
+// All dates are ISO 8601 strings. NUMERIC/BIGINT columns are strings.
+// See: DD_COMMON_03 §3
+// ------------------------------------------------------------------
+
+export interface User {
+  userId: number;
+  email: string;
+  fullName: string;
+  employeeNumber: string;
+  department: string | null;
+  branch: string;
+  roleId: number;
+  isActive: boolean;
+  createdDate: string;
+  modifiedDate: string;
+  lastLoginDate: string | null;
+}
+
+/** Minimal user info for display in lists and approval timelines. */
+export interface UserSummary {
+  userId: number;
+  fullName: string;
+  employeeNumber: string;
+  branch: string;
+}
+
+export interface PaymentRequest {
+  paymentRequestId: number;
+  /** Format: PRF-YYYY-NNNNNN */
+  requestNumber: string;
+  applicantUserId: number;
+  managerUserId: number | null;
+  finalApproverUserId: number | null;
+  accountingUserId: number | null;
+  currentAssignedToUserId: number | null;
+  /** YYYY-MM-DD */
+  applicationDate: string;
+  /** YYYY-MM-DD */
+  desiredPaymentDate: string;
+  /** NUMERIC(12,2) returned as string to prevent JS float precision loss */
+  totalAmount: string;
+  currencyId: number;
+  paymentTypeId: number;
+  paymentMethodId: number;
+  purpose: string;
+  bankAccountInfo: string | null;
+  requestContent: string;
+  hasReceipt: boolean;
+  statusId: number;
+  submittedToManagerDate: string | null;
+  managerVerificationDate: string | null;
+  submittedToApproverDate: string | null;
+  approvalDate: string | null;
+  paymentCompletedDate: string | null;
+  createdDate: string;
+  modifiedDate: string;
+  isDeleted: boolean;
+}
+
+export interface PaymentBreakdownItem {
+  paymentBreakdownItemId: number;
+  paymentRequestId: number;
+  /** 1-indexed line number, max 15 */
+  lineNumber: number;
+  /** YYYY-MM-DD */
+  itemDate: string;
+  description: string;
+  /** NUMERIC(10,2) as string */
+  amount: string;
+  /** NUMERIC(10,2) as string, nullable */
+  quantity: string | null;
+  /** NUMERIC(10,2) as string, nullable */
+  unitPrice: string | null;
+  createdDate: string;
+  modifiedDate: string;
+}
+
+export interface ApprovalLog {
+  /** BIGSERIAL returned as string to prevent JS integer overflow */
+  approvalLogId: string;
+  paymentRequestId: number;
+  actionTakenByUserId: number;
+  actionTypeId: number;
+  previousStatusId: number | null;
+  newStatusId: number | null;
+  comment: string | null;
+  ipAddress: string;
+  userAgent: string;
+  /** ISO 8601 UTC timestamp */
+  timestamp: string;
+}
+
+export interface ReceiptFile {
+  receiptFileId: number;
+  paymentRequestId: number;
+  originalFileName: string;
+  storedFileName: string;
+  fileStoragePath: string;
+  /** BIGINT as string (bytes) */
+  fileSize: string;
+  mimeType: string;
+  uploadedByUserId: number;
+  uploadedDate: string;
+  isDeleted: boolean;
+}
+
+// ------------------------------------------------------------------
+// 5. COMPOSITE VIEW TYPES (API response shapes with relations loaded)
+// See: DD_COMMON_03 §4
+// ------------------------------------------------------------------
+
+/**
+ * Flattened shape used in dashboard data tables.
+ * Returned by list endpoints — omits heavy relation fields.
+ */
+export interface PaymentRequestListItem {
+  paymentRequestId: number;
+  requestNumber: string;
+  applicationDate: string;
+  totalAmount: string;
+  /** Resolved currency code string e.g. 'MMK' */
+  currencyCode: string;
+  statusId: number;
+  createdDate: string;
+}
+
+/** ApprovalLog with the actor's user info populated. */
+export interface ApprovalLogWithUser extends ApprovalLog {
+  actionTakenByUser: UserSummary;
+}
+
+/**
+ * Full detail view returned by GET /payment-requests/:id.
+ * Contains all relations: applicant, manager, breakdown items, logs, files.
+ */
+export interface PaymentRequestDetailView extends PaymentRequest {
+  applicant: UserSummary;
+  manager: UserSummary | null;
+  finalApprover: UserSummary | null;
+  /** Resolved currency code string */
+  currencyCode: string;
+  /** Resolved payment type name */
+  paymentTypeName: string;
+  /** Resolved payment method name */
+  paymentMethodName: string;
+  breakdownItems: PaymentBreakdownItem[];
+  receiptFiles: ReceiptFile[];
+  approvalLogs: ApprovalLogWithUser[];
+}
+
+// ------------------------------------------------------------------
+// 6. API RESPONSE TYPES
 // ------------------------------------------------------------------
 
 export interface PaginationMeta {
@@ -249,7 +401,44 @@ export interface ActionResponse {
 }
 
 // ------------------------------------------------------------------
-// 5. WEBSOCKET EVENT PAYLOADS
+// 7. FORM DATA TYPES (used in React form state management)
+// See: DD_COMMON_03 §6
+// ------------------------------------------------------------------
+
+export interface PaymentRequestFormValues {
+  applicationDate: string;
+  desiredPaymentDate: string;
+  currencyId: number | null;
+  paymentTypeId: number | null;
+  paymentMethodId: number | null;
+  purpose: string;
+  bankAccountInfo: string;
+  requestContent: string;
+  hasReceipt: boolean;
+  /** Manager selected from dropdown */
+  managerUserId: number | null;
+  breakdownItems: BreakdownItemFormValues[];
+}
+
+export interface BreakdownItemFormValues {
+  lineNumber: number;
+  itemDate: string;
+  description: string;
+  /** Stored as string to preserve decimal display in inputs */
+  amount: string;
+  quantity: string;
+  unitPrice: string;
+}
+
+/** Generic option shape for select dropdowns populated from lookup endpoints. */
+export interface LookupOption {
+  id: number;
+  code: string;
+  name: string;
+}
+
+// ------------------------------------------------------------------
+// 8. WEBSOCKET EVENT PAYLOADS
 // See: DD_COMMON_03 §7, Development Rules §8.4
 // ------------------------------------------------------------------
 

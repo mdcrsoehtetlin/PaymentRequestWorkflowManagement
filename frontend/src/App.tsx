@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import { ToastContainer } from './components/shared/Toast';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ApplicantDashboard } from './pages/applicant/ApplicantDashboard';
 import { ManagerDashboard } from './pages/manager/ManagerDashboard';
@@ -13,6 +14,7 @@ import { RoleCode } from './types';
 export default function App() {
   return (
     <AuthProvider>
+      <ToastContainer />
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

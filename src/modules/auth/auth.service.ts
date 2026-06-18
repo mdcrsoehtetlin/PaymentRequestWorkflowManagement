@@ -36,7 +36,7 @@ export class AuthService {
   }
 
   async login(user: User) {
-    const payload: JwtPayload = {
+    const payload: Omit<JwtPayload, 'iat' | 'exp'> = {
       sub: user.userId,
       email: user.email,
       role: this.getRoleCode(user.roleId),

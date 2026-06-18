@@ -1,7 +1,12 @@
-export const ALLOWED_FILE_MIME_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
-export const MAX_FILE_SIZE_MB = 10;
-export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-export const MAX_TOTAL_FILE_SIZE_BYTES = 50 * 1024 * 1024;
+export const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+];
+
+export const MAX_FILE_SIZE = 10 * 1024 * 1024;       // 10MB per file
+export const MAX_TOTAL_FILE_SIZE = 50 * 1024 * 1024;  // 50MB per request
 
 export const FILE_VALIDATION_ERRORS = {
   INVALID_TYPE: 'VAL-APP-008: 許可されていないファイル形式です',
@@ -11,9 +16,9 @@ export const FILE_VALIDATION_ERRORS = {
 
 // Helper functions for programmatic validation (used in services)
 export function isValidMimeType(mimeType: string): boolean {
-  return ALLOWED_FILE_MIME_TYPES.includes(mimeType);
+  return ALLOWED_MIME_TYPES.includes(mimeType);
 }
 
 export function isValidFileSize(sizeBytes: number): boolean {
-  return sizeBytes > 0 && sizeBytes <= MAX_FILE_SIZE_BYTES;
+  return sizeBytes > 0 && sizeBytes <= MAX_FILE_SIZE;
 }

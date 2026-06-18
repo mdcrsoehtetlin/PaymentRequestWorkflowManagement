@@ -233,9 +233,9 @@ export interface JwtPayload {
   employeeNumber: string;
   fullName: string;
   /** Issued at (Unix timestamp) — set by JWT library at signing time */
-  iat?: number;
+  iat: number;
   /** Expiration (Unix timestamp) — set by JWT library at signing time */
-  exp?: number;
+  exp: number;
 }
 
 // ------------------------------------------------------------------

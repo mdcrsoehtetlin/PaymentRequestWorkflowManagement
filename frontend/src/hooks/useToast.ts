@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 export interface ToastMessage {
   id: string;
@@ -15,23 +15,50 @@ export interface UseToastReturn {
   dismiss: (id: string) => void;
 }
 
-export function useToast(): UseToastReturn {
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+let globalToasts: ToastMessage[] = [];
+let listeners: ((toasts: ToastMessage[]) => void)[] = [];
 
-  const addToast = useCallback((type: ToastMessage['type'], message: string) => {
-    const id = Date.now().toString();
-    setToasts((prev) => [...prev, { id, type, message }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+const notifyListeners = () => {
+  listeners.forEach((l) => l([...globalToasts]));
+};
+
+export const triggerGlobalToast = (type: ToastMessage['type'], message: string) => {
+  const id = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+  globalToasts = [...globalToasts, { id, type, message }];
+  notifyListeners();
+  setTimeout(() => {
+    globalToasts = globalToasts.filter((t) => t.id !== id);
+    notifyListeners();
+  }, 4000);
+};
+
+export const dismissGlobalToast = (id: string) => {
+  globalToasts = globalToasts.filter((t) => t.id !== id);
+  notifyListeners();
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('globalToast', ((e: CustomEvent) => {
+    triggerGlobalToast(e.detail.type, e.detail.message);
+  }) as EventListener);
+}
+
+export function useToast(): UseToastReturn {
+  const [toasts, setToasts] = useState<ToastMessage[]>(globalToasts);
+
+  useEffect(() => {
+    listeners.push(setToasts);
+    return () => {
+      listeners = listeners.filter((l) => l !== setToasts);
+    };
   }, []);
 
   return {
     toasts,
-    success: (msg) => addToast('success', msg),
-    error: (msg) => addToast('error', msg),
-    warning: (msg) => addToast('warning', msg),
-    info: (msg) => addToast('info', msg),
-    dismiss: (id) => setToasts((prev) => prev.filter((t) => t.id !== id)),
+    success: (msg) => triggerGlobalToast('success', msg),
+    error: (msg) => triggerGlobalToast('error', msg),
+    warning: (msg) => triggerGlobalToast('warning', msg),
+    info: (msg) => triggerGlobalToast('info', msg),
+    dismiss: dismissGlobalToast,
   };
 }
