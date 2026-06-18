@@ -1,73 +1,83 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
-
-interface User {
-  sub: number;
-  email: string;
-  roleId: number;
-  branch: string;
-  employeeNumber: string;
-  fullName: string;
-}
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from 'react';
+import { authService } from '../services/auth.service';
+import type { JwtPayload } from '../types';
 
 interface AuthContextType {
-  user: User | null;
+  user: JwtPayload | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string, userData: User) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * @description Provides authentication state to the entire application.
+ * Wrap the root App component with this provider.
+ * Exposes: user (JwtPayload), isAuthenticated, isLoading, login(), logout()
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<JwtPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // On mount: decode token from localStorage to restore session
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    const storedUser = localStorage.getItem('user');
-    
-    if (token && storedUser && storedUser !== 'undefined') {
+    const initAuth = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      } catch (e) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        const decoded = await authService.getCurrentUser();
+        setUser(decoded);
+      } catch {
+        // Token missing or malformed — treat as unauthenticated
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    }
-    setIsLoading(false);
+    };
+    
+    initAuth();
   }, []);
 
-  const login = (token: string, userData: User) => {
-    localStorage.setItem('accessToken', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setUser(userData);
-  };
+  const login = useCallback(async (email: string, password: string): Promise<JwtPayload> => {
+    await authService.login(email, password);
+    const decoded = await authService.getCurrentUser();
+    setUser(decoded);
+    return decoded;
+  }, []);
 
-  const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    delete axios.defaults.headers.common['Authorization'];
-    setUser(null);
-  };
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } finally {
+      setUser(null);
+    }
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated: !!user, isLoading, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
+/**
+ * @description Hook to consume the AuthContext.
+ * Must be called inside a component tree wrapped by <AuthProvider>.
+ * @throws Error if used outside of AuthProvider
+ */
+export function useAuthContext(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuthContext must be used within an AuthProvider');
   }
   return context;
 }

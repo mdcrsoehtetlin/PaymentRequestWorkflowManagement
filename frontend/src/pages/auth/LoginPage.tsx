@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { Loader2, Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export function LoginPage() {
@@ -19,9 +19,7 @@ export function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('/api/v1/auth/login', { email, password });
-      const { accessToken, user } = response.data;
-      login(accessToken, user);
+      const user = await login(email, password);
 
       // Redirect based on role
       switch (user.roleId) {
@@ -33,7 +31,9 @@ export function LoginPage() {
         default: navigate('/'); break;
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+      // Handle axios errors from authService, or standard errors
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to login. Please check your credentials.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

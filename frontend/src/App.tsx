@@ -8,6 +8,7 @@ import { ManagerDashboard } from './pages/manager/ManagerDashboard';
 import { ApproverDashboard } from './pages/approver/ApproverDashboard';
 import { AccountingDashboard } from './pages/accounting/AccountingDashboard';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { RoleCode } from './types';
 
 export default function App() {
   return (
@@ -17,31 +18,31 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           
           <Route path="/applicant/*" element={
-            <ProtectedRoute allowedRoles={[1]}>
+            <ProtectedRoute allowedRoles={[RoleCode.APPLICANT]}>
               <ApplicantDashboard />
             </ProtectedRoute>
           } />
           
           <Route path="/manager/*" element={
-            <ProtectedRoute allowedRoles={[2]}>
+            <ProtectedRoute allowedRoles={[RoleCode.MANAGER]}>
               <ManagerDashboard />
             </ProtectedRoute>
           } />
           
           <Route path="/approver/*" element={
-            <ProtectedRoute allowedRoles={[3]}>
+            <ProtectedRoute allowedRoles={[RoleCode.APPROVER]}>
               <ApproverDashboard />
             </ProtectedRoute>
           } />
           
           <Route path="/accounting/*" element={
-            <ProtectedRoute allowedRoles={[4]}>
+            <ProtectedRoute allowedRoles={[RoleCode.ACCOUNTING]}>
               <AccountingDashboard />
             </ProtectedRoute>
           } />
           
           <Route path="/admin/*" element={
-            <ProtectedRoute allowedRoles={[5]}>
+            <ProtectedRoute allowedRoles={[RoleCode.ADMIN]}>
               <AdminDashboard />
             </ProtectedRoute>
           } />

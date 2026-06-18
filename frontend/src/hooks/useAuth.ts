@@ -1,38 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
-import { authService } from '../services/auth.service';
+import { useAuthContext } from '../contexts/AuthContext';
 import type { JwtPayload } from '../types';
 
 interface UseAuthReturn {
   user: JwtPayload | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<JwtPayload>;
   logout: () => Promise<void>;
 }
 
+/**
+ * @description Convenience hook for consuming auth state.
+ * Thin wrapper around useAuthContext() — single source of truth.
+ * Use this hook in all components instead of directly calling useAuthContext().
+ *
+ * @example
+ * const { user, isAuthenticated, login, logout } = useAuth();
+ */
 export function useAuth(): UseAuthReturn {
-  const [user, setUser] = useState<JwtPayload | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    try {
-      authService.getCurrentUser().then(setUser).catch(() => setUser(null)).finally(() => setIsLoading(false));
-    } catch {
-      setUser(null);
-      setIsLoading(false);
-    }
-  }, []);
-
-  const login = useCallback(async (email: string, password: string) => {
-    await authService.login(email, password);
-    const payload = await authService.getCurrentUser();
-    setUser(payload);
-  }, []);
-
-  const logout = useCallback(async () => {
-    await authService.logout();
-    setUser(null);
-  }, []);
-
-  return { user, isAuthenticated: !!user, isLoading, login, logout };
+  return useAuthContext();
 }
