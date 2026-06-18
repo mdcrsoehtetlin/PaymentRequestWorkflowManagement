@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-The Approver frontend provides the Final Approver dashboard and request detail screens. The dashboard displays KPI summary cards and a paginated, sortable, filterable queue of requests submitted for final approval. The detail page displays full read-only request information, approval history, and contextual approve/reject actions.
+The Approver frontend provides the Final Approver dashboard and request detail screens. The dashboard displays sidebar summary cards and a paginated, sortable, filterable queue of requests submitted for final approval. The detail experience displays full read-only request information, approval history, and contextual approve/reject actions.
 
 - **Dashboard File Path:** `frontend/src/pages/approver/ApproverDashboard.tsx`
 - **Dashboard Route:** `/approver/dashboard`
@@ -20,80 +20,103 @@ The Approver frontend provides the Final Approver dashboard and request detail s
 
 ### 2.1 Approver Dashboard
 
-```
-┌──────────────────────────────────────────────────────────┐
-│ PageHeader (Title: "Approver Dashboard")                 │
-├──────────────────────────────────────────────────────────┤
-│ KpiCardRow (4 cards)                                     │
-│ [Awaiting Review] [Reviewing] [Approved] [Rejected]      │
-├──────────────────────────────────────────────────────────┤
-│ FilterSearchBar                                          │
-│ [Status Dropdown] [Branch] [Date Range] [Search Field]   │
-├──────────────────────────────────────────────────────────┤
-│ DataTable                                                │
-│ [Request No] [Applicant] [Status] [Amount] [Actions]     │
-└──────────────────────────────────────────────────────────┘
+The dashboard follows the screen item layout in `APPROVER_05`: a desktop workbench with a persistent left sidebar, content-area filter/search controls, a request queue grid, pagination, and a details panel shown as the next panel below the queue. On mobile, the sidebar becomes a drawer and the details panel opens as a full-screen detail view.
+
+```text
++--------------------------------------------------------------------------------+
+| Browser Viewport                                                               |
++------------+-------------------------------------------------------------------+
+| [NAV]      | [A] Page Header                                                   |
+| Sidebar    |     Final Approver Dashboard                                      |
+| w-64       |     Approver badge | Notification bell                            |
+|            +-------------------------------------------------------------------+
+| [B]        | [C] Filter / Search Bar                                           |
+| Summary    |     [Search Input] [Status Filter] [Branch] [Date Range]          |
+| Cards      +-------------------------------------------------------------------+
+| - Pending  | [D] Request Queue Data Grid                                       |
+| - Reviewing|     Request# | Applicant | Branch | Status | Amount | Submitted   |
+| - Overdue  |     Due | Action                                                  |
+| - Activity |                                                                   |
+|            | [E] Pagination / Page Controls                                    |
+|            | [F] Details Panel                                                 |
++------------+-------------------------------------------------------------------+
 ```
 
 ### 2.2 Approver Request Detail
 
-The layout is a 2-column design on desktop: Left column (Main Content, 70%), Right column (Actions & Timeline, 30%).
+The request detail is opened from the dashboard queue. On desktop and tablet, it appears as the `[F]` next full page so the approver can review the selected request in place. On mobile and direct-route access, it becomes a full-screen detail page.
 
+```text
++------------------------------------------------+
+| Detail Header: Request#, StatusBadge, Close    |
++------------------------------------------------+
+| Request Information                            |
+| Applicant, payment, branch, amount, purpose    |
++------------------------------------------------+
+| Breakdown Items                                |
+| Date | Description | Amount                    |
++------------------------------------------------+
+| Receipt Files                                  |
+| File name | Size | Download                    |
++------------------------------------------------+
+| Action Panel                                   |
+| Approve / Reject, only for APPROVER_REVIEWING  |
++------------------------------------------------+
+| Approval Timeline                              |
+| Manager and approver logs/comments             |
++------------------------------------------------+
 ```
-┌──────────────────────────────────────────────────────────┐
-│ PageHeader (Request Number, StatusBadge, Back Button)    │
-├────────────────────────────────────┬─────────────────────┤
-│ [Card: Request Information]        │ [Action Card]       │
-│ Applicant, payment, branch, amount │ Approve / Reject    │
-├────────────────────────────────────┼─────────────────────┤
-│ [Card: Breakdown Items]            │ [Timeline Card]     │
-│ DataTable (Date, Description, Amt) │ Approval Logs List  │
-├────────────────────────────────────┤                     │
-│ [Card: Receipt Files]              │                     │
-│ List of files with Download links  │                     │
-└────────────────────────────────────┴─────────────────────┘
-```
+
+### 2.3 Responsive Layout Breakpoints
+
+| Breakpoint | Min Width | Layout Behavior |
+|------------|-----------|-----------------|
+| Mobile | 0px | Single-column layout; sidebar hidden behind hamburger drawer; filter bar collapses to expandable panel; detail opens full-screen. |
+| Tablet (`md`) | 768px | Sidebar may be drawer or narrow rail; queue remains primary; details appear as the next panel below the queue. |
+| Desktop (`lg`) | 1024px | Persistent left sidebar (`w-64`) with summary cards; content area contains filter/search bar, queue grid, pagination, and a details panel below the queue. |
+| Wide (`xl`) | 1280px | Expanded queue columns and stable multi-pane view. |
 
 ---
 
 ## 3. Component Details
 
-### 3.1 KpiCardRow
+### 3.1 SummarySidebar
 
-Four KPI cards showing counts by Approver status group.
+Persistent desktop sidebar (`w-64`) containing compact summary cards for queue triage.
 
-1. **Awaiting Review:** Count of `SUBMITTED_APPROVER` (status 6)
+1. **Pending Requests:** Count of `SUBMITTED_APPROVER` (status 6)
 2. **Reviewing:** Count of `APPROVER_REVIEWING` (status 7)
-3. **Approved:** Count of `APPROVED` (status 8)
-4. **Rejected:** Count of `REJECTED_APPROVER` (status 9)
+3. **Overdue:** Count of requests whose desired payment date requires urgent action
+4. **Recent Activity:** Latest approval/rejection activity from `approvalLogs`
 
-Clicking a KPI card updates the `FilterSearchBar` status dropdown to filter the table.
+Clicking a status summary card updates the `FilterSearchBar` status dropdown and refreshes the queue table.
 
 ### 3.2 FilterSearchBar
 
 State managed via `useApproverRequests` hook.
 
-- **Status Filter:** Select one from Approver-related `PaymentStatus` values, or "All".
-- **Branch Filter:** Select active branch options from lookup data.
-- **Date Range Filter:** Filter by manager verification or submitted-to-approver date.
 - **Search:** Free text search against `requestNumber`, applicant name, and purpose. Debounced by 300ms.
+- **Status Filter:** Select `Submitted to Approver`, `Approver Reviewing`, or "All".
+- **Branch Filter:** Select active branch options from lookup data.
+- **Date Range Filter:** Filter by `submittedToApproverDate`.
 
 ### 3.3 DataTable (ApproverRequestTable)
 
 | Column Header | Data Field | Component/Format | Sortable |
 |---------------|------------|------------------|----------|
-| Request No | `requestNumber` | String link to detail page | Yes |
+| Request# | `requestNumber` | String link / clickable row | Yes |
 | Applicant | `applicant` | User display name / employee code | Yes |
-| Manager | `manager` | User display name | No |
+| Branch | `branch` | Applicant branch | Yes |
 | Status | `statusId` | `StatusBadge` | Yes |
-| Purpose | `purpose` | Truncated string (max 30 chars) | No |
 | Amount | `totalAmount`, `currencyCode` | `CurrencyDisplay` | Yes |
-| Actions | - | View button | No |
+| Submitted | `submittedToApproverDate` | Date/time display | Yes |
+| Due | `desiredPaymentDate`, overdue flag | Icon/label indicator | No |
+| Action | - | Review button/link | No |
 
 **Action Column Rules:**
-- If `status === SUBMITTED_APPROVER | APPROVER_REVIEWING`: Show View action.
-- If `status === APPROVED | REJECTED_APPROVER`: Show read-only View action.
-- Row click navigates to `/approver/requests/${id}`.
+- If `status === SUBMITTED_APPROVER | APPROVER_REVIEWING`: Show Review action.
+- Row click opens the dashboard details panel as the next panel below the queue on desktop and tablet.
+- Mobile row click navigates to `/approver/requests/${id}` full-screen detail.
 
 ### 3.4 RequestInfoSection
 
@@ -142,13 +165,14 @@ import { usePagination } from '@/hooks/usePagination';
 
 export function useApproverRequests() {
   const [data, setData] = useState<ApproverRequestListItem[]>([]);
-  const [kpiCounts, setKpiCounts] = useState(null);
+  const [summaryCounts, setSummaryCounts] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [statusFilter, setStatusFilter] = useState<number | null>(null);
   const [branchFilter, setBranchFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('managerVerificationDate');
+  const [dateRange, setDateRange] = useState<{ from?: string; to?: string }>({});
+  const [sortBy, setSortBy] = useState('submittedToApproverDate');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
 
   const { page, pageSize, setPage, setPageSize } = usePagination(10);
@@ -158,20 +182,21 @@ export function useApproverRequests() {
     try {
       const response = await approverService.getRequests({
         page, pageSize, statusId: statusFilter, branch: branchFilter,
-        search: searchQuery, sortBy, sortOrder
+        search: searchQuery, dateFrom: dateRange.from, dateTo: dateRange.to,
+        sortBy, sortOrder
       });
       setData(response.data);
-      // set meta and KPI counts...
+      // set meta and summary counts...
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, statusFilter, branchFilter, searchQuery, sortBy, sortOrder]);
+  }, [page, pageSize, statusFilter, branchFilter, searchQuery, dateRange, sortBy, sortOrder]);
 
   useEffect(() => { fetchList(); }, [fetchList]);
 
   return {
-    data, isLoading, kpiCounts,
-    filters: { statusFilter, setStatusFilter, branchFilter, setBranchFilter, searchQuery, setSearchQuery },
+    data, isLoading, summaryCounts,
+    filters: { statusFilter, setStatusFilter, branchFilter, setBranchFilter, searchQuery, setSearchQuery, dateRange, setDateRange },
     sorting: { sortBy, sortOrder, setSortBy, setSortOrder },
     pagination: { page, pageSize, setPage, setPageSize },
     refresh: fetchList
@@ -207,8 +232,8 @@ export function useApproverRequestDetail(id: number) {
 
 ## 5. Event Handlers
 
-1. **Row Click:** Navigate to `/approver/requests/${id}`.
-2. **View Button:** Navigate to `/approver/requests/${id}`.
+1. **Row Click:** Open the `[F]` dashboard details panel below the queue on desktop/tablet; navigate to `/approver/requests/${id}` on mobile.
+2. **Review Button:** Open the same detail experience. If the request is `SUBMITTED_APPROVER`, backend starts review and refreshes as `APPROVER_REVIEWING`.
 3. **Approve Button:**
    - Call `useConfirmDialog.open()` with approval confirmation.
    - On confirm, call `approverService.approve(id, dto)`.
@@ -218,7 +243,7 @@ export function useApproverRequestDetail(id: number) {
    - Validate comment length before submit.
    - On confirm, call `approverService.reject(id, dto)`.
    - Call `refresh()` on success and show toast.
-5. **Back Button:** Navigate to `/approver/dashboard`.
+5. **Close / Back Button:** Clear or collapse the details panel on desktop/tablet; navigate to `/approver/dashboard` on full-screen detail.
 
 ---
 

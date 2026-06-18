@@ -82,7 +82,7 @@ The Final Approver Dashboard provides a centralized workspace for approvers to m
 │          │  │  │ (rows...)                                                      ││  │
 │          │  │  └────────────────────────────────────────────────────────────────┘│  │
 │          │  │  [E] PAGINATION / PAGE CONTROLS                                    │  │
-│          │  │  [F] DETAILS PANEL (right-hand slide-over on desktop)              │  │
+│          │  │  [F] DETAILS PANEL                                                 │  │
 │          │  └────────────────────────────────────────────────────────────────────┘  │
 └──────────┴──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -92,17 +92,17 @@ The Final Approver Dashboard provides a centralized workspace for approvers to m
 - **Page Header**: top header with page title, approver badge, notification access, and global action controls.
 - **Top Filter Bar**: centralised filter bar located within the content area directly under the header. Contains `Status`, `Branch`, `Date Range`, and `Search` controls. On desktop the bar appears inline; on mobile it collapses into a compact stacked control or an expandable panel. Follow `9.4.1` spacing and the card/container conventions in `9.5.1`.
 - **Summary Cards**: displayed in the persistent left sidebar (`[B]`, `w-64`) to surface queue metrics (Total, Pending, Reviewing, Overdue). Use compact `card` components per UI rules (`p-4`, `rounded-xl`, `shadow-sm`).
-- **Request Queue Data Grid**: primary work area with the table spec defined in `9.5.2` (responsive, accessible, numeric right-aligned, hover state). Rows are clickable to open the details panel.
+- **Request Queue Data Grid**: primary work area with the table spec defined in `9.5.2` (responsive, accessible, numeric right-aligned, hover state). Rows are clickable to open the details panel as the next full page.
 - **Pagination**: keyboard-accessible controls under the grid; support `10 / 20 / 50` page sizes.
-- **Details Panel**: on desktop show as a right-hand pane (slide-over) per component spec; on mobile navigate to a full-screen detail view.
+- **Details Panel**: on desktop and tablet show as the next full page; on mobile navigate to a full-screen detail view.
 
 ### 3.3 Responsive Layout Breakpoints (レスポンシブ対応)
 
 | Breakpoint | Min Width | Layout Behavior |
 | :--- | :--- | :--- |
 | Mobile (default) | 0px | Single-column stacked layout; sidebar hidden behind hamburger (drawer); top filter bar collapses to an expandable panel; content stacks vertically; detail view becomes full-screen or accordion. |
-| Tablet (`md:`) | 768px | Sidebar collapsible (drawer) or narrow; content shows top filter bar and queue; details panel appears below or as slide-over. |
-| Desktop (`lg:`) | 1024px | Full dashboard layout with persistent left sidebar (`w-64`) showing summary KPI cards, content area with top filter bar, queue grid, pagination, and right-hand details slide-over. |
+| Tablet (`md:`) | 768px | Sidebar collapsible (drawer) or narrow; content shows top filter bar and queue; details panel appears as the next panel below the queue. |
+| Desktop (`lg:`) | 1024px | Full dashboard layout with persistent left sidebar (`w-64`) showing summary KPI cards, content area with top filter bar, queue grid, pagination, and details panel below the queue. |
 | Wide (`xl:`) | 1280px | Expanded queue columns and stable multi-pane view. |
 
 ### 3.4 Visual Focus and UX Flow
@@ -111,7 +111,7 @@ The Final Approver Dashboard provides a centralized workspace for approvers to m
 - Keep **summary cards** visible to surface workload at a glance.
 - Use **status badges** to make urgent approvals clear.
 - Keep **queue rows** actionable so approvers can move directly into review from the list.
-- On desktop, maintain a **persistent details panel** so approvers can review and act without losing queue context.
+- On desktop, maintain a **persistent details panel below the queue** so approvers can review and act without losing queue context.
 
 ---
 ## 4. Item Definitions (画面項目定義)
@@ -144,7 +144,7 @@ The Final Approver Dashboard provides a centralized workspace for approvers to m
 | 12 | `queueRowStatus` | Current Status | Badge | — | Yes | `Submitted to Approver` / `Approver Reviewing` | — | `payment_statuses.status_name` | Color-coded. |
 | 13 | `queueRowAmount` | Total Amount | Label | NUMERIC(12,2) | Yes | 0.00 | > 0 | `payment_requests.total_amount` | Total payment amount. |
 | 14 | `queueRowSubmittedDate` | Submitted Date | Label | TIMESTAMPTZ | Yes | — | UTC | `payment_requests.submitted_to_approver_date` | Sort and timeline context. |
-| 15 | `queueRowAction` | Review Action | Button/Link | — | Yes | "Review" | — | Navigates to approver review screen | Opens detailed request review. |
+| 15 | `queueRowAction` | Review Action | Button/Link | — | Yes | "Review" | — | Opens next details panel or navigates to approver review screen on mobile | Opens detailed request review. |
 | 16 | `queueRowDueIndicator` | Overdue Indicator | Icon/Label | — | No | Visible if overdue | — | computed from desired_payment_date | Highlights urgent requests. |
 
 ### 4.4 Section [B]: Status Summary Cards (ステータス概要カード)
@@ -173,7 +173,7 @@ The Final Approver Dashboard provides a centralized workspace for approvers to m
 - **Trigger:** User clicks "Review" on a queue row.
 - **Processing Logic:**
   1. **Client-Side Pre-Check:** Ensure request still belongs to the current approver.
-  2. **Backend Dispatch:** Navigate to detailed review page, optionally starting review if status is `SUBMITTED_APPROVER`.
+  2. **Backend Dispatch:** Open the next details panel below the queue on desktop/tablet, or navigate to detailed review page on mobile, optionally starting review if status is `SUBMITTED_APPROVER`.
   3. **Backend Execution:** If needed, backend transitions request to `APPROVER_REVIEWING` and logs `APPR_REVIEW_START`.
   4. **Post-Execution UI:** Open the Final Approver Review screen for the selected request.
 - **Exception Handling:** If request has advanced or changed, show `ERR-APR-409` and refresh queue.
