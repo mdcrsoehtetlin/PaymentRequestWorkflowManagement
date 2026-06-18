@@ -6,14 +6,28 @@ import React, {
   useCallback,
   type ReactNode,
 } from 'react';
-import { authService } from '../services/auth.service';
+
+// Internal shared imports
 import type { JwtPayload } from '../types';
+
+// Local module imports
+import { authService } from '../services/auth.service';
 
 interface AuthContextType {
   user: JwtPayload | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  /**
+   * @description Authenticates the user with email and password
+   * @param email - The user's email
+   * @param password - The user's password
+   * @returns The decoded JWT payload
+   */
+  login: (email: string, password: string) => Promise<JwtPayload>;
+  /**
+   * @description Logs out the current user and destroys the session
+   * @returns Promise that resolves when the logout is complete
+   */
   logout: () => Promise<void>;
 }
 

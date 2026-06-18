@@ -23,18 +23,27 @@ import { JwtPayload } from '../types';
 export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
 
+  /**
+   * @description Intercepts an incoming HTTP request, logs the method, path, duration, 
+   * user ID, and IP address upon successful completion.
+   *
+   * @param context - The execution context of the request
+   * @param next - The call handler to invoke the next interceptor or route handler
+   * @returns An observable representing the response stream
+   */
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<Request>();
-    const { method, url } = req;
+    const { method, url, ip } = req;
     const user = req.user as JwtPayload | undefined;
     const userId = user?.sub;
+    const requestId = req.headers['x-request-id'] || 'N/A';
     const startTime = Date.now();
 
     return next.handle().pipe(
       tap(() => {
         const duration = Date.now() - startTime;
         this.logger.log(
-          `${method} ${url} — ${duration}ms${userId ? ` | userId=${userId}` : ''}`,
+          `${method} ${url} — ${duration}ms | ip=${ip} | requestId=${requestId}${userId ? ` | userId=${userId}` : ''}`,
         );
       }),
     );
