@@ -51,7 +51,7 @@ The Admin Panel centralizes system administrator operations for managing users, 
 
 ### 2.3 Core Functions & Basic Design Principles (主要機能・基本設計方針)
 1. **User Management** — Search, view, register, update, and activate/deactivate users with role assignment.
-2. **Master Data Configuration** — Maintain lookup tables for branches, system roles, payment types, methods, and currencies.
+2. **Master Data Configuration** — View and verify read-only lookup tables for system roles, payment statuses, payment types, payment methods, and currencies.
 3. **Audit Log Review** — Inspect historical operation records with read-only filtering and detail inspection.
 
 ---
@@ -93,17 +93,16 @@ The Admin Panel uses a persistent split-dashboard shell across all `SCR_005` var
  MENU NAVIGATION         |  DASHBOARD WORKSPACE
  -----------------------+---------------------------------------------------------------
  ( ) USER MANAGEMENT     |  MASTER DATA CONFIGURATION
- (*) MASTER DATA CONFIG  |  Maintain global lookup values, payment rules, and currencies.
+ (*) MASTER DATA CONFIG  |  View and verify read-only lookup values for system configuration.
  ( ) AUDIT LOGS          |
                          |  [ Select Master Table Category ]
-                         |  ( ) Branches  ( ) System Roles  (o) Payment Types  ( ) Methods  ( ) Currencies
-                         |  PAYMENT TYPES CONFIGURATION
+                         |  ( ) System Roles  ( ) Payment Statuses  (o) Payment Types  ( ) Payment Methods  ( ) Currencies
+                         |  PAYMENT TYPES VIEW
                          |  [Master Data Grid]
-                         |  Total Records + [[ + Add New Entry ]]
-                         |  [MODAL POPUP: ADD / EDIT ENTRY]
+                         |  Total Records + [[ Refresh ]]
 ```
 
-- **Layout Focus:** Category selector, reference data grid, total-record summary, and modal entry editor.
+- **Layout Focus:** Category selector, reference data grid, total-record summary, and refresh action.
 - **Primary Interaction:** The selected master category changes the right workspace content without leaving the admin shell.
 
 ### 3.4 Audit Log History Screen Design (`SCR_005_C_AUDIT_LOGS.txt`)
@@ -148,9 +147,9 @@ The Admin Panel uses a persistent split-dashboard shell across all `SCR_005` var
 
 | No. | Item ID | Item Name (Logical) | Component Type | Data Type & Max Length | Required | Initial State / Default Value | Input Constraints / Formats | Data Source / DB Mapping | Remarks / Business Rules |
 | :---: | :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
-| 4 | `search_keyword` | Search Keyword | Text Input | String(200) | N | Empty | Partial match search | `users.name`, `users.employee_number` | Searches names or employee codes |
-| 5 | `filter_role` | Role | Dropdown | Enum | N | `All Roles` | Select from role master | `roles` | Populated from system roles master data |
-| 6 | `filter_status` | Status | Dropdown | Enum | N | `All` | `All`, `Active`, `Inactive` | `users.status` | Filters active/inactive users |
+| 4 | `search_keyword` | Search Keyword | Text Input | String(200) | N | Empty | Partial match search | `users.full_name`, `users.employee_number` | Searches names or employee codes |
+| 5 | `filter_role` | Role | Dropdown | Enum | N | `All Roles` | Select from role master | `user_roles.role_id` | Populated from system roles master data |
+| 6 | `filter_status` | Status | Dropdown | Enum | N | `All` | `All`, `Active`, `Inactive` | `users.is_active` | Filters active/inactive users |
 | 7 | `user_grid` | Users Data Grid | Table Grid | — | N | Empty | Paginated | `users` | Displays up to 20 rows per page |
 | 8 | `grid_is_active` | Status Toggle | Toggle Switch | Boolean | Y | Based on DB state | Read-only when current session user row selected | `users.is_active` | Prevents admin self-lockout |
 | 9 | `btn_open_user_modal` | Add/Edit User | Button | — | Y | Enabled | — | N/A | Opens registration/edit modal |
@@ -162,43 +161,43 @@ The Admin Panel uses a persistent split-dashboard shell across all `SCR_005` var
 | 10 | `employee_number` | Employee Number | Text Input | String(20) | Y | Empty | Unique, max 20 chars | `users.employee_number` | Globally unique identifier |
 | 11 | `full_name` | Full Name | Text Input | String(200) | Y | Empty | Max 200 chars | `users.full_name` | Required field |
 | 12 | `email` | Email Address | Email Input | String(255) | Y | Empty | RFC-compliant email | `users.email` | Must be unique |
-| 13 | `password` | Password | Password Input | String(128) | Y for new / N for edit | Empty | Min 8 chars, alphanumeric | `users.password_hash` | Optional on edit, required on create |
-| 14 | `branch` | Branch Office | Dropdown | Enum | Y | Empty | Lookup from branch master | `branches.id` | Branch options from master data |
-| 15 | `role_id` | System Role | Dropdown | Enum | Y | Empty | Lookup from roles master | `roles.id` | Selects RBAC role |
-| 16 | `modal_is_active` | Account Status | Radio Group | Boolean | Y | Enabled | `Enabled` / `Disabled` | `users.is_active` | Controls account activation state |
-| 17 | `btn_submit_user_form` | Save User | Button | — | Y | Enabled when valid | — | N/A | Saves create/update action |
+| 13 | `branch` | Branch Office | Text Input | String(100) | Y | Empty | Max 100 chars | `users.branch` | Branch value stored with the user profile |
+| 14 | `role_id` | System Role | Dropdown | Enum | Y | Empty | Lookup from active user roles | `user_roles.role_id` | Selects RBAC role |
+| 15 | `modal_is_active` | Account Status | Radio Group | Boolean | Y | Enabled | `Enabled` / `Disabled` | `users.is_active` | Controls account activation state |
+| 16 | `btn_submit_user_form` | Save User | Button | — | Y | Enabled when valid | — | N/A | Saves create/update action |
 
 ### 4.3 Section [C]: Master Data Configuration Workspace (`MASTERS`)
 
 | No. | Item ID | Item Name (Logical) | Component Type | Data Type & Max Length | Required | Initial State / Default Value | Input Constraints / Formats | Data Source / DB Mapping | Remarks / Business Rules |
 | :---: | :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
-| 18 | `master_category` | Select Master Table | Radio Group | Enum | Y | `Payment Types` | `Branches`, `System Roles`, `Payment Types`, `Methods`, `Currencies` | N/A | Switches active master data view |
-| 19 | `master_grid` | Master Data Grid | Table Grid | — | N | Empty | Paginated | `master_tables` | Displays selected master data rows |
-| 20 | `btn_open_master_modal` | Add/Edit Master | Button | — | Y | Enabled | — | N/A | Opens master data modal |
+| 18 | `master_category` | Select Master Table | Radio Group | Enum | Y | `Payment Types` | `System Roles`, `Payment Statuses`, `Payment Types`, `Payment Methods`, `Currencies` | N/A | Switches active read-only master data view |
+| 19 | `master_grid` | Master Data Grid | Table Grid | — | N | Empty | Paginated | `user_roles`, `payment_statuses`, `payment_types`, `payment_methods`, `currencies` | Displays selected master data rows |
+| 20 | `btn_refresh_master` | Refresh Data | Button | — | N | Enabled | — | N/A | Reloads the active master data view from the backend |
 
-#### 4.3.1 Master Data Entry Configuration (Modal Popup)
+#### 4.3.1 Read-Only Master Data Columns
 
 | No. | Source Context Table | Field Physical Name | Item Name (Logical) | Required | Data Type / Boundary Rules | Remarks |
 | :---: | :--- | :--- | :--- | :---: | :--- | :--- |
-| 21 | All Master Tables | `is_active` | Status Flag | Y | Boolean (default `TRUE`) | Controls lookup availability |
-| 22 | Payment Types | `payment_type_code` | Type Code | Y | String(30), uppercase, unique | e.g. `EXPENSE_REIMBURSE` |
-| 23 | Payment Types | `payment_type_name` | Type Name | Y | String(100), unique | e.g. `Expense Reimbursement` |
-| 24 | Payment Methods | `payment_method_code` | Method Code | Y | String(20), unique | e.g. `BANK_TRANSFER` |
-| 25 | Payment Methods | `payment_method_name` | Method Name | Y | String(50), unique | e.g. `Bank Transfer` |
-| 26 | Currencies | `currency_code` | Currency Code | Y | String(3), uppercase, unique | e.g. `MMK`, `USD` |
-| 27 | Currencies | `currency_name` | Currency Name | Y | String(100), unique | e.g. `Myanmar Kyat` |
-| 28 | Branches | `branch_name` | Branch Name | Y | String(100), unique | e.g. `Yangon` |
-| 29 | System Roles | `role_code` | Role Code | Y | String(50), unique | e.g. `APPLICANT`, `ADMIN` |
+| 21 | System Roles | `role_code` | Role Code | Y | String(20), unique | e.g. `APPLICANT`, `ADMIN` |
+| 22 | System Roles | `role_name` | Role Name | Y | String(50), unique | e.g. `System Administrator` |
+| 23 | Payment Statuses | `status_code` | Status Code | Y | String(30), unique | e.g. `APPROVED` |
+| 24 | Payment Statuses | `status_name` | Status Name | Y | String(50), unique | e.g. `Approved` |
+| 25 | Payment Types | `payment_type_code` | Type Code | Y | String(30), uppercase, unique | e.g. `EXPENSE_REIMBURSE` |
+| 26 | Payment Types | `payment_type_name` | Type Name | Y | String(100), unique | e.g. `Expense Reimbursement` |
+| 27 | Payment Methods | `payment_method_code` | Method Code | Y | String(20), unique | e.g. `BANK_TRANSFER` |
+| 28 | Payment Methods | `payment_method_name` | Method Name | Y | String(50), unique | e.g. `Bank Transfer` |
+| 29 | Currencies | `currency_code` | Currency Code | Y | String(3), uppercase, unique | e.g. `MMK`, `USD` |
+| 30 | Currencies | `currency_name` | Currency Name | Y | String(100), unique | e.g. `Myanmar Kyat` |
 
 ### 4.4 Section [D]: Audit Log History Workspace (`AUDIT LOGS`)
 
 | No. | Item ID | Item Name (Logical) | Component Type | Data Type & Max Length | Required | Initial State / Default Value | Input Constraints / Formats | Data Source / DB Mapping | Remarks / Business Rules |
 | :---: | :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
-| 30 | `startDate` | Start Date | Date Picker | DATE | Y | 1st day of current month | `YYYY-MM-DD` | `audit_logs.timestamp` | Cannot exceed `endDate` |
-| 31 | `endDate` | End Date | Date Picker | DATE | Y | Current date | `YYYY-MM-DD` | `audit_logs.timestamp` | Cannot be in future |
-| 32 | `userId` | Target Actor | Dropdown | Enum | N | `All Users` | User lookup | `audit_logs.user_id` | Optional filter |
-| 33 | `audit_grid` | Audit Transactions | Table Grid | — | N | Empty | Paginated, descending order | `audit_logs` | Read-only audit history |
-| 34 | `audit_detail_panel` | Metadata Detail Panel | Read-only Panel | — | N | Hidden until row selected | — | `audit_logs` detail | Shows selected audit metadata |
+| 31 | `startDate` | Start Date | Date Picker | DATE | Y | 1st day of current month | `YYYY-MM-DD` | `approval_logs.timestamp` | Cannot exceed `endDate` |
+| 32 | `endDate` | End Date | Date Picker | DATE | Y | Current date | `YYYY-MM-DD` | `approval_logs.timestamp` | Cannot be in future |
+| 33 | `userId` | Target Actor | Dropdown | Enum | N | `All Users` | User lookup | `users.user_id` | Optional filter |
+| 34 | `audit_grid` | Audit Transactions | Table Grid | — | N | Empty | Paginated, descending order | `approval_logs` | Read-only audit history |
+| 35 | `audit_detail_panel` | Metadata Detail Panel | Read-only Panel | — | N | Hidden until row selected | — | `approval_logs` detail | Shows selected audit metadata |
 
 ---
 
@@ -237,7 +236,9 @@ The Admin Panel uses a persistent split-dashboard shell across all `SCR_005` var
 | :--- | :--- | :--- | :--- | :--- |
 | VAL-ADM-001 | `employee_number` | Empty or duplicate | Inline error text | "Employee number is required and must be unique." |
 | VAL-ADM-002 | `email` | Invalid or duplicate | Inline error text | "Please enter a valid email address." |
-| VAL-ADM-003 | `password` | Too short or missing on create | Inline error text | "Password must be at least 8 characters." |
+| VAL-ADM-003 | `full_name` | Empty or over 200 characters | Inline error text | "Full name is required (max 200 characters)." |
+| VAL-ADM-004 | `branch` | Empty or over 100 characters | Inline error text | "Branch is required (max 100 characters)." |
+| VAL-ADM-005 | `role_id` | Missing or inactive role | Inline error text | "A valid system role assignment is required." |
 | ERR-ADM-401 | Full Viewport / API | JWT missing or invalid | Modal / toast | "Session expired. Please log in again." |
 | ERR-ADM-403 | Full Viewport / API | Unauthorized access | Modal / page banner | "Access Denied. You do not have permission to view this resource." |
 | ERR-ADM-409 | `user_grid` / `master_grid` | Optimistic lock conflict | Modal dialog | "This record has been modified by another user. Refresh and try again." |
