@@ -26,6 +26,11 @@ export class ApplicantController {
     return this.applicantService.getMyRequests(userId, page, limit, statusId);
   }
 
+  @Get(':id')
+  async getRequestById(@Param('id', ParseIntPipe) id: number) {
+    return this.applicantService.getRequestById(id);
+  }
+
   @Post()
   async saveDraft(@Body() draftData: any) {
     const userId = 1;

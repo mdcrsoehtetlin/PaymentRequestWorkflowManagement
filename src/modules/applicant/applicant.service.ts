@@ -42,6 +42,15 @@ export class ApplicantService {
     };
   }
 
+  async getRequestById(id: number) {
+    this.logger.log(`Fetching request ${id}`);
+    const request = await this.paymentRequestRepository.findOne({
+      where: { paymentRequestId: id, isDeleted: false },
+      relations: ['applicant', 'breakdownItems'],
+    });
+    return request;
+  }
+
   async saveDraft(userId: number, draftData: any) {
     this.logger.log(`Saving draft for applicant: ${userId}`);
     const request = this.paymentRequestRepository.create({
