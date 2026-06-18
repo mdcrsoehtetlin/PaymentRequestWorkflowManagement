@@ -1,5 +1,10 @@
 import {
-  ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger,
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
@@ -14,16 +19,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'システムエラーが発生しました。管理者に連絡してください';
-    let details: any[] = [];
+    let details: unknown[] = [];
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exResponse = exception.getResponse();
       if (typeof exResponse === 'object' && exResponse !== null) {
-        message = (exResponse as any).message || message;
-        details = (exResponse as any).details || [];
+        const resObj = exResponse as Record<string, unknown>;
+        message = (resObj.message as string) || message;
+        details = (resObj.details as unknown[]) || [];
       } else {
-        message = exResponse as string;
+        message = exResponse;
       }
     }
 

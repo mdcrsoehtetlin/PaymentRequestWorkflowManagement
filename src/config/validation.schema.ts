@@ -5,13 +5,13 @@ export const validationSchema = Joi.object({
     .valid('development', 'production', 'test')
     .default('development'),
   PORT: Joi.number().default(3000),
-  
+
   // Database
-  DB_HOST: Joi.string().required(),
-  DB_PORT: Joi.number().default(5432),
-  DB_USERNAME: Joi.string().required(),
-  DB_PASSWORD: Joi.string().required(),
-  DB_DATABASE: Joi.string().required(),
+  DATABASE_HOST: Joi.string().required(),
+  DATABASE_PORT: Joi.number().default(5432),
+  DATABASE_USER: Joi.string().required(),
+  DATABASE_PASSWORD: Joi.string().required(),
+  DATABASE_NAME: Joi.string().required(),
 
   // Redis
   REDIS_HOST: Joi.string().required(),
@@ -25,5 +25,10 @@ export const validationSchema = Joi.object({
   JWT_REFRESH_EXPIRATION: Joi.string().default('7d'),
 
   // File Upload
-  FILE_UPLOAD_DEST: Joi.string().default('./uploads/payment-requests'),
+  UPLOAD_DIR: Joi.string().default('./uploads'),
+  MAX_FILE_SIZE: Joi.number().default(10485760),
+  MAX_TOTAL_FILE_SIZE: Joi.number().default(52428800),
+
+  // Server
+  CORS_ORIGINS: Joi.string().required(),
 });

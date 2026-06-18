@@ -3,17 +3,33 @@ import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE, FILE_VALIDATION_ERRORS } from '../validators/file-validators';
+import {
+  ALLOWED_MIME_TYPES,
+  MAX_FILE_SIZE,
+  FILE_VALIDATION_ERRORS,
+} from '../validators/file-validators';
+
+export interface UploadedFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
 
 @Injectable()
 export class FileUploadService {
   private readonly uploadDir: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.uploadDir = this.configService.get<string>('fileUpload.destination', './uploads/payment-requests');
+    this.uploadDir = this.configService.get<string>(
+      'fileUpload.destination',
+      './uploads/payment-requests',
+    );
   }
 
-  validateFile(file: any): void {
+  validateFile(file: UploadedFile): void {
     if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       throw new BadRequestException(FILE_VALIDATION_ERRORS.INVALID_TYPE);
     }
@@ -22,7 +38,10 @@ export class FileUploadService {
     }
   }
 
-  async saveFile(file: any, paymentRequestId: number): Promise<{
+  async saveFile(
+    file: UploadedFile,
+    paymentRequestId: number,
+  ): Promise<{
     storedFileName: string;
     fileStoragePath: string;
   }> {

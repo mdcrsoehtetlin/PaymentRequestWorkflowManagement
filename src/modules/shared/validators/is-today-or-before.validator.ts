@@ -7,18 +7,18 @@ import {
 
 @ValidatorConstraint({ name: 'isTodayOrBefore', async: false })
 export class IsTodayOrBeforeConstraint implements ValidatorConstraintInterface {
-  validate(value: any) {
+  validate(value: unknown) {
     if (!value) return false;
     // Input might be a Date object or an ISO string. Convert to Date.
-    const dateValue = new Date(value);
+    const dateValue = new Date(value as string | number | Date);
     if (isNaN(dateValue.getTime())) return false;
-    
+
     const today = new Date();
     // Compare dates ignoring time
     today.setHours(0, 0, 0, 0);
     const targetDate = new Date(dateValue);
     targetDate.setHours(0, 0, 0, 0);
-    
+
     return targetDate.getTime() <= today.getTime();
   }
 
@@ -28,7 +28,7 @@ export class IsTodayOrBeforeConstraint implements ValidatorConstraintInterface {
 }
 
 export function IsTodayOrBefore(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,

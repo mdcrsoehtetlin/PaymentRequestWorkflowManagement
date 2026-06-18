@@ -24,7 +24,7 @@ export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
 
   /**
-   * @description Intercepts an incoming HTTP request, logs the method, path, duration, 
+   * @description Intercepts an incoming HTTP request, logs the method, path, duration,
    * user ID, and IP address upon successful completion.
    *
    * @param context - The execution context of the request

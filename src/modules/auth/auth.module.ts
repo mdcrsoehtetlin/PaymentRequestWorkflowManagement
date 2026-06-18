@@ -19,7 +19,7 @@ import { User } from '../shared/entities/user.entity';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret')!,
         signOptions: {
-          expiresIn: configService.get<string>('jwt.expiration') as any,
+          expiresIn: configService.get<string>('jwt.expiration') as `${number}m`,
         },
       }),
     }),

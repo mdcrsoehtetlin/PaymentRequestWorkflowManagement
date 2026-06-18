@@ -5,8 +5,8 @@ export const ALLOWED_MIME_TYPES = [
   'image/jpg',
 ];
 
-export const MAX_FILE_SIZE = 10 * 1024 * 1024;       // 10MB per file
-export const MAX_TOTAL_FILE_SIZE = 50 * 1024 * 1024;  // 50MB per request
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
+export const MAX_TOTAL_FILE_SIZE = 50 * 1024 * 1024; // 50MB per request
 
 export const FILE_VALIDATION_ERRORS = {
   INVALID_TYPE: 'VAL-APP-008: 許可されていないファイル形式です',

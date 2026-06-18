@@ -12,6 +12,11 @@ export class ApproverService {
     private readonly paymentRequestRepository: Repository<PaymentRequest>,
   ) {}
 
+  /**
+   * @description Retrieves all pending requests assigned to the approver role.
+   * @returns A list of pending payment requests.
+   * @throws {Error} If database query fails.
+   */
   async getPendingRequests() {
     this.logger.log('Fetching pending requests for final approver');
     return this.paymentRequestRepository.find({
@@ -23,6 +28,14 @@ export class ApproverService {
     });
   }
 
+  /**
+   * @description Approves a payment request.
+   * @param id The payment request ID.
+   * @param approverId The final approver's user ID.
+   * @param comment Optional comment for approval.
+   * @returns A success status message.
+   * @throws {Error} If update fails.
+   */
   async approveRequest(id: number, approverId: number, comment?: string) {
     this.logger.log(
       `Approving request ${id} by approver ${approverId} with comment: ${comment}`,
@@ -31,6 +44,14 @@ export class ApproverService {
     return { success: true, message: 'Request approved successfully' };
   }
 
+  /**
+   * @description Rejects a payment request.
+   * @param id The payment request ID.
+   * @param approverId The final approver's user ID.
+   * @param comment Required comment for rejection.
+   * @returns A success status message.
+   * @throws {Error} If update fails.
+   */
   async rejectRequest(id: number, approverId: number, comment: string) {
     this.logger.log(
       `Rejecting request ${id} by approver ${approverId} with comment: ${comment}`,

@@ -10,7 +10,10 @@ import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
  * findAll(@Query('statusId', ParseIntOptionalPipe) statusId?: number) { ... }
  */
 @Injectable()
-export class ParseIntOptionalPipe implements PipeTransform<string | undefined, number | undefined> {
+export class ParseIntOptionalPipe implements PipeTransform<
+  string | undefined,
+  number | undefined
+> {
   transform(value: string | undefined): number | undefined {
     if (value === undefined || value === null || value === '') {
       return undefined;

@@ -8,7 +8,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 /**
  * @description DTO for a single payment breakdown line item.
@@ -35,6 +35,7 @@ export class BreakdownItemDto {
   @IsNotEmpty({ groups: ['submit'] })
   @IsOptional({ groups: ['draft'] })
   @MaxLength(200, { message: '品目説明は200文字以内で入力してください' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   description?: string;
 
   /**
@@ -43,7 +44,10 @@ export class BreakdownItemDto {
    */
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0.01, { groups: ['submit'], message: 'VAL-APP-007: 金額は0より大きい値を入力してください' })
+  @Min(0.01, {
+    groups: ['submit'],
+    message: 'VAL-APP-007: 金額は0より大きい値を入力してください',
+  })
   @Max(9999999999.99)
   @IsOptional({ groups: ['draft'] })
   amount?: number;

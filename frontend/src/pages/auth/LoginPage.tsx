@@ -30,9 +30,14 @@ export function LoginPage() {
         case 5: navigate('/admin'); break;
         default: navigate('/'); break;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle axios errors from authService, or standard errors
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to login. Please check your credentials.';
+      let errorMessage = 'Failed to login. Please check your credentials.';
+      if (axios.isAxiosError(err)) {
+        errorMessage = err.response?.data?.message || err.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
       setError(errorMessage);
     } finally {
       setIsLoading(false);

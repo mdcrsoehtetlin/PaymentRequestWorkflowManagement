@@ -21,11 +21,11 @@ class WebSocketService {
     });
   }
 
-  on(event: string, callback: (data: any) => void): void {
+  on(event: string, callback: (data: unknown) => void): void {
     this.socket?.on(event, callback);
   }
 
-  off(event: string, callback?: (data: any) => void): void {
+  off(event: string, callback?: (data: unknown) => void): void {
     this.socket?.off(event, callback);
   }
 

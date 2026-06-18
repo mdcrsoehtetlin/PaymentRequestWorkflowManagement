@@ -18,16 +18,18 @@ export function useWebSocket(userId: number, role: string) {
 
   const onStatusUpdate = useCallback(
     (callback: (data: StatusUpdatePayload) => void) => {
-      wsService.on('statusUpdate', callback);
-      return () => wsService.off('statusUpdate', callback);
+      const wrapper = (data: unknown) => callback(data as StatusUpdatePayload);
+      wsService.on('request:status-changed', wrapper);
+      return () => wsService.off('request:status-changed', wrapper);
     },
     [],
   );
 
   const onNotification = useCallback(
-    (callback: (data: NotificationPayload) => void) => {
-      wsService.on('notification', callback);
-      return () => wsService.off('notification', callback);
+    (eventName: string, callback: (data: NotificationPayload) => void) => {
+      const wrapper = (data: unknown) => callback(data as NotificationPayload);
+      wsService.on(eventName, wrapper);
+      return () => wsService.off(eventName, wrapper);
     },
     [],
   );

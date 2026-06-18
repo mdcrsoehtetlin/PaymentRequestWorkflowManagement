@@ -1,5 +1,5 @@
 import { IsOptional, IsInt, Min, Max, IsEnum, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 /**
  * @description Base DTO for all list/search endpoints.
@@ -27,6 +27,7 @@ export class PaginationQueryDto {
 
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   sortBy?: string;
 
   @IsOptional()

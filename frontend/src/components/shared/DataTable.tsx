@@ -6,7 +6,7 @@ export interface Column<T> {
   key: string;
   header: string;
   sortable?: boolean;
-  render?: (value: any, row: T) => React.ReactNode;
+  render?: (value: unknown, row: T) => React.ReactNode;
   width?: string;
 }
 
@@ -31,7 +31,7 @@ interface DataTableProps<T> {
   };
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
   columns,
   data,
   isLoading = false,
@@ -88,7 +88,7 @@ export function DataTable<T extends Record<string, any>>({
               >
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3 text-sm text-slate-700">
-                    {col.render ? col.render(row[col.key], row) : row[col.key]}
+                    {col.render ? col.render(row[col.key], row) : (row[col.key] as React.ReactNode)}
                   </td>
                 ))}
               </tr>

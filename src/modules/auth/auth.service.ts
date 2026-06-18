@@ -17,7 +17,9 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, pass: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({ where: { email, isActive: true } });
+    const user = await this.userRepository.findOne({
+      where: { email, isActive: true },
+    });
     if (user && (await bcrypt.compare(pass, user.passwordHash))) {
       return user;
     }
@@ -49,7 +51,9 @@ export class AuthService {
     return {
       accessToken: this.jwtService.sign(payload),
       refreshToken: this.jwtService.sign(payload, {
-        expiresIn: this.configService.get<string>('jwt.refreshExpiration') as any,
+        expiresIn: this.configService.get<string>(
+          'jwt.refreshExpiration',
+        ) as any,
       }),
       user: payload,
     };

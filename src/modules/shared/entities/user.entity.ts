@@ -13,63 +13,63 @@ import { ReceiptFile } from './receipt-file.entity';
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn({ name: 'user_id' })
-  userId: number;
+  userId!: number;
 
   @Column({ unique: true, length: 255 })
-  email: string;
+  email!: string;
 
   @Column({ name: 'password_hash', length: 512 })
-  passwordHash: string;
+  passwordHash!: string;
 
   @Column({ name: 'full_name', length: 200 })
-  fullName: string;
+  fullName!: string;
 
   @Column({ name: 'employee_number', unique: true, length: 20 })
-  employeeNumber: string;
+  employeeNumber!: string;
 
   @Column({ nullable: true, length: 100 })
-  department: string;
+  department!: string;
 
   @Column({ length: 100 })
-  branch: string;
+  branch!: string;
 
   @Column({ name: 'role_id' })
-  roleId: number;
+  roleId!: number;
 
   @Column({ name: 'is_active', default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @CreateDateColumn({ name: 'created_date', type: 'timestamp with time zone' })
-  createdDate: Date;
+  createdDate!: Date;
 
   @UpdateDateColumn({ name: 'modified_date', type: 'timestamp with time zone' })
-  modifiedDate: Date;
+  modifiedDate!: Date;
 
   @Column({
     name: 'last_login_date',
     type: 'timestamp with time zone',
     nullable: true,
   })
-  lastLoginDate: Date;
+  lastLoginDate!: Date;
 
   @OneToMany(() => PaymentRequest, (request) => request.applicant)
-  paymentRequestsAsApplicant: PaymentRequest[];
+  paymentRequestsAsApplicant!: PaymentRequest[];
 
   @OneToMany(() => PaymentRequest, (request) => request.manager)
-  paymentRequestsAsManager: PaymentRequest[];
+  paymentRequestsAsManager!: PaymentRequest[];
 
   @OneToMany(() => PaymentRequest, (request) => request.finalApprover)
-  paymentRequestsAsApprover: PaymentRequest[];
+  paymentRequestsAsApprover!: PaymentRequest[];
 
   @OneToMany(() => PaymentRequest, (request) => request.accounting)
-  paymentRequestsAsAccounting: PaymentRequest[];
+  paymentRequestsAsAccounting!: PaymentRequest[];
 
   @OneToMany(() => PaymentRequest, (request) => request.currentAssignedTo)
-  assignedPaymentRequests: PaymentRequest[];
+  assignedPaymentRequests!: PaymentRequest[];
 
   @OneToMany(() => ApprovalLog, (log) => log.actionTakenByUser)
-  approvalLogs: ApprovalLog[];
+  approvalLogs!: ApprovalLog[];
 
   @OneToMany(() => ReceiptFile, (file) => file.uploadedByUser)
-  uploadedReceipts: ReceiptFile[];
+  uploadedReceipts!: ReceiptFile[];
 }
