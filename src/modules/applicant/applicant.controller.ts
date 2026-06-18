@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -50,5 +51,13 @@ export class ApplicantController {
   async deleteDraft(@Param('id', ParseIntPipe) id: number) {
     const userId = 1;
     return this.applicantService.softDeleteDraft(id, userId);
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: any,
+  ) {
+    return this.applicantService.update(id, dto);
   }
 }

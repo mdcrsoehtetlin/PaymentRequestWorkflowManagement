@@ -15,7 +15,7 @@ When the user triggers you by saying "commit" or similar commands, silently exec
 
 1. **Read Rules:** Read the `## 3. Git Branching & Commit Conventions` section in the `02_開発ルール_DEVELOPMENT_RULES.md` file in the root directory to understand the required git commit message conventions and rules.
 2. **Analyze Changes:** Run `git status` and `git diff` to analyze the modified, added, or deleted files.
-3. **Draft Message:** Formulate a precise commit message based on the changes and the rules in `02_開発ルール_DEVELOPMENT_RULES.md`. (For example: `feat(api): update data report endpoints for BankR` or `fix: resolve integration bug`).
+3. **Draft Message:** Formulate a precise commit message based on the changes and the rules in `02_開発ルール_DEVELOPMENT_RULES.md`. (For example: `feat(api): update data report endpoints` or `fix: resolve integration bug`).
 4. **Stage:** Execute `git add .` to stage all changes.
 5. **Commit:** Execute `git commit -m "<your_formatted_message>"`.
 6. **Push:** Execute `git push` to push the changes to the remote repository.

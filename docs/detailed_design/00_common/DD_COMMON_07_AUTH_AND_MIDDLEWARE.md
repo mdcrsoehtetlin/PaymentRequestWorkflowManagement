@@ -35,7 +35,7 @@ sequenceDiagram
 ```typescript
 {
   sub: 42,                           // user_id
-  email: "soe@bankr.com",
+  email: "soe@example.com",
   role: "APPLICANT",                 // role_code
   roleId: 1,                        // role_id
   branch: "Yangon",
