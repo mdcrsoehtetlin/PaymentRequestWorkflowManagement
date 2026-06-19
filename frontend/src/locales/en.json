@@ -1,0 +1,30 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "request_list": "Application List",
+    "new_request": "New Application",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "applicant": {
+      "title": "Applicant Dashboard",
+      "welcome_message": "Welcome to your dashboard. Here you can view and manage your payment requests."
+    },
+    "manager": {
+      "title": "Manager Dashboard",
+      "welcome_message": "Welcome to your dashboard. Here you can verify payment requests submitted by your team."
+    },
+    "approver": {
+      "title": "Approver Dashboard",
+      "welcome_message": "Welcome to your dashboard. Here you can make final approval decisions."
+    },
+    "accounting": {
+      "title": "Accounting Dashboard",
+      "welcome_message": "Welcome to your dashboard. Here you can process payments for approved requests."
+    },
+    "admin": {
+      "title": "Admin Dashboard",
+      "welcome_message": "Welcome to your dashboard. Here you can manage users and system configuration."
+    }
+  }
+}

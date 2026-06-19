@@ -1,12 +1,17 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { DashboardLayout } from '../../components/layout/DashboardLayout';
 
-export const ApproverDashboard: React.FC = () => {
+export function ApproverDashboard() {
+  const { t } = useTranslation();
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-slate-100 mb-6">最終承認者ダッシュボード (Approver Dashboard)</h1>
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-        <p className="text-slate-400">最終承認待ちの申請（Submitted to Approver）の一覧がここに表示されます。</p>
+    <DashboardLayout>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">{t('dashboard.approver.title')}</h1>
       </div>
-    </div>
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <p className="text-slate-600">{t('dashboard.approver.welcome_message')}</p>
+      </div>
+    </DashboardLayout>
   );
-};
+}

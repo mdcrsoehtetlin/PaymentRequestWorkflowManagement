@@ -1,0 +1,30 @@
+{
+  "sidebar": {
+    "dashboard": "ダッシュボード",
+    "request_list": "申請一覧",
+    "new_request": "新規申請",
+    "logout": "ログアウト"
+  },
+  "dashboard": {
+    "applicant": {
+      "title": "申請者ダッシュボード",
+      "welcome_message": "ダッシュボードへようこそ。ここでは支払申請の確認と管理が行えます。"
+    },
+    "manager": {
+      "title": "マネージャーダッシュボード",
+      "welcome_message": "ダッシュボードへようこそ。ここではチームから提出された支払申請を検証できます。"
+    },
+    "approver": {
+      "title": "承認者ダッシュボード",
+      "welcome_message": "ダッシュボードへようこそ。ここでは最終的な承認を決定します。"
+    },
+    "accounting": {
+      "title": "経理ダッシュボード",
+      "welcome_message": "ダッシュボードへようこそ。ここでは承認された申請の支払処理を行います。"
+    },
+    "admin": {
+      "title": "管理者ダッシュボード",
+      "welcome_message": "ダッシュボードへようこそ。ここではユーザーとシステム設定を管理できます。"
+    }
+  }
+}

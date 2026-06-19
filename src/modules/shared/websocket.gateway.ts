@@ -10,14 +10,16 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 
-@WebSocketGateway(3001, {
+@WebSocketGateway({
   cors: {
     origin: '*',
   },
 })
-export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class WebsocketGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   private readonly logger = new Logger(WebsocketGateway.name);
 
@@ -38,16 +40,18 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     client.join(payload.role);
     // Join room based on individual userId
     client.join(`user:${payload.userId}`);
-    this.logger.log(`User ${payload.userId} with role ${payload.role} joined rooms.`);
+    this.logger.log(
+      `User ${payload.userId} with role ${payload.role} joined rooms.`,
+    );
     return { status: 'joined' };
   }
 
   // Helper method to broadcast status changes to specific roles or users
-  sendStatusUpdate(role: string, message: any) {
-    this.server.to(role).emit('statusUpdate', message);
+  sendStatusUpdate(role: string, message: unknown) {
+    this.server.to(role).emit('request:status-changed', message);
   }
 
-  sendPersonalNotification(userId: number, message: any) {
-    this.server.to(`user:${userId}`).emit('notification', message);
+  sendPersonalNotification(userId: number, eventName: string, message: unknown) {
+    this.server.to(`user:${userId}`).emit(eventName, message);
   }
 }

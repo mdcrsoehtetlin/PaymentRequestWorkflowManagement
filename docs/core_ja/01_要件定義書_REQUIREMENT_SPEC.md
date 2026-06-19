@@ -1,11 +1,25 @@
-# REQUIREMENT_DEFINITION.md
+# Requirements Definition (要件定義)
 
-# Payment Request Workflow Management System
+---
 
-**Requirements Definition (要件定義)**  
-**Version:** 1.0  
-**Date:** 2026-06-10  
-**Status:** In Progress
+## Document Control (ドキュメント管理)
+
+| Attribute | Value |
+| :--- | :--- |
+| **Document ID** | PRWM-REQ-001 |
+| **System** | Payment Request Workflow Management System (支払申請ワークフロー管理システム) |
+| **Version** | 1.1 |
+| **Created** | 2026-06-10 |
+| **Last Updated** | 2026-06-10 |
+| **Author** | Software Architect |
+| **Status** | Released (承認済み) |
+
+### Document Revision History
+
+| Version | Date | Author | Description of Changes |
+| :--- | :--- | :--- | :--- |
+| 1.0 | 2026-06-10 | Software Architect | Initial requirements definition |
+| 1.1 | 2026-06-10 | Software Architect | Updated with Payment Request Form Template (支払申請書) details and form field specifications |
 
 ---
 
@@ -305,6 +319,18 @@ Paid (Completed)
 - **REQ-032:** Only authorized users (applicant, manager, approver, accounting) can download/view receipt files for requests they have access to.
 - **REQ-032A:** Paper receipts (紙の領収書) can be submitted to Accounting after payment is processed or after the request is submitted. System tracks both digital and physical receipt receipts.
 
+#### 3.4.7 Form Validation & Data Constraints
+- **REQ-036:** Application Date (申請日) must be today or earlier; cannot be future date.
+- **REQ-037:** Desired Payment Date (支払希望日) must be today or later.
+- **REQ-038:** Total Payment Amount must be > 0 and calculated from breakdown items (should match sum of line items).
+- **REQ-039:** Payment Breakdown must contain at least 1 line item and at most 15 line items.
+- **REQ-040:** Each breakdown line item must have: Date, Description, and Amount (all required).
+- **REQ-041:** Currency Type and Payment Method are required dropdowns; system must prevent submission without selection.
+- **REQ-042:** If Payment Method is "Bank Transfer" or "Cash", Bank Account/Phone Info field is mandatory.
+- **REQ-043:** Currency selection must be restricted to organization-approved currencies (e.g., MMK, USD, JPY).
+- **REQ-044:** Amount fields support up to 2 decimal places (e.g., 1,234,567.89).
+- **REQ-045:** System must validate file attachment before allowing submission to Manager (Receipt Present = Yes requires at least 1 file).
+
 #### 3.4.8 Search & Filtering
 - **REQ-033:** Users can search payment requests by request number, applicant name, or amount range.
 - **REQ-034:** Users can filter requests by status, date range, and branch.
@@ -360,23 +386,6 @@ The breakdown table contains 1-15 line items with the following columns:
 | Field Name (Japanese) | Field Name (English) | Data Type | Required | Notes |
 |---|---|---|---|---|
 | N/A | Receipt Files | File Upload | Conditional | Required if 領収書の有無 = Yes; Support multiple files; Max 10 MB per file, 50 MB total |
-
-#### 3.4.9 Form Validation & Data Constraints
-- **REQ-036:** Application Date (申請日) must be today or earlier; cannot be future date.
-- **REQ-037:** Desired Payment Date (支払希望日) must be today or later.
-- **REQ-038:** Total Payment Amount must be > 0 and calculated from breakdown items (should match sum of line items).
-- **REQ-039:** Payment Breakdown must contain at least 1 line item and at most 15 line items.
-- **REQ-040:** Each breakdown line item must have: Date, Description, and Amount (all required).
-- **REQ-041:** Currency Type and Payment Method are required dropdowns; system must prevent submission without selection.
-- **REQ-042:** If Payment Method is "Bank Transfer" or "Cash", Bank Account/Phone Info field is mandatory.
-- **REQ-043:** Currency selection must be restricted to organization-approved currencies (e.g., MMK, USD, JPY).
-- **REQ-044:** Amount fields support up to 2 decimal places (e.g., 1,234,567.89).
-- **REQ-045:** System must validate file attachment before allowing submission to Manager (Receipt Present = Yes requires at least 1 file).
-
-#### 3.4.10 Search & Filtering
-- **REQ-046:** Users can search payment requests by request number, applicant name, or amount range.
-- **REQ-047:** Users can filter requests by status, date range, and branch.
-- **REQ-048:** Results are paginated and sorted by creation date or status priority.
 
 ---
 
@@ -592,8 +601,8 @@ The breakdown table contains 1-15 line items with the following columns:
 └──────────────────────────┬──────────────────────────────────────────┘
                            │ HTTP + SignalR (Real-time updates)
                            ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    ASP.NET Core Backend                             │
+┌────────────────────────────────────────────────────────────────────┐
+│                    ASP.NET Core Backend                            │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
 │  │  Controllers │  │   Services   │  │ SignalR Hubs │              │
 │  │  (Endpoints) │  │  (Business   │  │ (Real-time)  │              │
@@ -607,13 +616,13 @@ The breakdown table contains 1-15 line items with the following columns:
 └─────────────────────────────┬──────────────────────────────────────┘
                                   │ SQL Queries
                                   ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Microsoft SQL Server                             │
+┌────────────────────────────────────────────────────────────────────┐
+│                    Microsoft SQL Server                            │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
 │  │     Users    │  │PaymentRequest│  │ApprovalLog   │              │
 │  │     Table    │  │    Table     │  │    Table     │              │
 │  └──────────────┘  └──────────────┘  └──────────────┘              │
-└─────────────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────────────┘
 
         (File Storage)
               │
@@ -754,14 +763,7 @@ The form includes the following important notes that have been incorporated as b
    - English: "Paper receipts should be submitted to Accounting after payment or after request submission."
    - Implementation: REQ-032A, Rule 4.1.7
 
----
 
-## Document History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-06-10 | Software Architect | Initial requirements definition |
-| 1.1 | 2026-06-10 | Software Architect | Updated with Payment Request Form Template (支払申請書) details and form field specifications |
 
 ---
 

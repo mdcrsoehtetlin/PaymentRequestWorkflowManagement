@@ -1,12 +1,27 @@
 # Development Rules Specification (開発ルール)
 
-**System:** Payment Request Workflow Management System (支払申請ワークフロー管理システム)  
-**Document Classification:** MANDATORY — Source of Truth for All Developers and AI Agents  
-**Version:** 2.0  
-**Created:** 2026-06-12  
-**Author:** Lead UI/UX Director & Enterprise Software Architect  
-**Status:** Released (承認済み)  
-**Compliance Level:** All rules in this document are BINDING. Non-compliance will result in automatic PR rejection.
+---
+
+## Document Control (ドキュメント管理)
+
+| Attribute | Value |
+| :--- | :--- |
+| **Document ID** | PRWM-DEV-001 |
+| **System** | Payment Request Workflow Management System (支払申請ワークフロー管理システム) |
+| **Document Classification** | MANDATORY — Source of Truth for All Developers and AI Agents |
+| **Version** | 2.0 |
+| **Created** | 2026-06-12 |
+| **Last Updated** | 2026-06-12 |
+| **Author** | Lead UI/UX Director & Enterprise Software Architect |
+| **Status** | Released (承認済み) |
+| **Compliance Level** | All rules in this document are BINDING. Non-compliance will result in automatic PR rejection. |
+
+### Document Revision History
+
+| Version | Date | Author | Description of Changes |
+| :--- | :--- | :--- | :--- |
+| 1.0 | 2026-06-12 | Lead Architect | Initial release — naming conventions, directory isolation, Git rules, AI guardrails, basic UI/UX design system |
+| 2.0 | 2026-06-12 | Lead Architect | Complete production rewrite — added security standards, error handling, testing strategy, API design, full component specifications, performance targets, environment configuration, accessibility requirements |
 
 ---
 
@@ -246,10 +261,28 @@ main (protected)
  └── release/v1.0.0 (tagged release)
 ```
 
+#### 3.1.1 Active Developer Feature Branches
+
+Each role module is assigned a dedicated feature branch for the current development sprint. Developers must only commit to their assigned branch.
+
+| Role Module | Feature Branch | Scope |
+| :--- | :--- | :--- |
+| Applicant | `feature/applicant-soehtetlin` | Applicant dashboard, draft CRUD, submission, receipt upload |
+| Manager | `feature/manager-ayethandarmoe` | Manager verification queue, verify/reject actions |
+| Final Approver | `feature/approver-khaingthinthinwin` | Approver dashboard, final approval/rejection actions |
+| Accounting | `feature/accounting-shinminthant` | Accounting payment processing queue, Mandalay branch alerts |
+| Admin | `feature/admin-yemaungmaung` | Admin panel, user CRUD, master data management, audit logs |
+
+**Branch Isolation Rules:**
+* Each developer works **exclusively** on their assigned feature branch.
+* Cross-branch commits (e.g., an Applicant developer committing to the Manager branch) are a **blocking PR violation**.
+* All feature branches are created from `master` and will be merged back via Pull Request after review.
+
 **Branch Naming Rules:**
 
 | Branch Type | Pattern | Example |
 | :--- | :--- | :--- |
+| Feature (role-based) | `feature/{role}-{developer}` | `feature/applicant-soehtetlin` |
 | Feature (screen-based) | `feature/screen-[A-E]-{description}` | `feature/screen-A-draft-save` |
 | Feature (task-based) | `feature/task-{id}-{description}` | `feature/task-102-migration` |
 | Bug Fix | `fix/{description}` | `fix/totalAmount-precision-rounding` |
@@ -1284,11 +1317,4 @@ src/config/
 * Database credentials, JWT secrets, and API keys must never appear in source code, documentation, or commit messages.
 * Log output must never contain passwords, tokens, or full credit card numbers.
 
----
 
-## 12. Document Revision History
-
-| Version | Date | Author | Changes |
-| :--- | :--- | :--- | :--- |
-| 1.0 | 2026-06-12 | Lead Architect | Initial release — naming conventions, directory isolation, Git rules, AI guardrails, basic UI/UX design system |
-| 2.0 | 2026-06-12 | Lead Architect | Complete production rewrite — added security standards, error handling, testing strategy, API design, full component specifications, performance targets, environment configuration, accessibility requirements |
