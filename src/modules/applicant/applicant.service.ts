@@ -127,8 +127,10 @@ export class ApplicantService {
       const savedRequest = await manager.save(request);
 
       if (dto.breakdowns && dto.breakdowns.length > 0) {
-        const items = dto.breakdowns.map(b => manager.create(PaymentBreakdownItem, {
+        const items = dto.breakdowns.map((b, index) => manager.create(PaymentBreakdownItem, {
           payment_request_id: savedRequest.id,
+          line_number: index + 1,
+          item_date: dto.application_date || new Date().toISOString().split('T')[0],
           description: b.description,
           amount: b.amount.toString(),
         }));
@@ -313,8 +315,10 @@ export class ApplicantService {
 
       if (dto.breakdowns) {
         await manager.delete(PaymentBreakdownItem, { payment_request_id: requestId });
-        const items = dto.breakdowns.map(b => manager.create(PaymentBreakdownItem, {
+        const items = dto.breakdowns.map((b, index) => manager.create(PaymentBreakdownItem, {
           payment_request_id: requestId,
+          line_number: index + 1,
+          item_date: dto.application_date || request.application_date || new Date().toISOString().split('T')[0],
           description: b.description,
           amount: b.amount.toString(),
         }));
