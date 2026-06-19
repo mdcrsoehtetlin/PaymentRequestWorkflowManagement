@@ -10,6 +10,7 @@ const PaymentRequestForm: React.FC = () => {
     currency_id: 1,
     application_date: new Date().toISOString().split('T')[0],
     desired_payment_date: new Date().toISOString().split('T')[0],
+    payment_type_id: 1,
     payment_method_id: 1,
   });
   const [breakdowns, setBreakdowns] = useState([{ description: '', amount: 0 }]);
@@ -74,7 +75,7 @@ const PaymentRequestForm: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
                 <select 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 bg-white"
                   value={formData.currency_id}
                   onChange={(e) => setFormData({...formData, currency_id: Number(e.target.value)})}
                 >
@@ -87,7 +88,7 @@ const PaymentRequestForm: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Payment Method</label>
                 <select 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 bg-white"
                   value={formData.payment_method_id}
                   onChange={(e) => setFormData({...formData, payment_method_id: Number(e.target.value)})}
                 >
@@ -101,7 +102,7 @@ const PaymentRequestForm: React.FC = () => {
                 <label className="block text-sm font-medium text-slate-700 mb-1">Application Date</label>
                 <input 
                   type="date" 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 bg-white"
                   value={formData.application_date}
                   onChange={(e) => setFormData({...formData, application_date: e.target.value})}
                 />
@@ -111,7 +112,7 @@ const PaymentRequestForm: React.FC = () => {
                 <label className="block text-sm font-medium text-slate-700 mb-1">Desired Payment Date</label>
                 <input 
                   type="date" 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 bg-white"
                   value={formData.desired_payment_date}
                   onChange={(e) => setFormData({...formData, desired_payment_date: e.target.value})}
                 />
@@ -139,7 +140,7 @@ const PaymentRequestForm: React.FC = () => {
                     <input 
                       type="text" 
                       placeholder="E.g., Office Supplies"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 bg-white"
                       value={item.description}
                       onChange={(e) => {
                         const newBreakdowns = [...breakdowns];
@@ -156,7 +157,7 @@ const PaymentRequestForm: React.FC = () => {
                         type="number" 
                         min="0"
                         step="0.01"
-                        className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 bg-white"
                         value={item.amount || ''}
                         onChange={(e) => {
                           const newBreakdowns = [...breakdowns];

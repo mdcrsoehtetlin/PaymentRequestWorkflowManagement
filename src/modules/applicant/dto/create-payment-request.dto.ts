@@ -24,7 +24,19 @@ export class CreatePaymentRequestDraftDto {
 
   @IsNumber()
   @IsOptional()
+  payment_type_id?: number;
+
+  @IsNumber()
+  @IsOptional()
   payment_method_id?: number;
+
+  @IsString()
+  @IsOptional()
+  purpose?: string;
+
+  @IsString()
+  @IsOptional()
+  request_content?: string;
 
   @IsArray()
   @ValidateNested({ each: true })

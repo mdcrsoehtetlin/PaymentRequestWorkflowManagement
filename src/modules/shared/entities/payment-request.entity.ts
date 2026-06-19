@@ -30,7 +30,16 @@ export class PaymentRequest {
   desired_payment_date!: string;
 
   @Column({ type: 'int' })
+  payment_type_id!: number;
+
+  @Column({ type: 'int' })
   payment_method_id!: number;
+
+  @Column({ type: 'varchar', length: 500 })
+  purpose!: string;
+
+  @Column({ type: 'text' })
+  request_content!: string;
 
   @Column({ type: 'boolean', default: false })
   has_receipt!: boolean;

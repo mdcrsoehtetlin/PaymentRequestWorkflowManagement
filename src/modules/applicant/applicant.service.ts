@@ -118,7 +118,10 @@ export class ApplicantService {
         currency_id: dto.currency_id || 1,
         application_date: dto.application_date || new Date().toISOString().split('T')[0],
         desired_payment_date: dto.desired_payment_date || new Date().toISOString().split('T')[0],
+        payment_type_id: dto.payment_type_id || 1,
         payment_method_id: dto.payment_method_id || 1,
+        purpose: dto.purpose || 'Draft Purpose',
+        request_content: dto.request_content || 'Draft Content',
       });
 
       const savedRequest = await manager.save(request);
