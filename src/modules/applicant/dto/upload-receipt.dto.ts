@@ -1,7 +1,7 @@
-import { IsUUID, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty } from 'class-validator';
 
 export class UploadReceiptDto {
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
   payment_request_id!: string;
 }

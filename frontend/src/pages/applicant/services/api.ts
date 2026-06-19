@@ -1,6 +1,6 @@
-import axios from 'axios';
+import apiClient from '../../../services/api-client';
 
-const API_BASE_URL = '/api/v1/applicant/payment-requests';
+const API_BASE_URL = '/applicant/payment-requests';
 
 export interface PaymentRequestResponseDto {
   id: string;
@@ -36,24 +36,19 @@ export interface DashboardResponseDto {
 }
 
 export const fetchPaymentRequests = async (page: number = 1, limit: number = 10): Promise<DashboardResponseDto> => {
-  const response = await axios.get<DashboardResponseDto>(API_BASE_URL, {
-    params: { page, limit },
-    withCredentials: true,
+  const response = await apiClient.get<DashboardResponseDto>(API_BASE_URL, {
+    params: { page, limit }
   });
   return response.data;
 };
 
 export const fetchPaymentRequestDetail = async (id: string): Promise<any> => {
-  const response = await axios.get(`${API_BASE_URL}/${id}`, {
-    withCredentials: true,
-  });
+  const response = await apiClient.get(`${API_BASE_URL}/${id}`);
   return response.data;
 };
 
 export const submitToManager = async (id: string): Promise<any> => {
-  const response = await axios.post(`${API_BASE_URL}/${id}/submit-manager`, { id }, {
-    withCredentials: true,
-  });
+  const response = await apiClient.post(`${API_BASE_URL}/${id}/submit-manager`, { id });
   return response.data;
 };
 
@@ -61,8 +56,7 @@ export const uploadReceipt = async (id: string, file: File): Promise<any> => {
   const formData = new FormData();
   formData.append('file', file);
   
-  const response = await axios.post(`${API_BASE_URL}/${id}/receipts`, formData, {
-    withCredentials: true,
+  const response = await apiClient.post(`${API_BASE_URL}/${id}/receipts`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -71,21 +65,15 @@ export const uploadReceipt = async (id: string, file: File): Promise<any> => {
 };
 
 export const submitToApprover = async (id: string): Promise<any> => {
-  const response = await axios.post(`${API_BASE_URL}/${id}/submit-approver`, { id }, {
-    withCredentials: true,
-  });
+  const response = await apiClient.post(`${API_BASE_URL}/${id}/submit-approver`, { id });
   return response.data;
 };
 
 export const updatePaymentRequest = async (id: string, data: any): Promise<any> => {
-  const response = await axios.put(`${API_BASE_URL}/${id}`, data, {
-    withCredentials: true,
-  });
+  const response = await apiClient.put(`${API_BASE_URL}/${id}`, data);
   return response.data;
 };
 
 export const deleteDraft = async (id: string): Promise<void> => {
-  await axios.delete(`${API_BASE_URL}/${id}`, {
-    withCredentials: true,
-  });
+  await apiClient.delete(`${API_BASE_URL}/${id}`);
 };

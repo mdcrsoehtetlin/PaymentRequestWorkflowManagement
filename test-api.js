@@ -11,16 +11,15 @@ async function run() {
     });
     
     if (!loginRes.ok) {
-      console.error("Login failed:", await loginRes.text());
-      return;
+      console.error("Login failed (status):", loginRes.status);
     }
     
-    const loginData = await loginRes.json();
+    // const loginData = await loginRes.json();
     const cookieHeader = loginRes.headers.get('set-cookie');
     
     const headers = {};
     if (cookieHeader) headers['Cookie'] = cookieHeader;
-    if (loginData.access_token) headers['Authorization'] = `Bearer ${loginData.access_token}`;
+    // if (loginData.access_token) headers['Authorization'] = `Bearer ${loginData.access_token}`;
     
     // 2. Fetch Dashboard
     const dashRes = await fetch('http://127.0.0.1:3005/api/v1/applicant/payment-requests?page=1&limit=10', {

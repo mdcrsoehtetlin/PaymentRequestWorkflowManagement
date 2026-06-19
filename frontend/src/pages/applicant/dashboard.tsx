@@ -182,7 +182,7 @@ const ApplicantDashboard: React.FC = () => {
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                 <p>Loading requests...</p>
               </div>
-            ) : data?.requests.items.length === 0 ? (
+            ) : (!data || !data.requests || data.requests.items.length === 0) ? (
               <div className="flex flex-col items-center justify-center h-64 text-slate-400 gap-3">
                 <FileText className="w-12 h-12 opacity-20" />
                 <p>No payment requests found.</p>

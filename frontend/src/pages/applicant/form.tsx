@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, Plus, Trash2, ArrowLeft } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../services/api-client';
 
 const PaymentRequestForm: React.FC = () => {
   const navigate = useNavigate();
@@ -32,11 +32,11 @@ const PaymentRequestForm: React.FC = () => {
         breakdowns: breakdowns.filter(b => b.description.trim() !== '' || b.amount > 0),
       };
       
-      await axios.post('/api/v1/applicant/payment-requests/draft', payload, {
+      await apiClient.post('/applicant/payment-requests/draft', payload, {
         withCredentials: true,
       });
       
-      navigate('/applicant/dashboard');
+      navigate('/applicant');
     } catch (error) {
       console.error('Failed to save draft', error);
       alert('Failed to save draft. Please try again.');

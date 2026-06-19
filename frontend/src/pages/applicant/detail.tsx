@@ -147,7 +147,7 @@ const PaymentRequestDetail: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => navigate('/applicant/dashboard')}
+              onClick={() => navigate('/applicant')}
               className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500"
             >
               <ArrowLeft className="w-5 h-5" />
