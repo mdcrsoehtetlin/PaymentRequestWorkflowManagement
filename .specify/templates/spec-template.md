@@ -90,8 +90,11 @@
 - **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
 - **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]
 - **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
+- [ ] **FR-004**: System MUST enforce Role-Based Access Control using JwtAuthGuard and RolesGuard on all endpoints
+- [ ] **FR-005**: System MUST adhere to the premium enterprise dashboard aesthetic and exact Color Tokens from the Design System
+- [ ] **FR-006**: System MUST meet Performance Targets (Dashboard Load < 2s, API Response P95 < 200ms, WebSocket delivery < 500ms)
+- [ ] **FR-007**: System MUST produce an immutable audit log (approval_logs) for every workflow state transition
+- [ ] **FR-008**: System MUST comply with WCAG 2.1 AA accessibility requirements (contrast ratios, focus indicators, keyboard navigation, ARIA labels)
 
 *Example of marking unclear requirements:*
 

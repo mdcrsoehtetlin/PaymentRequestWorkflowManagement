@@ -154,8 +154,14 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Documentation updates in docs/
 - [ ] TXXX Code cleanup and refactoring
 - [ ] TXXX Performance optimization across all stories
-- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
-- [ ] TXXX Security hardening
+- [ ] TXXX Verify API response times and frontend performance targets (< 2s load, < 200ms P95 API, < 500ms WebSocket)
+- [ ] TXXX [P] Additional unit tests (ensure 80% line coverage) in tests/unit/
+- [ ] TXXX Verify UI/UX design system — colors, StatusBadge components, typography (Inter font), modal dialogs
+- [ ] TXXX Verify accessibility compliance — WCAG 2.1 AA contrast, focus indicators, ARIA labels, keyboard navigation
+- [ ] TXXX Security hardening — RBAC guards on all endpoints, audit trail logging for all state transitions
+- [ ] TXXX JSDoc/TSDoc comments on all public services, controllers, gateways, guards, and hooks
+- [ ] TXXX Verify import ordering convention across all TypeScript files (5-group order)
+- [ ] TXXX Confirm all commits follow Conventional Commits semantic prefix convention
 - [ ] TXXX Run quickstart.md validation
 
 ---

@@ -40,7 +40,13 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] Validated against Strict Naming Conventions, Type Safety & Documentation Standards (I)
+- [ ] Confirmed Module-Based Directory Isolation — internal structure & shared layer access control (II)
+- [ ] Checked against Security, Auth, Error Handling & Audit Trail Standards (IV)
+- [ ] Ensured UI/UX Design System Compliance — colors, typography, accessibility (V)
+- [ ] Aligned with Detailed Design "Contract" & Architecture (VI) — tech stack, 4-layer model, path aliases
+- [ ] Verified Performance Targets, API Design & Environment Standards (VII)
+- [ ] Confirmed Git Branching, Commit & PR Standards compliance (VIII)
 
 ## Project Structure
 
