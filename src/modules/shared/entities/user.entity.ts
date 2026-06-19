@@ -52,24 +52,4 @@ export class User {
   })
   lastLoginDate!: Date;
 
-  @OneToMany(() => PaymentRequest, (request) => request.applicant)
-  paymentRequestsAsApplicant!: PaymentRequest[];
-
-  @OneToMany(() => PaymentRequest, (request) => request.manager)
-  paymentRequestsAsManager!: PaymentRequest[];
-
-  @OneToMany(() => PaymentRequest, (request) => request.finalApprover)
-  paymentRequestsAsApprover!: PaymentRequest[];
-
-  @OneToMany(() => PaymentRequest, (request) => request.accounting)
-  paymentRequestsAsAccounting!: PaymentRequest[];
-
-  @OneToMany(() => PaymentRequest, (request) => request.currentAssignedTo)
-  assignedPaymentRequests!: PaymentRequest[];
-
-  @OneToMany(() => ApprovalLog, (log) => log.actionTakenByUser)
-  approvalLogs!: ApprovalLog[];
-
-  @OneToMany(() => ReceiptFile, (file) => file.uploadedByUser)
-  uploadedReceipts!: ReceiptFile[];
-}
+  }

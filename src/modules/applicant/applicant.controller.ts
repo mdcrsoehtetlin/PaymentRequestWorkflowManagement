@@ -1,142 +1,140 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  ParseIntPipe,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException, Put, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApplicantService } from './applicant.service';
+import { DashboardResponseDto } from './dto/payment-request-response.dto';
+import { CreatePaymentRequestDraftDto } from './dto/create-payment-request.dto';
+import { UpdatePaymentRequestDto } from './dto/update-payment-request.dto';
+import { SubmitManagerDto } from './dto/submit-manager.dto';
 import { JwtAuthGuard } from '../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../shared/guards/roles.guard';
 import { Roles } from '../shared/decorators/roles.decorator';
-import { RoleCode, JwtPayload } from '../shared/types';
-import { ApplicantService } from './applicant.service';
-import { CreatePaymentRequestDto } from './dto/create-payment-request.dto';
-import { UpdatePaymentRequestDto } from './dto/update-payment-request.dto';
+import { RoleCode } from '../shared/types';
 
 /**
- * @description Controller handling operations for payment requests by the applicant.
+ * Controller for Applicant Dashboard endpoints
  */
+@Controller('applicant/payment-requests')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(RoleCode.APPLICANT)
-@Controller('applicant/payment-requests')
 export class ApplicantController {
   constructor(private readonly applicantService: ApplicantService) {}
 
-  /**
-   * @description Fetches paginated payment requests for the currently authenticated applicant.
-   * @param req The HTTP request object containing the JWT payload.
-   * @param page The page number for pagination.
-   * @param limit The number of items per page.
-   * @param statusId Optional filter for request status.
-   * @returns A paginated list of payment requests.
-   * @throws {UnauthorizedException} If the user is not authenticated.
-   */
-  @Get('my-requests')
-  async getMyRequests(
-    @Request() req: { user: JwtPayload },
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-    @Query('statusId') statusId?: number,
-  ) {
-    const userId = req.user.sub;
-    return this.applicantService.getMyRequests(userId, page, limit, statusId);
+  @Get()
+  async getPaymentRequests(
+    @Req() req: any,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<DashboardResponseDto> {
+    const applicantId = req.user.sub;
+    return this.applicantService.getDashboardData(applicantId, Number(page), Number(limit));
   }
 
-  /**
-   * @description Fetches a specific payment request by ID.
-   * @param id The ID of the payment request.
-   * @returns The requested payment request.
-   * @throws {NotFoundException} If the request is not found.
-   */
   @Get(':id')
-  async getRequestById(@Param('id', ParseIntPipe) id: number) {
-    return this.applicantService.getRequestById(id);
-  }
-
-  /**
-   * @description Saves a new payment request as a draft.
-   * @param req The HTTP request object.
-   * @param draftData The data for the draft payment request.
-   * @returns The created draft payment request.
-   * @throws {BadRequestException} If the provided data is invalid.
-   */
-  @Post()
-  async saveDraft(
-    @Request() req: { user: JwtPayload },
-    @Body() draftData: CreatePaymentRequestDto,
+  async getPaymentRequestDetail(
+    @Req() req: any,
+    @Param('id') id: string,
   ) {
-    const userId = req.user.sub;
-    return this.applicantService.saveDraft(userId, draftData);
+    const applicantId = req.user.sub;
+    return this.applicantService.getPaymentRequestDetail(applicantId, id);
   }
 
-  /**
-   * @description Submits a payment request to a manager for review.
-   * @param req The HTTP request object.
-   * @param id The ID of the payment request.
-   * @param managerId The ID of the manager to submit to.
-   * @returns A success status message.
-   * @throws {NotFoundException} If the request or manager is not found.
-   */
-  @Post(':id/submit-to-manager')
+  @Post('draft')
+  async createDraft(
+    @Req() req: any,
+    @Body() dto: CreatePaymentRequestDraftDto,
+  ) {
+    const applicantId = req.user.sub;
+    const request = await this.applicantService.createDraft(applicantId, dto);
+    return {
+      message: 'Draft created successfully',
+      data: {
+        id: request.id,
+        request_number: request.request_number,
+      }
+    };
+  }
+
+  @Post(':id/submit-manager')
   async submitToManager(
-    @Request() req: { user: JwtPayload },
-    @Param('id', ParseIntPipe) id: number,
-    @Body('managerId') managerId: number,
+    @Req() req: any,
+    @Body() dto: SubmitManagerDto,
   ) {
-    const userId = req.user.sub;
-    return this.applicantService.submitToManager(id, userId, managerId);
+    const applicantId = req.user.sub;
+    const request = await this.applicantService.submitToManager(applicantId, dto.id);
+    return {
+      message: 'Request submitted to Manager successfully',
+      data: {
+        id: request.id,
+        status_id: request.status_id,
+      }
+    };
   }
 
-  /**
-   * @description Submits a payment request directly to an approver (if applicable).
-   * @param req The HTTP request object.
-   * @param id The ID of the payment request.
-   * @returns A success status message.
-   * @throws {NotFoundException} If the request is not found.
-   */
-  @Post(':id/submit-to-approver')
+  @Post(':id/receipts')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadReceipt(
+    @Req() req: any,
+    @Param('id') id: string,
+    @UploadedFile() file: any,
+  ) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    
+    const applicantId = req.user.sub;
+    const receipt = await this.applicantService.uploadReceipt(applicantId, id, file);
+    
+    return {
+      message: 'Receipt uploaded successfully',
+      data: {
+        id: receipt.id,
+        file_name: receipt.file_name,
+        file_size: receipt.file_size,
+      }
+    };
+  }
+
+  @Post(':id/submit-approver')
   async submitToApprover(
-    @Request() req: { user: JwtPayload },
-    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
+    @Param('id') id: string,
   ) {
-    const userId = req.user.sub;
-    return this.applicantService.submitToApprover(id, userId);
+    const applicantId = req.user.sub;
+    const request = await this.applicantService.submitToApprover(applicantId, id);
+    return {
+      message: 'Request submitted to Final Approver successfully',
+      data: {
+        id: request.id,
+        status_id: request.status_id,
+      }
+    };
   }
 
-  /**
-   * @description Soft deletes a draft payment request.
-   * @param req The HTTP request object.
-   * @param id The ID of the payment request to delete.
-   * @returns A success status message.
-   * @throws {NotFoundException} If the request is not found.
-   */
-  @Delete(':id')
-  async deleteDraft(
-    @Request() req: { user: JwtPayload },
-    @Param('id', ParseIntPipe) id: number,
-  ) {
-    const userId = req.user.sub;
-    return this.applicantService.softDeleteDraft(id, userId);
-  }
-
-  /**
-   * @description Updates an existing payment request draft.
-   * @param id The ID of the payment request.
-   * @param dto The data to update.
-   * @returns A success status message.
-   * @throws {ConflictException} If there is a lock version mismatch.
-   */
-  @Patch(':id')
-  async update(
-    @Param('id', ParseIntPipe) id: number,
+  @Put(':id')
+  async updatePaymentRequest(
+    @Req() req: any,
+    @Param('id') id: string,
     @Body() dto: UpdatePaymentRequestDto,
   ) {
-    return this.applicantService.update(id, dto);
+    const applicantId = req.user.sub;
+    const request = await this.applicantService.updatePaymentRequest(applicantId, id, dto);
+    return {
+      message: 'Payment request updated successfully',
+      data: {
+        id: request.id,
+        status_id: request.status_id,
+        total_amount: request.total_amount,
+      }
+    };
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteDraft(
+    @Req() req: any,
+    @Param('id') id: string,
+  ) {
+    const applicantId = req.user.sub;
+    await this.applicantService.deleteDraft(applicantId, id);
   }
 }

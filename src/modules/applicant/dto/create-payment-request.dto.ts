@@ -1,70 +1,34 @@
-import {
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-  IsNumber,
-  Min,
-  Max,
-  IsDateString,
-  IsArray,
-  ArrayMinSize,
-  ArrayMaxSize,
-  ValidateNested,
-  IsOptional,
-  IsInt,
-  IsBoolean,
-} from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { BreakdownItemDto } from './breakdown-item.dto';
+import { IsNumber, IsOptional, ValidateNested, IsDateString, IsArray, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class CreatePaymentRequestDto {
-  @IsOptional()
-  @IsInt()
-  currencyId?: number;
-
-  @IsOptional()
-  @IsInt()
-  paymentTypeId?: number;
-
-  @IsOptional()
-  @IsInt()
-  paymentMethodId?: number;
-
-  @IsNotEmpty()
+export class PaymentBreakdownItemDto {
   @IsString()
-  @MaxLength(500)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  purpose!: string;
+  description!: string;
 
+  @IsNumber()
+  amount!: number;
+}
+
+export class CreatePaymentRequestDraftDto {
+  @IsNumber()
   @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  bankAccountInfo?: string;
+  currency_id?: number;
 
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  requestContent?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  hasReceipt?: boolean;
-
-  @IsNotEmpty()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0.01)
-  @Max(999999999999.99)
-  totalAmount!: number;
-
-  @IsNotEmpty()
   @IsDateString()
-  desiredPaymentDate!: string;
+  @IsOptional()
+  application_date?: string;
+
+  @IsDateString()
+  @IsOptional()
+  desired_payment_date?: string;
+
+  @IsNumber()
+  @IsOptional()
+  payment_method_id?: number;
 
   @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(15)
   @ValidateNested({ each: true })
-  @Type(() => BreakdownItemDto)
-  breakdownItems!: BreakdownItemDto[];
+  @Type(() => PaymentBreakdownItemDto)
+  @IsOptional()
+  breakdowns?: PaymentBreakdownItemDto[];
 }
