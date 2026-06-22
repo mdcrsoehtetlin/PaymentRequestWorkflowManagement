@@ -1,4 +1,11 @@
-import { IsNumber, IsOptional, ValidateNested, IsDateString, IsArray, IsString } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  ValidateNested,
+  IsDateString,
+  IsArray,
+  IsString,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PaymentBreakdownItemDto {

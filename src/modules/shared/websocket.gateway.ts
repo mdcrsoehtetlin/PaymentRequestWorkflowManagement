@@ -51,7 +51,11 @@ export class WebsocketGateway
     this.server.to(role).emit('request:status-changed', message);
   }
 
-  sendPersonalNotification(userId: number, eventName: string, message: unknown) {
+  sendPersonalNotification(
+    userId: number,
+    eventName: string,
+    message: unknown,
+  ) {
     this.server.to(`user:${userId}`).emit(eventName, message);
   }
 }

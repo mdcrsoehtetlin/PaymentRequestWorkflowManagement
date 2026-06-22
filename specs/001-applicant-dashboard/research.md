@@ -1,22 +1,26 @@
-# Research & Technical Decisions: Applicant Dashboard
+# Research Notes: Applicant Dashboard
 
-**Feature**: Applicant Dashboard
-**Date**: 2026-06-19
+## Technical Context Unknowns
+No explicit "NEEDS CLARIFICATION" items were present in the implementation plan's technical context.
 
-## Overview
+## Technology Best Practices & Patterns
 
-No `NEEDS CLARIFICATION` items were identified during the planning phase. The system architecture, technology stack, and module isolation rules are strictly predefined by the project's Constitution (`.specify/memory/constitution.md`) and the Development Rules (`02_開発ルール_DEVELOPMENT_RULES.md`).
+### Design System and Tailwind CSS
+- **Decision**: Strict adherence to the documented Global UI/UX Design System Specification (Section 9 of DEVELOPMENT_RULES.md).
+- **Rationale**: Project constraints enforce premium enterprise dashboard aesthetics. Status badges must strictly follow the defined colors (e.g., Draft gray `#6B7280`, Verified sky blue `#0284C7`).
+- **Alternatives considered**: Ad-hoc component styling (rejected due to design system strictness).
 
-## Decisions & Rationale
+### State Management & Communication
+- **Decision**: WebSocket for real-time notifications with Socket.IO 4.8+, JWT for authentication.
+- **Rationale**: To satisfy NFR-003 (WebSocket status update delivery ≤ 500ms). WebSockets authenticated via JWT.
+- **Alternatives considered**: HTTP polling (rejected due to latency constraints and performance NFRs).
 
-**Decision**: Strict Module-Based Directory Isolation
-- **Rationale**: Principle II dictates that the Applicant module must reside entirely within `backend/src/modules/applicant/` and `frontend/src/pages/applicant/`. No cross-module imports are allowed.
+### Database Storage
+- **Decision**: PostgreSQL 16 with TypeORM.
+- **Rationale**: Project enforces PostgreSQL and TypeORM. 
+- **Alternatives considered**: None, mandated by tech stack.
 
-**Decision**: Dual-Application Architecture (NestJS + React)
-- **Rationale**: Enforced by Principle VI. NestJS provides the REST API (port 3000) and Vite/React serves the SPA (port 5173), connected via Socket.IO for real-time updates.
-
-**Decision**: Immutable Audit Trail for Transitions
-- **Rationale**: Enforced by Principle IV. All workflow state changes must insert a record into the `approval_logs` table.
-
-**Decision**: Performance and Caching Strategies
-- **Rationale**: Enforced by Principle VII. Redis is used for caching lookup data (24h TTL) and request payloads (10m TTL). P95 API response must be < 200ms. WebSocket latency < 500ms.
+### Caching
+- **Decision**: Redis (Memurai) caching for lookups and request payloads.
+- **Rationale**: NFR-007 mandates Redis cache for master tables (24h TTL) and request payloads (10m TTL).
+- **Alternatives considered**: In-memory caching without Redis (rejected due to horizontal scaling limitations).

@@ -1,4 +1,20 @@
-import { Controller, Get, Post, Body, Query, Param, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException, Put, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Param,
+  UseGuards,
+  Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Put,
+  Delete,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApplicantService } from './applicant.service';
 import { DashboardResponseDto } from './dto/payment-request-response.dto';
@@ -26,14 +42,15 @@ export class ApplicantController {
     @Query('limit') limit: number = 10,
   ): Promise<DashboardResponseDto> {
     const applicantId = req.user.sub;
-    return this.applicantService.getDashboardData(applicantId, Number(page), Number(limit));
+    return this.applicantService.getDashboardData(
+      applicantId,
+      Number(page),
+      Number(limit),
+    );
   }
 
   @Get(':id')
-  async getPaymentRequestDetail(
-    @Req() req: any,
-    @Param('id') id: string,
-  ) {
+  async getPaymentRequestDetail(@Req() req: any, @Param('id') id: string) {
     const applicantId = req.user.sub;
     return this.applicantService.getPaymentRequestDetail(applicantId, id);
   }
@@ -50,23 +67,23 @@ export class ApplicantController {
       data: {
         id: request.id,
         request_number: request.request_number,
-      }
+      },
     };
   }
 
   @Post(':id/submit-manager')
-  async submitToManager(
-    @Req() req: any,
-    @Body() dto: SubmitManagerDto,
-  ) {
+  async submitToManager(@Req() req: any, @Body() dto: SubmitManagerDto) {
     const applicantId = req.user.sub;
-    const request = await this.applicantService.submitToManager(applicantId, dto.id);
+    const request = await this.applicantService.submitToManager(
+      applicantId,
+      dto.id,
+    );
     return {
       message: 'Request submitted to Manager successfully',
       data: {
         id: request.id,
         status_id: request.status_id,
-      }
+      },
     };
   }
 
@@ -80,33 +97,37 @@ export class ApplicantController {
     if (!file) {
       throw new BadRequestException('File is required');
     }
-    
+
     const applicantId = req.user.sub;
-    const receipt = await this.applicantService.uploadReceipt(applicantId, id, file);
-    
+    const receipt = await this.applicantService.uploadReceipt(
+      applicantId,
+      id,
+      file,
+    );
+
     return {
       message: 'Receipt uploaded successfully',
       data: {
         id: receipt.id,
         file_name: receipt.file_name,
         file_size: receipt.file_size,
-      }
+      },
     };
   }
 
   @Post(':id/submit-approver')
-  async submitToApprover(
-    @Req() req: any,
-    @Param('id') id: string,
-  ) {
+  async submitToApprover(@Req() req: any, @Param('id') id: string) {
     const applicantId = req.user.sub;
-    const request = await this.applicantService.submitToApprover(applicantId, id);
+    const request = await this.applicantService.submitToApprover(
+      applicantId,
+      id,
+    );
     return {
       message: 'Request submitted to Final Approver successfully',
       data: {
         id: request.id,
         status_id: request.status_id,
-      }
+      },
     };
   }
 
@@ -117,23 +138,24 @@ export class ApplicantController {
     @Body() dto: UpdatePaymentRequestDto,
   ) {
     const applicantId = req.user.sub;
-    const request = await this.applicantService.updatePaymentRequest(applicantId, id, dto);
+    const request = await this.applicantService.updatePaymentRequest(
+      applicantId,
+      id,
+      dto,
+    );
     return {
       message: 'Payment request updated successfully',
       data: {
         id: request.id,
         status_id: request.status_id,
         total_amount: request.total_amount,
-      }
+      },
     };
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteDraft(
-    @Req() req: any,
-    @Param('id') id: string,
-  ) {
+  async deleteDraft(@Req() req: any, @Param('id') id: string) {
     const applicantId = req.user.sub;
     await this.applicantService.deleteDraft(applicantId, id);
   }

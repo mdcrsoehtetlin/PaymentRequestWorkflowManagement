@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -12,7 +17,10 @@ import { UpdatePaymentRequestDto } from './dto/update-payment-request.dto';
 import { PaymentBreakdownItem } from '../shared/entities/payment-breakdown-item.entity';
 import { ApprovalLog } from '../shared/entities/approval-log.entity';
 import { ReceiptFile } from '../shared/entities/receipt-file.entity';
-import { FileUploadService, UploadedFile } from '../shared/services/file-upload.service';
+import {
+  FileUploadService,
+  UploadedFile,
+} from '../shared/services/file-upload.service';
 import { ApplicantGateway } from './applicant.gateway';
 
 /**
@@ -33,20 +41,25 @@ export class ApplicantService {
     private readonly applicantGateway: ApplicantGateway,
   ) {}
 
-  async getDashboardData(applicantId: string, page: number = 1, limit: number = 10): Promise<DashboardResponseDto> {
+  async getDashboardData(
+    applicantId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<DashboardResponseDto> {
     const cacheKey = `applicant_dashboard_${applicantId}_${page}_${limit}`;
     const cached = await this.cacheManager.get<DashboardResponseDto>(cacheKey);
     if (cached) return cached;
 
-    const kpiQuery = this.paymentRequestRepo.createQueryBuilder('pr')
+    const kpiQuery = this.paymentRequestRepo
+      .createQueryBuilder('pr')
       .select('pr.status_id', 'status_id')
       .addSelect('COUNT(pr.id)', 'count')
       .where('pr.applicant_id = :applicantId', { applicantId })
       .andWhere('pr.is_deleted = false')
       .groupBy('pr.status_id');
-      
+
     const kpiRaw = await kpiQuery.getRawMany();
-    
+
     const kpis = {
       total_draft: 0,
       total_submitted: 0,
@@ -77,17 +90,20 @@ export class ApplicantService {
         total,
         page,
         limit,
-      }
+      },
     };
 
     await this.cacheManager.set(cacheKey, response, 300000);
     return response;
   }
 
-  async getPaymentRequestDetail(applicantId: string, requestId: string): Promise<PaymentRequest> {
+  async getPaymentRequestDetail(
+    applicantId: string,
+    requestId: string,
+  ): Promise<PaymentRequest> {
     const request = await this.paymentRequestRepo.findOne({
       where: { id: requestId, applicant_id: applicantId, is_deleted: false },
-      relations: ['breakdowns', 'receipts', 'logs']
+      relations: ['breakdowns', 'receipts', 'logs'],
     });
 
     if (!request) {
@@ -95,19 +111,29 @@ export class ApplicantService {
     }
 
     // Sort breakdowns and logs
-    if (request.breakdowns) request.breakdowns.sort((a, b) => Number(b.amount) - Number(a.amount));
-    if (request.logs) request.logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    if (request.breakdowns)
+      request.breakdowns.sort((a, b) => Number(b.amount) - Number(a.amount));
+    if (request.logs)
+      request.logs.sort(
+        (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
+      );
 
     return request;
   }
 
-  async createDraft(applicantId: string, dto: CreatePaymentRequestDraftDto): Promise<PaymentRequest> {
+  async createDraft(
+    applicantId: string,
+    dto: CreatePaymentRequestDraftDto,
+  ): Promise<PaymentRequest> {
     const requestNumber = await this.requestNumberService.generateNext();
-    
+
     return this.dataSource.transaction(async (manager) => {
       let totalAmount = 0;
       if (dto.breakdowns) {
-        totalAmount = dto.breakdowns.reduce((sum, item) => sum + item.amount, 0);
+        totalAmount = dto.breakdowns.reduce(
+          (sum, item) => sum + item.amount,
+          0,
+        );
       }
 
       const request = manager.create(PaymentRequest, {
@@ -116,8 +142,10 @@ export class ApplicantService {
         status_id: 1, // Draft
         total_amount: totalAmount.toString(),
         currency_id: dto.currency_id || 1,
-        application_date: dto.application_date || new Date().toISOString().split('T')[0],
-        desired_payment_date: dto.desired_payment_date || new Date().toISOString().split('T')[0],
+        application_date:
+          dto.application_date || new Date().toISOString().split('T')[0],
+        desired_payment_date:
+          dto.desired_payment_date || new Date().toISOString().split('T')[0],
         payment_type_id: dto.payment_type_id || 1,
         payment_method_id: dto.payment_method_id || 1,
         purpose: dto.purpose || 'Draft Purpose',
@@ -127,13 +155,16 @@ export class ApplicantService {
       const savedRequest = await manager.save(request);
 
       if (dto.breakdowns && dto.breakdowns.length > 0) {
-        const items = dto.breakdowns.map((b, index) => manager.create(PaymentBreakdownItem, {
-          payment_request_id: savedRequest.id,
-          line_number: index + 1,
-          item_date: dto.application_date || new Date().toISOString().split('T')[0],
-          description: b.description,
-          amount: b.amount.toString(),
-        }));
+        const items = dto.breakdowns.map((b, index) =>
+          manager.create(PaymentBreakdownItem, {
+            payment_request_id: savedRequest.id,
+            line_number: index + 1,
+            item_date:
+              dto.application_date || new Date().toISOString().split('T')[0],
+            description: b.description,
+            amount: b.amount.toString(),
+          }),
+        );
         await manager.save(items);
       }
 
@@ -155,32 +186,48 @@ export class ApplicantService {
     });
   }
 
-  async submitToManager(applicantId: string, requestId: string): Promise<PaymentRequest> {
+  async submitToManager(
+    applicantId: string,
+    requestId: string,
+  ): Promise<PaymentRequest> {
     return this.dataSource.transaction(async (manager) => {
       const request = await manager.findOne(PaymentRequest, {
         where: { id: requestId, applicant_id: applicantId, is_deleted: false },
-        relations: ['breakdowns', 'receipts']
+        relations: ['breakdowns', 'receipts'],
       });
 
       if (!request) throw new NotFoundException('Payment request not found');
       if (![1, 5, 9].includes(request.status_id)) {
-        throw new BadRequestException('Only Draft or Rejected requests can be submitted to Manager');
+        throw new BadRequestException(
+          'Only Draft or Rejected requests can be submitted to Manager',
+        );
       }
 
       // Strict validation
-      if (!request.currency_id) throw new BadRequestException('Currency is required');
-      if (!request.application_date) throw new BadRequestException('Application date is required');
-      if (!request.desired_payment_date) throw new BadRequestException('Desired payment date is required');
-      if (!request.payment_method_id) throw new BadRequestException('Payment method is required');
-      if (!request.breakdowns || request.breakdowns.length === 0) throw new BadRequestException('At least one breakdown item is required');
-      
-      const total = request.breakdowns.reduce((sum, item) => sum + Number(item.amount), 0);
-      if (total <= 0) throw new BadRequestException('Total amount must be greater than 0');
+      if (!request.currency_id)
+        throw new BadRequestException('Currency is required');
+      if (!request.application_date)
+        throw new BadRequestException('Application date is required');
+      if (!request.desired_payment_date)
+        throw new BadRequestException('Desired payment date is required');
+      if (!request.payment_method_id)
+        throw new BadRequestException('Payment method is required');
+      if (!request.breakdowns || request.breakdowns.length === 0)
+        throw new BadRequestException(
+          'At least one breakdown item is required',
+        );
+
+      const total = request.breakdowns.reduce(
+        (sum, item) => sum + Number(item.amount),
+        0,
+      );
+      if (total <= 0)
+        throw new BadRequestException('Total amount must be greater than 0');
 
       // State transition
       request.status_id = 2; // Submitted (Manager)
       request.has_receipt = request.receipts && request.receipts.length > 0;
-      
+
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
@@ -211,9 +258,13 @@ export class ApplicantService {
     });
   }
 
-  async uploadReceipt(applicantId: string, requestId: string, file: UploadedFile): Promise<ReceiptFile> {
+  async uploadReceipt(
+    applicantId: string,
+    requestId: string,
+    file: UploadedFile,
+  ): Promise<ReceiptFile> {
     const request = await this.paymentRequestRepo.findOne({
-      where: { id: requestId, applicant_id: applicantId, is_deleted: false }
+      where: { id: requestId, applicant_id: applicantId, is_deleted: false },
     });
 
     if (!request) {
@@ -221,10 +272,13 @@ export class ApplicantService {
     }
 
     if (request.status_id !== 1 && request.status_id !== 4) {
-      throw new BadRequestException('Receipts can only be uploaded for Draft or Rejected requests');
+      throw new BadRequestException(
+        'Receipts can only be uploaded for Draft or Rejected requests',
+      );
     }
 
-    const { storedFileName, fileStoragePath } = await this.fileUploadService.saveFile(file, requestId);
+    const { storedFileName, fileStoragePath } =
+      await this.fileUploadService.saveFile(file, requestId);
 
     const receipt = this.receiptFileRepo.create({
       payment_request_id: requestId,
@@ -239,14 +293,17 @@ export class ApplicantService {
 
     // Update has_receipt flag
     await this.paymentRequestRepo.update(requestId, { has_receipt: true });
-    
+
     // Invalidate cache
     await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
     return savedReceipt;
   }
 
-  async submitToApprover(applicantId: string, requestId: string): Promise<PaymentRequest> {
+  async submitToApprover(
+    applicantId: string,
+    requestId: string,
+  ): Promise<PaymentRequest> {
     return this.dataSource.transaction(async (manager) => {
       const request = await manager.findOne(PaymentRequest, {
         where: { id: requestId, applicant_id: applicantId, is_deleted: false },
@@ -256,13 +313,16 @@ export class ApplicantService {
         throw new NotFoundException('Payment request not found');
       }
 
-      if (request.status_id !== 4) { // MANAGER_VERIFIED
-        throw new BadRequestException('Only Manager-Verified requests can be submitted to Final Approver');
+      if (request.status_id !== 4) {
+        // MANAGER_VERIFIED
+        throw new BadRequestException(
+          'Only Manager-Verified requests can be submitted to Final Approver',
+        );
       }
 
       // State transition
       request.status_id = 6; // SUBMITTED_APPROVER
-      
+
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
@@ -293,15 +353,19 @@ export class ApplicantService {
     });
   }
 
-  async updatePaymentRequest(applicantId: string, requestId: string, dto: UpdatePaymentRequestDto): Promise<PaymentRequest> {
+  async updatePaymentRequest(
+    applicantId: string,
+    requestId: string,
+    dto: UpdatePaymentRequestDto,
+  ): Promise<PaymentRequest> {
     return this.dataSource.transaction(async (manager) => {
       const request = await manager.findOne(PaymentRequest, {
         where: { id: requestId, applicant_id: applicantId, is_deleted: false },
-        relations: ['breakdowns']
+        relations: ['breakdowns'],
       });
 
       if (!request) throw new NotFoundException('Payment request not found');
-      
+
       const editableStatuses = [1, 5, 9]; // DRAFT, REJECTED_MANAGER, REJECTED_APPROVER
       if (!editableStatuses.includes(request.status_id)) {
         throw new BadRequestException('Request is not in an editable state');
@@ -309,21 +373,33 @@ export class ApplicantService {
 
       // Update fields
       if (dto.currency_id !== undefined) request.currency_id = dto.currency_id;
-      if (dto.application_date !== undefined) request.application_date = dto.application_date;
-      if (dto.desired_payment_date !== undefined) request.desired_payment_date = dto.desired_payment_date;
-      if (dto.payment_method_id !== undefined) request.payment_method_id = dto.payment_method_id;
+      if (dto.application_date !== undefined)
+        request.application_date = dto.application_date;
+      if (dto.desired_payment_date !== undefined)
+        request.desired_payment_date = dto.desired_payment_date;
+      if (dto.payment_method_id !== undefined)
+        request.payment_method_id = dto.payment_method_id;
 
       if (dto.breakdowns) {
-        await manager.delete(PaymentBreakdownItem, { payment_request_id: requestId });
-        const items = dto.breakdowns.map((b, index) => manager.create(PaymentBreakdownItem, {
+        await manager.delete(PaymentBreakdownItem, {
           payment_request_id: requestId,
-          line_number: index + 1,
-          item_date: dto.application_date || request.application_date || new Date().toISOString().split('T')[0],
-          description: b.description,
-          amount: b.amount.toString(),
-        }));
+        });
+        const items = dto.breakdowns.map((b, index) =>
+          manager.create(PaymentBreakdownItem, {
+            payment_request_id: requestId,
+            line_number: index + 1,
+            item_date:
+              dto.application_date ||
+              request.application_date ||
+              new Date().toISOString().split('T')[0],
+            description: b.description,
+            amount: b.amount.toString(),
+          }),
+        );
         await manager.save(items);
-        request.total_amount = dto.breakdowns.reduce((sum, item) => sum + Number(item.amount), 0).toString();
+        request.total_amount = dto.breakdowns
+          .reduce((sum, item) => sum + Number(item.amount), 0)
+          .toString();
       }
 
       const savedRequest = await manager.save(request);
@@ -363,7 +439,11 @@ export class ApplicantService {
       request.is_deleted = true;
       await manager.save(request);
 
-      await manager.update(ReceiptFile, { payment_request_id: requestId }, { is_deleted: true });
+      await manager.update(
+        ReceiptFile,
+        { payment_request_id: requestId },
+        { is_deleted: true },
+      );
 
       const log = manager.create(ApprovalLog, {
         payment_request_id: request.id,

@@ -1,42 +1,68 @@
 # Quickstart Validation Guide: Applicant Dashboard
 
+This guide outlines how to validate the end-to-end functionality of the Applicant Dashboard feature once implemented.
+
 ## Prerequisites
-- Node.js 22.x installed
-- PostgreSQL 16 running on `localhost:5432`
-- Redis (Memurai) 4+ running on `localhost:6379`
-- Environment variables configured in `backend/.env` and `frontend/.env`
+- Node.js v18+, PostgreSQL 16, Redis running locally.
+- Project dependencies installed via `npm install`.
+- Database migrated and seeded with master lookup data (Roles, Statuses, etc. defined in [data-model.md](file:///C:/Projects/PRWM/specs/001-applicant-dashboard/data-model.md)).
 
 ## Setup Commands
-
-**Backend:**
-```bash
-cd backend
-npm install
-npm run build
-npm run start:dev
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
+1. **Start Backend:**
+   ```bash
+   cd backend
+   npm run start:dev
+   ```
+2. **Start Frontend:**
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+3. **Login:**
+   Authenticate as an `APPLICANT` role user (e.g., using test credentials).
 
 ## Validation Scenarios
 
-### Scenario 1: Applicant Dashboard Load
-1. Login with an Applicant role account.
-2. Navigate to `http://localhost:5173/applicant`.
-3. **Expected Outcome**: The dashboard renders within 2 seconds. The KPI summary cards correctly reflect the total counts of the test data. The paginated data grid shows the applicant's requests.
+### 1. View Dashboard & Draft Creation
+**Command/Action:**
+Navigate to the `/applicant` route in the frontend SPA. Click "Create New Request". Fill in required fields, add one breakdown item, and click "Save Draft".
 
-### Scenario 2: Create Draft
-1. Click "+ Create New Request".
-2. Fill out the "Payment Breakdown" with at least one item.
-3. Click "Save Draft".
-4. **Expected Outcome**: A success toast appears. The new request appears in the data grid with a status badge of "Draft" and a generated `PRF-YYYY-NNNNNN` request number.
+**Expected Outcome:**
+- The request is saved and appears in the dashboard list.
+- Status is `DRAFT` (gray badge).
+- Total amount matches the breakdown item.
+- Request number follows `PRF-YYYY-NNNNNN` format.
 
-### Scenario 3: Real-Time WebSocket Notification
-1. Open the Applicant Dashboard in Browser A.
-2. Using Postman or Browser B, simulate a Manager updating the status of one of the Applicant's requests to `REJECTED_MANAGER`.
-3. **Expected Outcome**: Within 500ms, Browser A displays a toast notification ("Request Rejected") and the status badge for that request automatically updates to "Rejected" without a page refresh.
+### 2. Receipt Upload & Strict Validation Submission
+**Command/Action:**
+Open the saved draft. Check "Receipt Present = Yes". Attempt to "Submit to Manager" without uploading a receipt.
+
+**Expected Outcome:**
+- Submission is blocked by the UI and API with a 422 Unprocessable Entity error.
+- After uploading a valid image/PDF receipt (max 10MB) and re-submitting, the request transitions to `SUBMITTED_MANAGER`.
+
+### 3. Real-Time Status Update Notification
+**Command/Action:**
+While keeping the Applicant Dashboard open, use a REST client (like Postman or curl) to simulate a Manager rejecting the request:
+```bash
+curl -X POST http://localhost:3000/api/v1/manager/payment-requests/{id}/reject \
+  -H "Authorization: Bearer <MANAGER_JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"comment": "Missing details in breakdown."}'
+```
+
+**Expected Outcome:**
+- A WebSocket notification (`request:rejected`) is received instantly on the Applicant Dashboard.
+- A toast notification appears indicating the rejection.
+- The request status in the grid updates to `REJECTED_MANAGER` (red badge) without a page reload.
+
+## Testing Reference
+For automated validation, run the test suites:
+```bash
+# Run backend applicant module unit tests
+cd backend
+npm run test -- --testPathPattern=applicant
+
+# Run end-to-end API tests
+npm run test:e2e
+```

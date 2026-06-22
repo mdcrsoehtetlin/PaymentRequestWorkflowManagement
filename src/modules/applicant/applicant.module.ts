@@ -16,7 +16,7 @@ import { JwtModule } from '@nestjs/jwt';
       PaymentRequest,
       PaymentBreakdownItem,
       ReceiptFile,
-      ApprovalLog
+      ApprovalLog,
     ]),
     SharedModule,
     JwtModule.register({}),

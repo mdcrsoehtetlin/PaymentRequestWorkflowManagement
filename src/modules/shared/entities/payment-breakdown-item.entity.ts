@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { PaymentRequest } from './payment-request.entity';
 
 @Entity('payment_breakdown_items')
@@ -24,7 +32,13 @@ export class PaymentBreakdownItem {
   @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
   quantity!: string;
 
-  @Column({ name: 'unit_price', type: 'numeric', precision: 12, scale: 2, nullable: true })
+  @Column({
+    name: 'unit_price',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
   unit_price!: string;
 
   @CreateDateColumn({ name: 'created_date' })
@@ -33,7 +47,7 @@ export class PaymentBreakdownItem {
   @UpdateDateColumn({ name: 'modified_date' })
   updated_at!: Date;
 
-  @ManyToOne(() => PaymentRequest, request => request.breakdowns)
+  @ManyToOne(() => PaymentRequest, (request) => request.breakdowns)
   @JoinColumn({ name: 'payment_request_id' })
   payment_request!: PaymentRequest;
 }

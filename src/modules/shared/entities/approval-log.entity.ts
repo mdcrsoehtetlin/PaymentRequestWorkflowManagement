@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { PaymentRequest } from './payment-request.entity';
 
 @Entity('approval_logs')
@@ -33,7 +39,7 @@ export class ApprovalLog {
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   timestamp!: Date;
 
-  @ManyToOne(() => PaymentRequest, request => request.logs)
+  @ManyToOne(() => PaymentRequest, (request) => request.logs)
   @JoinColumn({ name: 'payment_request_id' })
   payment_request!: PaymentRequest;
 }

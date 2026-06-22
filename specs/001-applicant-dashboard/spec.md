@@ -8,6 +8,13 @@
 
 **Input**: User description: source files — PRWM-REQ-001 (Requirements), PRWM-DBS-001 (Database Spec), PRWM-FSD-SCR-001 (Functional Spec), PRWM-SIS-SCR-001 (Screen Items Spec)
 
+## Clarifications
+
+### Session 2026-06-22
+- Q: Authentication method for Applicants? → A: Email/password (simple username/password login, JWT issued)
+- Q: Retention period for user‑related data (FR‑007)? → A: 5 years (matches audit‑log minimum retention).
+- Q: Should the receipt‑file naming convention be enforced server‑side? → A: Yes, enforce `{Description}_{Date}_{Seq}.{ext}` on upload; reject non‑conforming files.
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*
@@ -38,6 +45,8 @@
 - [ ] Search by request number (e.g., "PRF-2026-001") filters the list correctly with 300ms debounce
 - [ ] Status dropdown filter narrows the list correctly
 - [ ] Date range filter narrows by creation date correctly
+- [ ] **Filtering by total amount range works and respects the UI controls** (REQ‑033)
+- [ ] **Filtering by applicant’s branch works** (REQ‑034)
 - [ ] Pagination controls work; default page size is 10 rows
 - [ ] Display "No requests found on this page" empty state if navigating past the last page or if 0 requests exist
 
@@ -50,23 +59,37 @@
 > **so that** I can prepare my request incrementally before formal submission.
 
 **Given** I am on the Applicant Dashboard,
-**When** I click "+ Create New Request" and fill in the Payment Request form,
-**Then** a new record is saved with status `DRAFT` and a system-generated request number in format `PRF-YYYY-NNNNNN`.
+**When** I click "+ Create New Request" and fill in the Payment Request form, the form now includes the following **mandatory** fields (REQ‑002A):
+	- Desired Payment Date (支払希望日) – must be today or later.
+	- Currency Type (通貨選択) – mandatory dropdown (e.g., MMK, USD, JPY).
+	- Payment Type (支払タイプ) – mandatory dropdown.
+	- Payment Method (支払方法) – mandatory dropdown (Bank Transfer, Cash, Check).
+	- Purpose / Usage (用途) – maximum 255 characters.
+	- Payment Request Content (支払申請内容) – maximum 1000 characters.
+	- Receipt Present (領収書の有無) – Yes/No radio.
+	- Target Manager – live dropdown of active users with the MANAGER role (required for submission).
+**Then** a new record is saved with status `DRAFT` and a system‑generated request number in format `PRF-YYYY-NNNNNN`.
 
 **And** the system auto-populates my Employee Number, Full Name, Branch, and Department from my profile.
-**And** the Total Payment Amount is auto-calculated as the sum of all breakdown line item amounts (manual override is not possible).
+**And** the Total Payment Amount is auto‑calculated as the sum of all breakdown line item amounts (manual override is not possible). Each breakdown line item amount must be > 0 and ≤ 1,000,000,000.
 **And** an `CREATED` entry is written to the approval log.
 
 **Acceptance tests:**
-- [ ] Employee info fields are pre-populated and read-only
-- [ ] Total Amount auto-calculates in real-time as breakdown amounts are entered
+- [ ] Employee info fields are pre-populated and read‑only
+- [ ] Total Amount auto‑calculates in real‑time as breakdown amounts are entered
 - [ ] Save Draft succeeds with relaxed validation (Only basic auth/user identity fields are mandatory; all functional fields are optional until submission)
 - [ ] Request number is generated in `PRF-YYYY-NNNNNN` format (Sequence resets to 000001 at the start of every calendar year)
 - [ ] Breakdown table accepts 1–15 rows; "Add Row" is disabled at 15; "Remove Row" is disabled at 1
 - [ ] At least one breakdown line item is required on draft save
-- [ ] `CREATED` action appears in approval history timeline after save
+- [ ] `CREATED` audit log entry appears in approval history timeline after save
 - [ ] Application Date defaults to today and cannot be set to a future date
-- [ ] Bank Account / Phone field is conditionally visible: shown and mandatory when Payment Method is "Bank Transfer" or "Cash"; hidden when "Check"
+- [ ] Desired Payment Date must be today or a future date
+- [ ] Currency Type field must be selected before the request can be submitted
+- [ ] Payment Type field must be selected before the request can be submitted
+- [ ] Payment Method field must be selected before the request can be submitted
+- [ ] When Payment Method is "Bank Transfer" or "Cash", Bank Account / Phone field is shown and mandatory; hidden otherwise
+- [ ] Receipt Present radio must be chosen; if "Yes", at least one receipt file is required at submission time
+- [ ] Target Manager dropdown must have a selection before submission
 
 ---
 
@@ -86,7 +109,9 @@
 - [ ] Submission blocked if any mandatory field is missing or invalid
 - [ ] Submission blocked if `has_receipt = TRUE` but zero active receipt files are attached
 - [ ] Submission blocked if no manager is selected from the dropdown
+- [ ] Submission blocked if the previously selected Target Manager is no longer active; the UI must prompt the applicant to select a new active manager
 - [ ] On success: status changes to `SUBMITTED_MANAGER`, row refreshes in the list, success toast shown
+- [ ] If submission fails (e.g., server error or network timeout), a red error toast is displayed and the form remains in its editable state
 - [ ] Manager receives a real-time WebSocket notification within 500ms
 - [ ] `SUBMITTED` audit log entry contains the correct `previous_status_id` and `new_status_id`
 - [ ] Desired Payment Date must be today or a future date
@@ -154,6 +179,7 @@
 - [ ] Resubmission from `REJECTED_APPROVER` transitions to `SUBMITTED_MANAGER` (full workflow restart)
 - [ ] `EDITED` audit log entry is recorded on save
 - [ ] `SUBMITTED` audit log entry is recorded on resubmission
+- [ ] Applicant can add a reply comment via an “Add Comment” box; the comment is saved and appears in the approval‑history timeline immediately
 
 ---
 
@@ -199,12 +225,12 @@
 
 - **FR-001**: Applicant can view all their non-deleted payment requests in a paginated, sortable, and filterable list.
 - **FR-002**: Applicant can create a new payment request, filling in all required fields including up to 15 breakdown line items, and save it as a Draft.
-- **FR-003**: Applicant can upload receipt files (PDF, PNG, JPG/JPEG) with per-file limit of 10 MB and a 50 MB aggregate per-request limit.
-- **FR-004**: System MUST enforce Role-Based Access Control using JwtAuthGuard, RolesGuard, and OwnershipGuard on all Applicant endpoints.
+- **FR-003**: Applicant can upload receipt files (PDF, PNG, JPG/JPEG) with per‑file limit of 10 MB and a 50 MB aggregate per‑request limit. Uploaded files must follow the naming convention `{Description}_{Date}_{Seq}.{ext}`; the server validates this pattern and rejects non‑conforming uploads. Files are stored via an abstract storage service to allow future migration to cloud storage (AWS S3, Azure Blob, etc.).
+- **FR-004**: System MUST authenticate Applicants via email/password login, issuing a JWT for session management.
 - **FR-005**: System MUST adhere to the premium enterprise dashboard aesthetic and exact Color Tokens from the Design System (status badge colors, typography with Inter font, modal dialogs for confirmations).
 - **FR-006**: System MUST meet Performance Targets (Dashboard Load < 2s, API Response P95 < 200ms, WebSocket delivery < 500ms).
 - **FR-007**: System MUST produce an immutable audit log (`approval_logs`) for every workflow state transition and editing action.
-- **FR-008**: System MUST comply with WCAG 2.1 AA accessibility requirements (contrast ratios, focus indicators, keyboard navigation, ARIA labels on icon-only buttons).
+- **FR-008**: System MUST retain user‑related data for a minimum of 5 years (aligned with audit‑log retention requirements).
 - **FR-009**: Applicant can submit a Draft or Rejected request to a Manager (selected from a live dropdown of active Manager-role users), transitioning status to `SUBMITTED_MANAGER`.
 - **FR-010**: Applicant can submit a `MANAGER_VERIFIED` request to the Final Approver, transitioning status to `SUBMITTED_APPROVER`.
 - **FR-011**: Applicant can view a chronological approval history timeline for each request, showing actor, action type, timestamp (UTC → local), and comment.

@@ -18,7 +18,9 @@ import { Logger } from '@nestjs/common';
     credentials: true,
   },
 })
-export class ApplicantGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ApplicantGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 

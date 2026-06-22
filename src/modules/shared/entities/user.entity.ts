@@ -51,5 +51,4 @@ export class User {
     nullable: true,
   })
   lastLoginDate!: Date;
-
-  }
+}

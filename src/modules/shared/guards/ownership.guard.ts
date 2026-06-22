@@ -32,7 +32,7 @@ export class OwnershipGuard implements CanActivate {
     if (!paymentRequest) {
       throw new NotFoundException('指定された申請が見つかりません');
     }
-    if (paymentRequest.applicant_id !== userId as any) {
+    if (paymentRequest.applicant_id !== (userId as any)) {
       throw new ForbiddenException('この操作を実行する権限がありません');
     }
 

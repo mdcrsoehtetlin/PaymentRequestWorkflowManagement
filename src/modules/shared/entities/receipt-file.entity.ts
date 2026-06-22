@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+} from 'typeorm';
 import { PaymentRequest } from './payment-request.entity';
 
 @Entity('receipt_files')
@@ -9,10 +16,20 @@ export class ReceiptFile {
   @Column({ type: 'int' })
   payment_request_id!: string;
 
-  @Column({ name: 'original_file_name', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'original_file_name',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   file_name!: string;
 
-  @Column({ name: 'stored_file_name', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'stored_file_name',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   stored_file_name!: string;
 
   @Column({ type: 'bigint' })
@@ -33,7 +50,7 @@ export class ReceiptFile {
   @CreateDateColumn({ name: 'uploaded_date' })
   created_at!: Date;
 
-  @ManyToOne(() => PaymentRequest, request => request.receipts)
+  @ManyToOne(() => PaymentRequest, (request) => request.receipts)
   @JoinColumn({ name: 'payment_request_id' })
   payment_request!: PaymentRequest;
 }

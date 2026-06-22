@@ -1,8 +1,8 @@
 # Tasks: Applicant Dashboard
 
-**Input**: Design documents from `specs/001-applicant-dashboard/`
+**Input**: Design documents from `/specs/001-applicant-dashboard/`
 
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/api.md
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/api-endpoints.md
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -12,13 +12,16 @@
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
 
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Project initialization and basic structure
+**Purpose**: Project initialization and basic structure for the applicant module.
 
-- [X] T001 Initialize Applicant module backend structure in `src/modules/applicant/applicant.module.ts`
-- [X] T002 [P] Create empty `src/modules/applicant/applicant.controller.ts` and `applicant.service.ts`
-- [X] T003 [P] Initialize frontend routing and base pages in `frontend/src/pages/applicant/`
+- [X] T001 Create backend module structure in `backend/src/modules/applicant/applicant.module.ts`
+- [X] T002 Create backend controller in `backend/src/modules/applicant/applicant.controller.ts`
+- [X] T003 [P] Create backend service in `backend/src/modules/applicant/applicant.service.ts`
+- [X] T004 Create frontend directory structure in `frontend/src/pages/applicant/`
 
 ---
 
@@ -28,155 +31,158 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [X] T004 Ensure `payment_requests` and `payment_breakdown_items` entities exist in `src/modules/shared/entities/`
-- [X] T005 [P] Ensure `receipt_files` and `approval_logs` entities exist in `src/modules/shared/entities/`
-- [X] T006 [P] Implement `OwnershipGuard` in `src/modules/applicant/guards/ownership.guard.ts` for strict RBAC
-- [X] T007 Configure `src/modules/applicant/applicant.module.ts` to import required TypeORM shared entities
+- [X] T005 Verify/Create `PaymentRequest` entity in `backend/src/modules/shared/entities/payment-request.entity.ts`
+- [X] T006 [P] Verify/Create `PaymentBreakdownItem` entity in `backend/src/modules/shared/entities/payment-breakdown-item.entity.ts`
+- [X] T007 [P] Verify/Create `ReceiptFile` entity in `backend/src/modules/shared/entities/receipt-file.entity.ts`
+- [X] T008 [P] Verify/Create `ApprovalLog` entity in `backend/src/modules/shared/entities/approval-log.entity.ts`
+- [X] T009 Create `ownership.guard.ts` in `backend/src/modules/applicant/guards/ownership.guard.ts` to ensure applicants can only access their own requests.
+- [X] T010 Setup API routing for `/api/v1/applicant` in the NestJS application
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
 ---
 
-## Phase 3: User Story 1 - Applicant views and manages payment request list (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - View Request List (Priority: P1) 🎯 MVP
 
-**Goal**: Applicant sees a consolidated, real-time list of all their payment requests sorted by status.
+**Goal**: Applicant views and manages their payment request list
 
-**Independent Test**: Load the dashboard URL and verify the paginated grid and KPI cards display correctly.
+**Independent Test**: Applicant logs in, navigates to `/applicant`, and sees their payment requests with correct statuses and KPI summaries.
 
 ### Implementation for User Story 1
 
-- [X] T008 [P] [US1] Create `payment-request-response.dto.ts` in `src/modules/applicant/dto/`
-- [X] T009 [US1] Implement `getPaymentRequests` logic with pagination and caching in `src/modules/applicant/applicant.service.ts`
-- [X] T010 [US1] Implement `GET /payment-requests` in `src/modules/applicant/applicant.controller.ts`
-- [X] T011 [P] [US1] Create frontend API service `frontend/src/pages/applicant/services/api.ts` with `fetchPaymentRequests`
-- [X] T012 [US1] Implement UI List component and KPI cards in `frontend/src/pages/applicant/dashboard.tsx`
-- [X] T013 [US1] Integrate data fetching with the UI in `dashboard.tsx`
-- [X] T013b [US1] Integrate nested routing for Dashboard, Form, and Detail pages in `ApplicantDashboard.tsx`
+- [X] T011 [P] [US1] Create response DTO `payment-request-response.dto.ts` in `backend/src/modules/applicant/dto/`
+- [X] T012 [US1] Implement `getPaymentRequests` in `backend/src/modules/applicant/applicant.service.ts`
+- [X] T013 [US1] Expose `GET /payment-requests` endpoint in `backend/src/modules/applicant/applicant.controller.ts`
+- [X] T014 [US1] Implement `getPaymentRequestById` service and `GET /payment-requests/:id` endpoint
+- [X] T015 [P] [US1] Create `StatusBadge.tsx` component in `frontend/src/pages/applicant/components/StatusBadge.tsx`
+- [X] T016 [US1] Implement `use-payment-requests.ts` custom hook in `frontend/src/pages/applicant/hooks/`
+- [X] T017 [US1] Create `ApplicantDashboard.tsx` in `frontend/src/pages/applicant/ApplicantDashboard.tsx` with list and KPI cards
 
-**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently.
+**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
 ---
 
-## Phase 4: User Story 2 - Applicant creates draft (Priority: P2)
+## Phase 4: User Story 2 - Create Draft (Priority: P2)
 
-**Goal**: Applicant can create a new payment request form and save it as a draft.
+**Goal**: Applicant creates a new payment request and saves it as a draft
 
-**Independent Test**: Fill out form with relaxed validation, click Save Draft, and see it appear in the list.
+**Independent Test**: Applicant clicks "Create New Request", fills required fields, and successfully saves as draft.
 
 ### Implementation for User Story 2
 
-- [X] T014 [P] [US2] Create `create-payment-request.dto.ts` in `src/modules/applicant/dto/`
-- [X] T015 [US2] Implement `createDraft` logic and ID generation in `src/modules/applicant/applicant.service.ts`
-- [X] T016 [US2] Implement `POST /payment-requests/draft` in `src/modules/applicant/applicant.controller.ts`
-- [X] T017 [P] [US2] Implement Payment Form UI in `frontend/src/pages/applicant/form.tsx`
-- [X] T018 [US2] Integrate save draft API in `form.tsx`
+- [X] T018 [P] [US2] Create `create-payment-request.dto.ts` in `backend/src/modules/applicant/dto/`
+- [X] T019 [US2] Implement `createDraftRequest` logic in `backend/src/modules/applicant/applicant.service.ts`
+- [X] T020 [US2] Expose `POST /payment-requests` endpoint in `backend/src/modules/applicant/applicant.controller.ts`
+- [X] T021 [P] [US2] Create `BreakdownItemTable.tsx` in `frontend/src/pages/applicant/components/BreakdownItemTable.tsx`
+- [X] T022 [US2] Create `CreateRequestForm.tsx` in `frontend/src/pages/applicant/CreateRequestForm.tsx`
+- [X] T023 [US2] Implement `calculate-total.ts` utility in `frontend/src/pages/applicant/utils/calculate-total.ts`
 
-**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently.
+**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
 ---
 
 ## Phase 5: User Story 3 - Submit to Manager (Priority: P3)
 
-**Goal**: Applicant submits a completed draft to a Manager for verification.
+**Goal**: Applicant submits a payment request to the Manager
 
-**Independent Test**: Attempt submission with missing fields (should fail). Attempt with all required fields (should transition to `SUBMITTED_MANAGER`).
+**Independent Test**: Applicant submits a draft, status changes to SUBMITTED_MANAGER, and it locks from editing.
 
 ### Implementation for User Story 3
 
-- [X] T019 [P] [US3] Create `submit-manager.dto.ts` in `src/modules/applicant/dto/`
-- [X] T020 [US3] Implement strict validation, state transition, and audit logging in `src/modules/applicant/applicant.service.ts`
-- [X] T021 [US3] Implement `POST /payment-requests/:id/submit-manager` in `src/modules/applicant/applicant.controller.ts`
-- [X] T022 [P] [US3] Implement Detail view UI in `frontend/src/pages/applicant/detail.tsx`
-- [X] T023 [US3] Integrate submit action and validation handling in `detail.tsx`
+- [X] T024 [P] [US3] Create `submit-to-manager.dto.ts` in `backend/src/modules/applicant/dto/`
+- [X] T025 [US3] Implement `submitToManager` logic with strict validation in `applicant.service.ts`
+- [X] T026 [US3] Expose `POST /payment-requests/:id/submit-to-manager` in `applicant.controller.ts`
+- [X] T027 [US3] Add "Submit to Manager" button and confirmation modal to `CreateRequestForm.tsx` / `EditRequestForm.tsx`
+- [X] T028 [US3] Implement read-only view in `RequestDetailView.tsx` for submitted requests
 
 ---
 
-## Phase 6: User Story 4 - Upload Receipts (Priority: P4)
+## Phase 6: User Story 4 - Upload Receipt Files (Priority: P4)
 
-**Goal**: Applicant attaches receipt files to their payment request.
+**Goal**: Applicant uploads and manages receipt files
 
-**Independent Test**: Upload a PDF < 10MB to a Draft request and verify it saves.
+**Independent Test**: Applicant attaches a PDF receipt to a draft request successfully.
 
 ### Implementation for User Story 4
 
-- [X] T024 [P] [US4] Create `upload-receipt.dto.ts` in `src/modules/applicant/dto/`
-- [X] T025 [US4] Implement file validation and storage logic in `src/modules/applicant/applicant.service.ts`
-- [X] T026 [US4] Implement `POST /payment-requests/:id/receipts` in `src/modules/applicant/applicant.controller.ts`
-- [X] T027 [P] [US4] Create drag-and-drop UI component in `frontend/src/pages/applicant/components/ReceiptUpload.tsx`
-- [X] T028 [US4] Integrate receipt upload API in `detail.tsx`
+- [X] T029 [P] [US4] Create `upload-receipt.dto.ts` in `backend/src/modules/applicant/dto/`
+- [X] T030 [US4] Implement `uploadReceiptFile` logic in `applicant.service.ts`
+- [X] T031 [US4] Expose `POST /payment-requests/:id/receipts` endpoint in `applicant.controller.ts`
+- [X] T032 [US4] Create `ReceiptUploader.tsx` component in `frontend/src/pages/applicant/components/ReceiptUploader.tsx`
+- [X] T033 [US4] Integrate `ReceiptUploader.tsx` into `CreateRequestForm.tsx`
 
 ---
 
-## Phase 6a: User Story 5 - Submit to Final Approver (Priority: P4)
+## Phase 7: User Story 5 - Submit to Approver (Priority: P5)
 
-**Goal**: Applicant forwards a Manager-Verified request to the Final Approver.
+**Goal**: Applicant submits a Manager-Verified request to the Final Approver
 
-**Independent Test**: Transition a `MANAGER_VERIFIED` request to `SUBMITTED_APPROVER`.
+**Independent Test**: Applicant submits verified request, status changes to SUBMITTED_APPROVER.
 
 ### Implementation for User Story 5
 
-- [X] T041 [US5] Implement strict validation and state transition logic for Approver submission in `applicant.service.ts`
-- [X] T042 [US5] Implement `POST /payment-requests/:id/submit-approver` in `src/modules/applicant/applicant.controller.ts`
-- [X] T043 [US5] Integrate submit to approver action in `detail.tsx`
+- [X] T034 [US5] Implement `submitToApprover` logic in `applicant.service.ts`
+- [X] T035 [US5] Expose `POST /payment-requests/:id/submit-to-approver` in `applicant.controller.ts`
+- [X] T036 [US5] Add "Submit to Final Approver" button to `RequestDetailView.tsx` when status is MANAGER_VERIFIED
 
 ---
 
-## Phase 6b: User Story 6 - Edit/Resubmit Rejected Requests (Priority: P4)
+## Phase 8: User Story 6 - Edit/Resubmit Rejected (Priority: P6)
 
-**Goal**: Applicant views rejection comments, edits fields, and resubmits.
+**Goal**: Applicant views rejection comments and edits/resubmits a rejected request
 
-**Independent Test**: Edit a rejected request and verify it transitions back to `SUBMITTED_MANAGER`.
+**Independent Test**: Applicant opens rejected request, sees rejection comment, edits amount, and resubmits.
 
 ### Implementation for User Story 6
 
-- [X] T044 [P] [US6] Create `update-payment-request.dto.ts` in `src/modules/applicant/dto/`
-- [X] T045 [US6] Implement edit logic for rejected states and restart approval workflow in `applicant.service.ts`
-- [X] T046 [US6] Implement `PUT /payment-requests/:id` in `src/modules/applicant/applicant.controller.ts`
-- [X] T047 [US6] Integrate rejection comment display and edit mode toggle in `detail.tsx`
+- [X] T037 [P] [US6] Create `update-payment-request.dto.ts` in `backend/src/modules/applicant/dto/`
+- [X] T038 [US6] Implement `updateDraftRequest` logic in `applicant.service.ts`
+- [X] T039 [US6] Expose `PATCH /payment-requests/:id` in `applicant.controller.ts`
+- [X] T040 [US6] Create `EditRequestForm.tsx` in `frontend/src/pages/applicant/EditRequestForm.tsx`
+- [X] T041 [US6] Display approval history timeline in frontend component
 
 ---
 
-## Phase 6c: User Story 7 - Soft-delete Draft (Priority: P4)
+## Phase 9: User Story 7 - Soft-Delete Draft (Priority: P7)
 
-**Goal**: Applicant can soft-delete a draft they no longer need.
+**Goal**: Applicant soft-deletes a draft request
 
-**Independent Test**: Delete a draft and verify it no longer appears in the list but remains in the DB.
+**Independent Test**: Applicant deletes draft, it vanishes from the list, database shows `is_deleted = true`.
 
 ### Implementation for User Story 7
 
-- [X] T048 [US7] Implement soft-delete logic for request and associated receipts in `applicant.service.ts`
-- [X] T049 [US7] Implement `DELETE /payment-requests/:id` in `src/modules/applicant/applicant.controller.ts`
-- [X] T050 [US7] Implement delete confirmation modal and action in `dashboard.tsx`
+- [X] T042 [US7] Implement `softDeleteDraft` logic in `applicant.service.ts`
+- [X] T043 [US7] Expose `DELETE /payment-requests/:id` in `applicant.controller.ts`
+- [X] T044 [US7] Add "Delete Draft" button and confirmation modal to `EditRequestForm.tsx`
 
 ---
 
-## Phase 7: User Story 8 - Real-time WebSocket Notifications (Priority: P5)
+## Phase 10: User Story 8 - Real-Time Notifications (Priority: P8)
 
-**Goal**: Applicant receives live status updates without refreshing.
+**Goal**: Applicant receives real-time status notifications
 
-**Independent Test**: Trigger a status change from backend and observe the frontend toast and auto-refresh.
+**Independent Test**: Request status changes remotely, Applicant receives toast and list updates instantly.
 
 ### Implementation for User Story 8
 
-- [X] T029 [P] [US8] Create WebSocket gateway `src/modules/applicant/applicant.gateway.ts`
-- [X] T030 [US8] Dispatch `statusUpdate` events from `applicant.service.ts` state transitions
-- [X] T031 [P] [US8] Create custom hook `frontend/src/pages/applicant/hooks/useApplicantSocket.ts`
-- [X] T032 [US8] Integrate WebSocket hook in `dashboard.tsx` to trigger toast and re-fetch
+- [X] T045 [P] [US8] Verify/Setup `NotificationGateway` in `backend/src/modules/shared/gateways/notification.gateway.ts`
+- [X] T046 [US8] Integrate `NotificationGateway` in `applicant.service.ts` to emit events when Applicant takes action
+- [X] T047 [US8] Create `use-websocket.ts` hook in `frontend/src/pages/applicant/hooks/use-websocket.ts`
+- [X] T048 [US8] Integrate WebSocket listener in `ApplicantDashboard.tsx` to update request list in real-time
 
 ---
 
-## Phase N: Polish & Cross-Cutting Concerns
+## Phase 11: Polish & Cross-Cutting Concerns
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [X] T033 Verify API response times and frontend performance targets (< 2s load, < 200ms P95 API, < 500ms WebSocket)
-- [X] T034 [P] Verify UI/UX design system — colors, StatusBadge components, typography (Inter font), modal dialogs
-- [X] T035 Verify accessibility compliance — WCAG 2.1 AA contrast, focus indicators, ARIA labels, keyboard navigation
-- [X] T036 Security hardening — RBAC guards on all endpoints, audit trail logging for all state transitions verified
-- [X] T037 [P] JSDoc/TSDoc comments on all public services, controllers, gateways, guards, and hooks
-- [X] T038 Verify import ordering convention across all TypeScript files (5-group order)
-- [X] T039 Confirm all commits follow Conventional Commits semantic prefix convention
-- [X] T040 Run quickstart.md validation
+- [X] T049 [P] Write unit tests for `applicant.controller.ts`
+- [X] T050 [P] Write unit tests for `applicant.service.ts`
+- [X] T051 Verify UI/UX design system — colors, StatusBadge components, typography (Inter font), modal dialogs
+- [X] T052 Verify accessibility compliance — WCAG 2.1 AA contrast, focus indicators, ARIA labels, keyboard navigation
+- [X] T053 Verify all API response times (< 200ms) and WebSocket delivery (< 500ms)
+- [X] T054 Add JSDoc/TSDoc comments on all public services and controllers in the applicant module
+- [X] T055 Ensure Strict Naming Conventions & Type Safety are followed
 
 ---
 
@@ -186,10 +192,12 @@
 
 - **Setup (Phase 1)**: No dependencies - can start immediately
 - **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Stories (Phase 3+)**: All depend on Foundational phase completion
-- **Polish (Final Phase)**: Depends on all desired user stories being complete
+- **User Stories (Phase 3-10)**: All depend on Foundational phase completion
+  - Sequentially in priority order (P1 → P8)
+- **Polish (Phase 11)**: Depends on all user stories being complete
 
 ### Parallel Opportunities
 
-- DTO creation across stories (T008, T014, T019, T024) can run in parallel.
-- Frontend UI components (T011, T017, T022, T027) can be built in parallel with backend endpoints.
+- Setup tasks and Foundational tasks marked [P] can run in parallel.
+- DTO creation across different user stories can run in parallel.
+- Frontend component UI design (like `StatusBadge.tsx`, `BreakdownItemTable.tsx`) can be built in parallel with backend services.

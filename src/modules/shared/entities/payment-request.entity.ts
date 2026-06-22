@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { PaymentBreakdownItem } from './payment-breakdown-item.entity';
 import { ReceiptFile } from './receipt-file.entity';
 import { ApprovalLog } from './approval-log.entity';
@@ -53,12 +60,12 @@ export class PaymentRequest {
   @UpdateDateColumn({ name: 'modified_date' })
   updated_at!: Date;
 
-  @OneToMany(() => PaymentBreakdownItem, item => item.payment_request)
+  @OneToMany(() => PaymentBreakdownItem, (item) => item.payment_request)
   breakdowns!: PaymentBreakdownItem[];
 
-  @OneToMany(() => ReceiptFile, file => file.payment_request)
+  @OneToMany(() => ReceiptFile, (file) => file.payment_request)
   receipts!: ReceiptFile[];
 
-  @OneToMany(() => ApprovalLog, log => log.payment_request)
+  @OneToMany(() => ApprovalLog, (log) => log.payment_request)
   logs!: ApprovalLog[];
 }
