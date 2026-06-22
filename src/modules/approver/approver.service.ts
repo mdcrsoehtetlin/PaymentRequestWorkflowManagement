@@ -1,7 +1,82 @@
-import { Injectable, Logger } from '@nestjs/common';
+// ============================================================
+// src/modules/approver/approver.service.ts
+// Business logic for the Final Approver dashboard workspace.
+// Handles queue queries, review-start transitions, approvals, and rejections.
+// All state mutations are wrapped in transactions with pessimistic locking.
+// ============================================================
+
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource, EntityManager, Brackets } from 'typeorm';
+
 import { PaymentRequest } from '../shared/entities/payment-request.entity';
+import { User } from '../shared/entities/user.entity';
+import { ApprovalLog } from '../shared/entities/approval-log.entity';
+import { AuditLogService } from '../shared/services/audit-log.service';
+import { RedisService } from '../shared/services/redis.service';
+import { WebsocketGateway } from '../shared/websocket.gateway';
+import { buildPaginationMeta } from '../shared/utils/pagination.util';
+import {
+  PaymentStatus,
+  ApprovalActionType,
+  Currency,
+  PaymentType,
+  PaymentMethod,
+  CURRENCY_CODES,
+  PAYMENT_TYPE_LABELS_JP,
+  PAYMENT_METHOD_LABELS_JP,
+} from '../shared/types';
+import {
+  QueryApproverRequestsDto,
+  ApproverRequestSortFields,
+} from './dto/query-approver-requests.dto';
+import { ApprovePaymentRequestDto } from './dto/approve-payment-request.dto';
+import { RejectPaymentRequestDto } from './dto/reject-payment-request.dto';
+import {
+  ApproverRequestListItem,
+  ApproverRequestDetailView,
+} from './dto/query-approver-requests.dto';
+
+/**
+ * @description Audit context capturing client IP and User-Agent for log entries.
+ */
+export interface AuditContext {
+  ipAddress: string;
+  userAgent: string;
+}
+
+/**
+ * @description Service for the Final Approver dashboard.
+ *
+ * Provides:
+ * - **Queue listing** (`findAssignedRequests`): paginated, filtered, sortable list
+ *   of requests in SUBMITTED_APPROVER or APPROVER_REVIEWING status.
+ * - **Detail fetch with auto-review** (`findOneForReview`): returns full detail
+ *   and atomically transitions SUBMITTED_APPROVER → APPROVER_REVIEWING with an
+ *   `APPR_REVIEW_START` audit log entry.
+ * - **Approval** (`approve`): transitions to APPROVED, assigns Accounting user,
+ *   evicts Redis cache, and broadcasts WebSocket notifications.
+ * - **Rejection** (`reject`): transitions to REJECTED_APPROVER with mandatory
+ *   comment (≥10 chars), returns assignment to Applicant, evicts cache, and
+ *   notifies Applicant via WebSocket.
+ *
+ * All write operations use pessimistic locking inside TypeORM transactions
+ * to prevent race conditions from concurrent approver sessions.
+ *
+ * @see {@link ApproverController} for HTTP route definitions.
+ */
+
+export interface AuditContext {
+  ipAddress: string;
+  userAgent: string;
+}
 
 @Injectable()
 export class ApproverService {
@@ -10,53 +85,649 @@ export class ApproverService {
   constructor(
     @InjectRepository(PaymentRequest)
     private readonly paymentRequestRepository: Repository<PaymentRequest>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    private readonly dataSource: DataSource,
+    private readonly auditLogService: AuditLogService,
+    private readonly redisService: RedisService,
+    private readonly websocketGateway: WebsocketGateway,
   ) {}
 
   /**
-   * @description Retrieves all pending requests assigned to the approver role.
-   * @returns A list of pending payment requests.
-   * @throws {Error} If database query fails.
+   * @description Retrieves pending requests assigned to or reviewable by the approver.
+   * @param approverUserId The ID of the authenticated final approver.
+   * @param query Filtering, sorting, and pagination parameters.
+   * @returns Paginated list of approver requests.
    */
-  async getPendingRequests() {
-    this.logger.log('Fetching pending requests for final approver');
-    return this.paymentRequestRepository.find({
-      where: [
-        { statusId: 6 }, // SUBMITTED_APPROVER
-        { statusId: 7 }, // APPROVER_REVIEWING
+  async findAssignedRequests(
+    approverUserId: number,
+    query: QueryApproverRequestsDto,
+  ) {
+    const {
+      statusId,
+      search,
+      branch,
+      dateFrom,
+      dateTo,
+      showAll,
+      page = 1,
+      pageSize = 10,
+      sortBy = ApproverRequestSortFields.MANAGER_VERIFIED_DATE,
+      sortOrder = 'DESC',
+    } = query;
+
+    this.logger.log(
+      `Fetching pending requests for final approver: ${approverUserId}`,
+    );
+
+    const qb = this.paymentRequestRepository
+      .createQueryBuilder('request')
+      .leftJoinAndSelect('request.applicant', 'applicant')
+      .leftJoinAndSelect('request.manager', 'manager')
+      .where('request.isDeleted = false');
+
+    const allowedStatuses = [
+      PaymentStatus.SUBMITTED_APPROVER,
+      PaymentStatus.APPROVER_REVIEWING,
+      PaymentStatus.APPROVED,
+      PaymentStatus.REJECTED_APPROVER,
+    ];
+
+    if (statusId) {
+      if (!allowedStatuses.includes(statusId as PaymentStatus)) {
+        throw new BadRequestException(
+          'Invalid status query for approver queue.',
+        );
+      }
+      qb.andWhere('request.statusId = :statusId', { statusId });
+    } else if (showAll) {
+      qb.andWhere('request.statusId IN (:...statuses)', {
+        statuses: allowedStatuses,
+      });
+    } else {
+      qb.andWhere('request.statusId IN (:...statuses)', {
+        statuses: [
+          PaymentStatus.SUBMITTED_APPROVER,
+          PaymentStatus.APPROVER_REVIEWING,
+        ],
+      });
+    }
+
+    // Role Queue / Assignment Check:
+    // - status = 6 (Submitted to Approver) -> available to any approver
+    // - status = 7, 8, 9 (Reviewing/Approved/Rejected) -> only visible if assigned to current approver
+    qb.andWhere(
+      new Brackets((innerQb) => {
+        innerQb
+          .where('request.statusId = :submittedStatus', {
+            submittedStatus: PaymentStatus.SUBMITTED_APPROVER,
+          })
+          .orWhere(
+            'request.statusId IN (:...assignedStatuses) AND request.finalApproverUserId = :approverUserId',
+            {
+              assignedStatuses: [
+                PaymentStatus.APPROVER_REVIEWING,
+                PaymentStatus.APPROVED,
+                PaymentStatus.REJECTED_APPROVER,
+              ],
+              approverUserId,
+            },
+          );
+      }),
+    );
+
+    // Branch filter
+    if (branch) {
+      qb.andWhere('LOWER(applicant.branch) LIKE LOWER(:branch)', { branch: `%${branch}%` });
+    }
+
+    // Date range filter (submitted_to_approver_date)
+    if (dateFrom) {
+      qb.andWhere('request.submittedToApproverDate >= :dateFrom', { dateFrom });
+    }
+    if (dateTo) {
+      qb.andWhere('request.submittedToApproverDate <= :dateTo', { dateTo });
+    }
+
+    // Search filter (request number, applicant name, or purpose)
+    if (search) {
+      qb.andWhere(
+        new Brackets((searchQb) => {
+          searchQb
+            .where('request.requestNumber LIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('applicant.fullName LIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('request.purpose LIKE :search', { search: `%${search}%` });
+        }),
+      );
+    }
+
+    // Sorting
+    const orderDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    if (sortBy === ApproverRequestSortFields.TOTAL_AMOUNT) {
+      qb.orderBy('request.totalAmount', orderDirection);
+    } else if (sortBy === ApproverRequestSortFields.STATUS) {
+      qb.orderBy('request.statusId', orderDirection);
+    } else if (sortBy === ApproverRequestSortFields.APPLICATION_DATE) {
+      qb.orderBy('request.applicationDate', orderDirection);
+    } else if (sortBy === ApproverRequestSortFields.DESIRED_PAYMENT_DATE) {
+      qb.orderBy('request.desiredPaymentDate', orderDirection);
+    } else if (sortBy === ApproverRequestSortFields.CREATED_DATE) {
+      qb.orderBy('request.createdDate', orderDirection);
+    } else {
+      // Default: managerVerificationDate / MANAGER_VERIFIED_DATE
+      qb.orderBy('request.managerVerificationDate', orderDirection);
+    }
+
+    const [data, total] = await qb
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    const items: ApproverRequestListItem[] = data.map((req) => ({
+      paymentRequestId: req.paymentRequestId,
+      requestNumber: req.requestNumber,
+      applicant: {
+        userId: req.applicant.userId,
+        fullName: req.applicant.fullName,
+        employeeNumber: req.applicant.employeeNumber,
+        branch: req.applicant.branch,
+      },
+      manager: req.manager
+        ? {
+            userId: req.manager.userId,
+            fullName: req.manager.fullName,
+            employeeNumber: req.manager.employeeNumber,
+            branch: req.manager.branch,
+          }
+        : null,
+      applicationDate: req.applicationDate as string,
+      desiredPaymentDate: req.desiredPaymentDate as string,
+      totalAmount: req.totalAmount,
+      currencyCode: CURRENCY_CODES[req.currencyId as Currency] || 'MMK',
+      statusId: req.statusId,
+      purpose: req.purpose,
+      managerVerificationDate: req.managerVerificationDate
+        ? req.managerVerificationDate.toISOString()
+        : null,
+      submittedToApproverDate: req.submittedToApproverDate
+        ? req.submittedToApproverDate.toISOString()
+        : null,
+      createdDate: req.createdDate.toISOString(),
+    }));
+
+    return {
+      data: items,
+      meta: buildPaginationMeta(total, page, pageSize),
+    };
+  }
+
+  /**
+   * @description Returns summary counts for the approver dashboard.
+   * @param approverUserId The ID of the final approver.
+   * @returns Counts of pending, reviewing, and approved requests.
+   */
+  async getSummary(approverUserId: number) {
+    this.logger.log(`Fetching summary for final approver: ${approverUserId}`);
+
+    const pendingCount = await this.paymentRequestRepository
+      .createQueryBuilder('request')
+      .where('request.isDeleted = false')
+      .andWhere('request.statusId = :statusId', {
+        statusId: PaymentStatus.SUBMITTED_APPROVER,
+      })
+      .getCount();
+
+    const reviewingCount = await this.paymentRequestRepository
+      .createQueryBuilder('request')
+      .where('request.isDeleted = false')
+      .andWhere('request.statusId = :statusId', {
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+      })
+      .andWhere('request.finalApproverUserId = :approverUserId', {
+        approverUserId,
+      })
+      .getCount();
+
+    const approvedCount = await this.paymentRequestRepository
+      .createQueryBuilder('request')
+      .where('request.isDeleted = false')
+      .andWhere('request.statusId = :statusId', {
+        statusId: PaymentStatus.APPROVED,
+      })
+      .andWhere('request.finalApproverUserId = :approverUserId', {
+        approverUserId,
+      })
+      .getCount();
+
+    const rejectedCount = await this.paymentRequestRepository
+      .createQueryBuilder('request')
+      .where('request.isDeleted = false')
+      .andWhere('request.statusId = :statusId', {
+        statusId: PaymentStatus.REJECTED_APPROVER,
+      })
+      .andWhere('request.finalApproverUserId = :approverUserId', {
+        approverUserId,
+      })
+      .getCount();
+
+    const totalAll = pendingCount + reviewingCount + approvedCount + rejectedCount;
+
+    return {
+      pendingCount,
+      reviewingCount,
+      approvedCount,
+      rejectedCount,
+      totalQueue: totalAll,
+    };
+  }
+
+  /**
+   * @description Fetches a request's details and triggers auto-start review if status is SUBMITTED_APPROVER.
+   * @param id The ID of the payment request.
+   * @param approverUserId The ID of the final approver.
+   * @param auditContext IP address and User Agent of client.
+   */
+  async findOneForReview(
+    id: number,
+    approverUserId: number,
+    auditContext: AuditContext,
+  ): Promise<ApproverRequestDetailView> {
+    const request = await this.paymentRequestRepository.findOne({
+      where: { paymentRequestId: id, isDeleted: false },
+      relations: [
+        'applicant',
+        'manager',
+        'finalApprover',
+        'receiptFiles',
+        'approvalLogs',
+        'approvalLogs.actionTakenByUser',
       ],
-      relations: ['applicant'],
     });
+
+    // Fetch breakdown items using raw query to avoid unitPrice column mapping issue
+    const breakdownItems = await this.dataSource.query(
+      `SELECT payment_breakdown_item_id, payment_request_id, line_number, item_date,
+              description, amount, quantity, unit_price, created_date, modified_date
+       FROM payment_breakdown_items
+       WHERE payment_request_id = $1
+       ORDER BY line_number ASC`,
+      [id],
+    );
+
+    if (!request) {
+      throw new NotFoundException('Payment request not found');
+    }
+
+    // Access control
+    if (
+      request.statusId !== PaymentStatus.SUBMITTED_APPROVER &&
+      request.statusId !== PaymentStatus.APPROVER_REVIEWING &&
+      request.statusId !== PaymentStatus.APPROVED &&
+      request.statusId !== PaymentStatus.REJECTED_APPROVER &&
+      request.statusId !== PaymentStatus.PAID
+    ) {
+      throw new ForbiddenException(
+        'You do not have access to view this request in its current state.',
+      );
+    }
+
+    if (
+      request.statusId === PaymentStatus.APPROVER_REVIEWING &&
+      request.finalApproverUserId !== approverUserId
+    ) {
+      throw new ForbiddenException(
+        'This request is currently being reviewed by another approver.',
+      );
+    }
+
+    const approverUser = await this.userRepository.findOne({
+      where: { userId: approverUserId },
+    });
+    if (!approverUser) {
+      throw new NotFoundException('Approver user not found');
+    }
+
+    // Auto-transition to Reviewing
+    if (
+      (request.statusId as PaymentStatus) === PaymentStatus.SUBMITTED_APPROVER
+    ) {
+      await this.dataSource.transaction(async (manager: EntityManager) => {
+        const freshRequest = await manager.findOne(PaymentRequest, {
+          where: {
+            paymentRequestId: id,
+            statusId: PaymentStatus.SUBMITTED_APPROVER,
+          },
+          lock: { mode: 'pessimistic_write' },
+        });
+
+        if (!freshRequest) {
+          throw new ConflictException(
+            'This request has already been processed or is being reviewed by another user.',
+          );
+        }
+
+        freshRequest.statusId = PaymentStatus.APPROVER_REVIEWING;
+        freshRequest.finalApproverUserId = approverUserId;
+        freshRequest.currentAssignedToUserId = approverUserId;
+        freshRequest.modifiedDate = new Date();
+        await manager.save(PaymentRequest, freshRequest);
+
+        await this.auditLogService.createLog(manager, {
+          paymentRequestId: id,
+          actionTakenByUserId: approverUserId,
+          actionTypeId: ApprovalActionType.APPR_REVIEW_START,
+          previousStatusId: PaymentStatus.SUBMITTED_APPROVER,
+          newStatusId: PaymentStatus.APPROVER_REVIEWING,
+          comment: 'Approver review started',
+          ipAddress: auditContext.ipAddress,
+          userAgent: auditContext.userAgent,
+        });
+      });
+
+      await this.redisService.del(`payment_request:payload:${id}`);
+
+      const statusUpdatePayload = {
+        paymentRequestId: request.paymentRequestId,
+        requestNumber: request.requestNumber,
+        previousStatusId: PaymentStatus.SUBMITTED_APPROVER,
+        newStatusId: PaymentStatus.APPROVER_REVIEWING,
+        actionByUserId: approverUserId,
+        actionByUserName: approverUser.fullName,
+        timestamp: new Date().toISOString(),
+      };
+      this.websocketGateway.sendPersonalNotification(
+        request.applicantUserId,
+        'request:status-changed',
+        statusUpdatePayload,
+      );
+
+      request.statusId = PaymentStatus.APPROVER_REVIEWING;
+      request.finalApproverUserId = approverUserId;
+      request.currentAssignedToUserId = approverUserId;
+
+      const reloadedLogs = await this.dataSource
+        .getRepository(ApprovalLog)
+        .find({
+          where: { paymentRequestId: id },
+          relations: ['actionTakenByUser'],
+          order: { timestamp: 'DESC' },
+        });
+      request.approvalLogs = reloadedLogs;
+    }
+
+    const sortedLogs = [...request.approvalLogs].sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+
+    const canApprove =
+      request.statusId === PaymentStatus.APPROVER_REVIEWING &&
+      request.finalApproverUserId === approverUserId;
+    const canReject =
+      request.statusId === PaymentStatus.APPROVER_REVIEWING &&
+      request.finalApproverUserId === approverUserId;
+
+    const latestManagerComment =
+      [...request.approvalLogs]
+        .reverse()
+        .find((log) => log.actionTypeId === ApprovalActionType.MGR_VERIFIED)
+        ?.comment || null;
+
+    const latestApplicantSubmissionComment =
+      [...request.approvalLogs]
+        .reverse()
+        .find((log) => log.actionTypeId === ApprovalActionType.SUBMITTED)
+        ?.comment || null;
+
+    return {
+      ...request,
+      applicationDate: request.applicationDate as string,
+      desiredPaymentDate: request.desiredPaymentDate as string,
+      submittedToManagerDate:
+        request.submittedToManagerDate?.toISOString() ?? null,
+      managerVerificationDate:
+        request.managerVerificationDate?.toISOString() ?? null,
+      submittedToApproverDate:
+        request.submittedToApproverDate?.toISOString() ?? null,
+      approvalDate: request.approvalDate?.toISOString() ?? null,
+      paymentCompletedDate: request.paymentCompletedDate?.toISOString() ?? null,
+      createdDate: request.createdDate.toISOString(),
+      modifiedDate: request.modifiedDate.toISOString(),
+      currencyCode: CURRENCY_CODES[request.currencyId as Currency] || 'MMK',
+      paymentTypeName:
+        PAYMENT_TYPE_LABELS_JP[request.paymentTypeId as PaymentType] || '経費精算',
+      paymentMethodName:
+        PAYMENT_METHOD_LABELS_JP[request.paymentMethodId as PaymentMethod] || '銀行振込',
+      breakdownItems: breakdownItems.map((item: any) => ({
+        paymentBreakdownItemId: item.payment_breakdown_item_id,
+        paymentRequestId: item.payment_request_id,
+        lineNumber: item.line_number,
+        itemDate: item.item_date,
+        description: item.description,
+        amount: item.amount,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        createdDate: item.created_date,
+        modifiedDate: item.modified_date,
+      })),
+      receiptFiles: request.receiptFiles.map((file) => ({
+        ...file,
+        uploadedDate: file.uploadedDate.toISOString(),
+      })),
+      approvalLogs: sortedLogs.map((log) => ({
+        ...log,
+        timestamp: log.timestamp.toISOString(),
+        actionTakenByUser: {
+          userId: log.actionTakenByUser.userId,
+          fullName: log.actionTakenByUser.fullName,
+          employeeNumber: log.actionTakenByUser.employeeNumber,
+          branch: log.actionTakenByUser.branch,
+        },
+      })),
+      canApprove,
+      canReject,
+      latestManagerComment,
+      latestApplicantSubmissionComment,
+    };
   }
 
   /**
-   * @description Approves a payment request.
-   * @param id The payment request ID.
-   * @param approverId The final approver's user ID.
-   * @param comment Optional comment for approval.
-   * @returns A success status message.
-   * @throws {Error} If update fails.
+   * @description Approves a request that is currently in APPROVER_REVIEWING status.
+   * @param id The ID of the payment request.
+   * @param approverUserId The ID of the final approver.
+   * @param dto Approval comment and optional target accounting user assignment.
+   * @param auditContext IP address and User Agent of client.
    */
-  async approveRequest(id: number, approverId: number, comment?: string) {
-    this.logger.log(
-      `Approving request ${id} by approver ${approverId} with comment: ${comment}`,
+  async approve(
+    id: number,
+    approverUserId: number,
+    dto: ApprovePaymentRequestDto,
+    auditContext: AuditContext,
+  ) {
+    const request = await this.paymentRequestRepository.findOne({
+      where: { paymentRequestId: id, isDeleted: false },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Payment request not found');
+    }
+
+    if (request.statusId !== PaymentStatus.APPROVER_REVIEWING) {
+      throw new ConflictException(
+        'This request is not in Reviewing state and cannot be approved.',
+      );
+    }
+
+    if (request.finalApproverUserId !== approverUserId) {
+      throw new ForbiddenException(
+        'You are not assigned to review this request.',
+      );
+    }
+
+    const approverUser = await this.userRepository.findOne({
+      where: { userId: approverUserId },
+    });
+    if (!approverUser) {
+      throw new NotFoundException('Approver user not found');
+    }
+
+    await this.dataSource.transaction(async (manager: EntityManager) => {
+      const freshRequest = await manager.findOne(PaymentRequest, {
+        where: {
+          paymentRequestId: id,
+          statusId: PaymentStatus.APPROVER_REVIEWING,
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!freshRequest) {
+        throw new ConflictException(
+          'This request has already been processed or modified by another user.',
+        );
+      }
+
+      freshRequest.statusId = PaymentStatus.APPROVED;
+      freshRequest.approvalDate = new Date();
+      freshRequest.accountingUserId = dto.accountingUserId ?? undefined!;
+      freshRequest.currentAssignedToUserId = dto.accountingUserId ?? undefined!;
+      freshRequest.modifiedDate = new Date();
+      await manager.save(PaymentRequest, freshRequest);
+
+      await this.auditLogService.createLog(manager, {
+        paymentRequestId: id,
+        actionTakenByUserId: approverUserId,
+        actionTypeId: ApprovalActionType.APPROVED,
+        previousStatusId: PaymentStatus.APPROVER_REVIEWING,
+        newStatusId: PaymentStatus.APPROVED,
+        comment: dto.comment || 'Approved by Final Approver',
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
+      });
+    });
+
+    await this.redisService.del(`payment_request:payload:${id}`);
+
+    const statusUpdatePayload = {
+      paymentRequestId: request.paymentRequestId,
+      requestNumber: request.requestNumber,
+      previousStatusId: PaymentStatus.APPROVER_REVIEWING,
+      newStatusId: PaymentStatus.APPROVED,
+      actionByUserId: approverUserId,
+      actionByUserName: approverUser.fullName,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Notify applicant
+    this.websocketGateway.sendPersonalNotification(
+      request.applicantUserId,
+      'request:status-changed',
+      statusUpdatePayload,
     );
-    // Update status to APPROVED (8)
-    return { success: true, message: 'Request approved successfully' };
+
+    // Notify accounting queue
+    this.websocketGateway.sendStatusUpdate('ACCOUNTING', statusUpdatePayload);
+
+    return { success: true, message: 'Request successfully approved.' };
   }
 
   /**
-   * @description Rejects a payment request.
-   * @param id The payment request ID.
-   * @param approverId The final approver's user ID.
-   * @param comment Required comment for rejection.
-   * @returns A success status message.
-   * @throws {Error} If update fails.
+   * @description Rejects a request in APPROVER_REVIEWING status and returns it to the Applicant.
+   * @param id The ID of the payment request.
+   * @param approverUserId The ID of the final approver.
+   * @param dto Rejection comment payload.
+   * @param auditContext IP address and User Agent of client.
    */
-  async rejectRequest(id: number, approverId: number, comment: string) {
-    this.logger.log(
-      `Rejecting request ${id} by approver ${approverId} with comment: ${comment}`,
+  async reject(
+    id: number,
+    approverUserId: number,
+    dto: RejectPaymentRequestDto,
+    auditContext: AuditContext,
+  ) {
+    const request = await this.paymentRequestRepository.findOne({
+      where: { paymentRequestId: id, isDeleted: false },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Payment request not found');
+    }
+
+    if (request.statusId !== PaymentStatus.APPROVER_REVIEWING) {
+      throw new ConflictException(
+        'This request is not in Reviewing state and cannot be rejected.',
+      );
+    }
+
+    if (request.finalApproverUserId !== approverUserId) {
+      throw new ForbiddenException(
+        'You are not assigned to review this request.',
+      );
+    }
+
+    const approverUser = await this.userRepository.findOne({
+      where: { userId: approverUserId },
+    });
+    if (!approverUser) {
+      throw new NotFoundException('Approver user not found');
+    }
+
+    await this.dataSource.transaction(async (manager: EntityManager) => {
+      const freshRequest = await manager.findOne(PaymentRequest, {
+        where: {
+          paymentRequestId: id,
+          statusId: PaymentStatus.APPROVER_REVIEWING,
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!freshRequest) {
+        throw new ConflictException(
+          'This request has already been processed or modified by another user.',
+        );
+      }
+
+      freshRequest.statusId = PaymentStatus.REJECTED_APPROVER;
+      freshRequest.currentAssignedToUserId = freshRequest.applicantUserId;
+      freshRequest.modifiedDate = new Date();
+      await manager.save(PaymentRequest, freshRequest);
+
+      await this.auditLogService.createLog(manager, {
+        paymentRequestId: id,
+        actionTakenByUserId: approverUserId,
+        actionTypeId: ApprovalActionType.APPR_REJECTED,
+        previousStatusId: PaymentStatus.APPROVER_REVIEWING,
+        newStatusId: PaymentStatus.REJECTED_APPROVER,
+        comment: dto.comment,
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
+      });
+    });
+
+    await this.redisService.del(`payment_request:payload:${id}`);
+
+    const statusUpdatePayload = {
+      paymentRequestId: request.paymentRequestId,
+      requestNumber: request.requestNumber,
+      previousStatusId: PaymentStatus.APPROVER_REVIEWING,
+      newStatusId: PaymentStatus.REJECTED_APPROVER,
+      actionByUserId: approverUserId,
+      actionByUserName: approverUser.fullName,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Notify applicant
+    this.websocketGateway.sendPersonalNotification(
+      request.applicantUserId,
+      'request:status-changed',
+      statusUpdatePayload,
     );
-    // Update status to REJECTED_APPROVER (9)
-    return { success: true, message: 'Request rejected by final approver' };
+
+    return {
+      success: true,
+      message: 'Request successfully rejected and returned to applicant.',
+    };
   }
 }
