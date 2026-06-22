@@ -27,7 +27,9 @@ export class PaginationQueryDto {
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   sortBy?: string;
 
   @IsOptional()
