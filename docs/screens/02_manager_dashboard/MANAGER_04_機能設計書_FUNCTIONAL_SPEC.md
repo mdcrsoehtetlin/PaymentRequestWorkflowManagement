@@ -299,11 +299,11 @@ Not applicable to this screen — the `MANAGER` actor has no deletion privileges
 
 | Column ID | Column Name | Data Source | Display Format | Sortable | Filterable |
 | :--- | :--- | :--- | :--- | :---: | :---: |
-| COL-01 | Request Number | `payment_requests.request_number` | "PRF-YYYY-NNN" (Anchor Link to detail view) | ✓ | ✓ |
-| COL-02 | Applicant | `users.full_name` (Applicant) | String | ✓ | ✓ |
-| COL-03 | Branch | `users.branch` (Applicant) | String | ✗ | ✓ |
-| COL-04 | Application Date | `payment_requests.application_date` | YYYY-MM-DD | ✓ | ✓ |
-| COL-05 | Total Amount | `payment_requests.total_amount` | Currency + Decimal (e.g. USD 1,500.00) | ✓ | ✗ |
+| COL-01 | Request ID | `payment_requests.request_number` | "PRF-YYYY-NNN" (Anchor Link to detail view) | ✓ | ✓ |
+| COL-02 | Applicant Name | `users.full_name` (Applicant) | String | ✓ | ✓ |
+| COL-03 | Amount | `payment_requests.total_amount` | Currency + Decimal (e.g. USD 1,500.00) | ✓ | ✗ |
+| COL-04 | Date | `payment_requests.application_date` | YYYY-MM-DD | ✓ | ✓ |
+| COL-05 | Urgent Flag | Computed from `desired_payment_date` | Red Badge/Icon (Active if `desired_payment_date` is <= 48 hours from today or overdue) | ✓ | ✓ |
 | COL-06 | Status | `payment_statuses.status_name` | Badge (Yellow: Submitted, Blue: Reviewing) | ✓ | ✓ |
 
 **Action Controls:**
@@ -365,11 +365,13 @@ Timeline component rendering all previous `approval_logs` entries:
 
 | UI Element | Type | Description / Behavior |
 | :--- | :--- | :--- |
-| **Verify Button** | Button (Primary Green) | Triggers verification flow. Displays confirmation modal: "Are you sure you want to verify this request?". |
-| **Reject Button** | Button (Danger Red) | Opens Rejection Modal requiring comment. |
-| **Rejection Comment Input**| Text Area | In Rejection Modal. Length validator enforced (>=10 chars, max 500 chars). |
+| UI Element | Type | Description / Behavior |
+| :--- | :--- | :--- |
+| **Approve Button (Verify)** | Button (Primary Green) | Triggers approval/verification flow. Displays confirmation modal: "Are you sure you want to approve/verify this request?". |
+| **Reject Button** | Button (Danger Red) | Opens Rejection Modal requiring a comment. |
+| **Rejection Comment Input**| Text Area | In Rejection Modal. Mandatory for rejections. Length validator enforced (>=10 chars, max 500 chars). |
 | **Cancel Rejection Button**| Button | Closes Rejection Modal and resets input. |
-| **Submit Rejection Button**| Button | Submits rejection and transitions request back to Applicant. |
+| **Submit Rejection Button**| Button | Submits rejection and transitions request back to Applicant with the mandatory comment. |
 
 #### 5.2.3 Dynamic Alert Evaluation
 
@@ -445,11 +447,11 @@ All request detail parameters are read-only. The only interactive inputs are:
 
 | Field | Display Name | Data Source | Display Format |
 | :--- | :--- | :--- | :--- |
-| Request Number | 申請番号 | `payment_requests.request_number` | String (e.g., "PRF-2026-0001") |
-| Applicant | 申請者 | `users.full_name` | String |
-| Branch | 支店 | `users.branch` | String |
-| Application Date | 申請日 | `payment_requests.application_date` | YYYY-MM-DD |
-| Total Amount | 合計金額 | `payment_requests.total_amount` | Decimal (12,2) with currency code |
+| Request ID | 申請番号 (Request Number) | `payment_requests.request_number` | String (e.g., "PRF-2026-0001") |
+| Applicant Name | 申請者氏名 | `users.full_name` | String |
+| Amount | 合計金額 | `payment_requests.total_amount` | Decimal (12,2) with currency code |
+| Date | 申請日 | `payment_requests.application_date` | YYYY-MM-DD |
+| Urgent Flag | 至急フラグ | Computed from `desired_payment_date` | Red Badge/Icon (Active if `desired_payment_date` <= 48 hours or overdue) |
 | Status Badge | ステータス | `payment_statuses.status_name` | Colored Badge |
 
 #### 7.2.2 Request Detail View

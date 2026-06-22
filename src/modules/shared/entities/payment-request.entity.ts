@@ -7,7 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
-  VersionColumn,
+
 } from 'typeorm';
 import { User } from './user.entity';
 import { PaymentBreakdownItem } from './payment-breakdown-item.entity';
@@ -153,8 +153,6 @@ export class PaymentRequest {
   @Column({ name: 'is_deleted', default: false })
   isDeleted!: boolean;
 
-  @VersionColumn()
-  version!: number;
 
   @OneToMany(() => PaymentBreakdownItem, (item) => item.paymentRequest, {
     cascade: true,

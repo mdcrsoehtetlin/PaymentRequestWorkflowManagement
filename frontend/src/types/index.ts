@@ -105,6 +105,20 @@ export const STATUS_LABELS_JP: Record<PaymentStatus, string> = {
   [PaymentStatus.PAID]: '支払完了',
 };
 
+/** English labels for each payment status. */
+export const STATUS_LABELS_EN: Record<PaymentStatus, string> = {
+  [PaymentStatus.DRAFT]: 'Draft',
+  [PaymentStatus.SUBMITTED_MANAGER]: 'Submitted to Manager',
+  [PaymentStatus.MANAGER_REVIEWING]: 'Manager Reviewing',
+  [PaymentStatus.MANAGER_VERIFIED]: 'Manager Verified',
+  [PaymentStatus.REJECTED_MANAGER]: 'Rejected by Manager',
+  [PaymentStatus.SUBMITTED_APPROVER]: 'Submitted to Approver',
+  [PaymentStatus.APPROVER_REVIEWING]: 'Approver Reviewing',
+  [PaymentStatus.APPROVED]: 'Approved',
+  [PaymentStatus.REJECTED_APPROVER]: 'Rejected by Approver',
+  [PaymentStatus.PAID]: 'Paid',
+};
+
 /**
  * Tailwind CSS classes for status badges.
  * Includes `border` class as required by Design System §9.2.2.
@@ -147,6 +161,20 @@ export const ACTION_LABELS_JP: Record<ApprovalActionType, string> = {
   [ApprovalActionType.PAYMENT_COMPLETED]: '支払完了',
 };
 
+/** English labels for approval action types. */
+export const ACTION_LABELS_EN: Record<ApprovalActionType, string> = {
+  [ApprovalActionType.CREATED]: 'Created',
+  [ApprovalActionType.EDITED]: 'Edited',
+  [ApprovalActionType.SUBMITTED]: 'Submitted',
+  [ApprovalActionType.MGR_REVIEW_START]: 'Manager Review Started',
+  [ApprovalActionType.MGR_VERIFIED]: 'Manager Verified',
+  [ApprovalActionType.MGR_REJECTED]: 'Rejected by Manager',
+  [ApprovalActionType.APPR_REVIEW_START]: 'Approver Review Started',
+  [ApprovalActionType.APPROVED]: 'Approved',
+  [ApprovalActionType.APPR_REJECTED]: 'Rejected by Approver',
+  [ApprovalActionType.PAYMENT_COMPLETED]: 'Payment Completed',
+};
+
 /** Tailwind color classes for action type badges in ApprovalTimeline. */
 export const ACTION_BADGE_COLORS: Record<ApprovalActionType, string> = {
   [ApprovalActionType.CREATED]: 'bg-gray-100 text-gray-700',
@@ -169,11 +197,26 @@ export const PAYMENT_TYPE_LABELS_JP: Record<PaymentType, string> = {
   [PaymentType.OTHER]: 'その他',
 };
 
+/** English labels for payment type dropdown options. */
+export const PAYMENT_TYPE_LABELS_EN: Record<PaymentType, string> = {
+  [PaymentType.EXPENSE_REIMBURSE]: 'Expense Reimbursement',
+  [PaymentType.SERVICE_PAYMENT]: 'Service Payment',
+  [PaymentType.ADVANCE_PAYMENT]: 'Advance Payment',
+  [PaymentType.OTHER]: 'Other',
+};
+
 /** Japanese labels for payment method dropdown options. */
 export const PAYMENT_METHOD_LABELS_JP: Record<PaymentMethod, string> = {
   [PaymentMethod.BANK_TRANSFER]: '銀行振込',
   [PaymentMethod.CASH]: '現金',
   [PaymentMethod.CHECK]: '小切手',
+};
+
+/** English labels for payment method dropdown options. */
+export const PAYMENT_METHOD_LABELS_EN: Record<PaymentMethod, string> = {
+  [PaymentMethod.BANK_TRANSFER]: 'Bank Transfer',
+  [PaymentMethod.CASH]: 'Cash',
+  [PaymentMethod.CHECK]: 'Check',
 };
 
 /** ISO currency codes for display. */
@@ -191,6 +234,15 @@ export const ROLE_LABELS_JP: Record<UserRole, string> = {
   [UserRole.APPROVER]: '最終承認者',
   [UserRole.ACCOUNTING]: '経理担当者',
   [UserRole.ADMIN]: 'システム管理者',
+};
+
+/** English labels for user role display. */
+export const ROLE_LABELS_EN: Record<UserRole, string> = {
+  [UserRole.APPLICANT]: 'Applicant',
+  [UserRole.MANAGER]: 'Manager',
+  [UserRole.APPROVER]: 'Approver',
+  [UserRole.ACCOUNTING]: 'Accounting',
+  [UserRole.ADMIN]: 'Admin',
 };
 
 /**

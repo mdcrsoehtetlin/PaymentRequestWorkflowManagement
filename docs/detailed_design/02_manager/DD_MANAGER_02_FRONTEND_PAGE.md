@@ -1,4 +1,4 @@
-﻿# DD_MANAGER_02 — Frontend Request Page (Dashboard)
+# DD_MANAGER_02 — Frontend Request Page (Dashboard)
 
 > **Doc ID:** PRWM-DD-MGR-02 | **Version:** 1.0 | **Status:** Released  
 > **Last Updated:** 2026-06-16
@@ -38,7 +38,7 @@ The `ManagerDashboard` is the landing page for the Manager role. It displays KPI
 │          │  ┌──────────────────────────────────────────────────────────────────────┐  │
 │          │  │ [D] PENDING VERIFICATION LIST (LEFT PANE)                          │  │
 │          │  │ Data Grid with Columns:                                             │  │
-│          │  │ [申請番号] [申請日] [申請者] [支店] [金額] [ステータス] [経過時間]     │  │
+│          │  │ [申請番号 (Request ID)] [申請者氏名] [合計金額] [申請日] [至急フラグ] [ステータス] │  │
 │          │  │ (10 rows max per page, with pagination)                             │  │
 │          │  │ Row Click → Triggers Detail Panel Load (RIGHT PANE)                 │  │
 │          │  └──────────────────────────────────────────────────────────────────────┘  │
@@ -92,13 +92,12 @@ State managed via `useManagerQueue` hook.
 
 | Column Header | Data Field | Component/Format | Sortable | Width |
 |---------------|-----------|------------------|----------|-------|
-| 申請番号 (Request No) | `requestNumber` | String link to detail | Yes | 15% |
-| 申請日 (App Date) | `applicationDate` | `formatDate()` YYYY-MM-DD | Yes | 12% |
-| 申請者 (Applicant) | `applicantName` | String | Yes | 20% |
-| 支店 (Branch) | `applicantBranch` | String badge | No | 15% |
+| 申請番号 (Request ID) | `requestNumber` | String link to detail | Yes | 15% |
+| 申請者氏名 (Applicant Name) | `applicantName` | String | Yes | 20% |
 | 合計金額 (Amount) | `totalAmount`, `currency` | `CurrencyDisplay` | Yes | 18% |
+| 申請日 (Date) | `applicationDate` | `formatDate()` YYYY-MM-DD | Yes | 12% |
+| 至急フラグ (Urgent Flag) | `isUrgent` (computed) | Red Badge/Icon (Active if `desiredPaymentDate` <= 48 hours or overdue) | Yes | 15% |
 | ステータス (Status) | `statusId` | `StatusBadge` | Yes | 15% |
-| 経過時間 (Elapsed Time) | Calculated from `submittedDate` | Time badge (e.g., "2h 30m") | No | 12% |
 
 **Table Behavior:**
 - Row click triggers detail panel load on right side (split-pane layout on desktop)

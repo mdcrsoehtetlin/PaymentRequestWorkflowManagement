@@ -12,7 +12,60 @@
     },
     "manager": {
       "title": "Manager Dashboard",
-      "welcome_message": "Welcome to your dashboard. Here you can verify payment requests submitted by your team."
+      "welcome_message": "Welcome to your dashboard. Here you can verify payment requests submitted by your team.",
+      "refresh": "Refresh",
+      "pending_review": "Pending Review",
+      "reviewing": "Reviewing",
+      "verified": "Verified",
+      "rejected": "Rejected",
+      "search_placeholder": "Search by applicant name...",
+      "all_statuses": "All Statuses",
+      "request_no": "Request No.",
+      "applicant": "Applicant",
+      "amount": "Amount",
+      "application_date": "Application Date",
+      "urgent": "Urgent",
+      "status": "Status",
+      "loading": "Loading...",
+      "no_requests": "No matching payment requests.",
+      "unregistered": "N/A",
+      "select_request": "Select a request to view details",
+      "select_request_hint": "Select a payment request from the table to view breakdowns, attached receipts, and perform approve/reject actions.",
+      "loading_details": "Loading request details...",
+      "last_updated": "Last Updated:",
+      "employee_number": "Employee Number",
+      "department_branch": "Department / Branch",
+      "desired_payment_date": "Desired Payment Date",
+      "payment_type": "Payment Type",
+      "payment_method": "Payment Method",
+      "bank_account_phone": "Bank Account / Phone Number",
+      "purpose": "Purpose",
+      "payment_breakdown": "Payment Breakdown",
+      "date": "Date",
+      "description": "Description",
+      "total_amount": "Total Amount",
+      "receipt_attachments": "Receipt Attachments",
+      "no_receipts": "No receipt files attached.",
+      "preview": "Preview",
+      "approval_history": "Approval Process History",
+      "comment_label": "Comment (optional for approval / rejection requires reason >= 10 characters)",
+      "comment_placeholder": "Enter a comment about the verification result, or the reason for rejection if sending back.",
+      "max_chars": "Max 500 characters",
+      "reject": "Reject",
+      "approve": "Approve",
+      "fetch_error": "Failed to fetch payment requests.",
+      "detail_fetch_error": "Failed to fetch request details.",
+      "approve_success": "Request approved.",
+      "reject_success": "Request rejected.",
+      "conflict_warning": "This request was updated by another user. Loading latest state.",
+      "approve_error": "Approval failed.",
+      "reject_error": "Rejection failed.",
+      "comment_max_error": "Comment must be 500 characters or less.",
+      "rejection_reason_min_error": "Rejection reason must be at least 10 characters.",
+      "rejection_reason_max_error": "Rejection reason must be 500 characters or less.",
+      "no_branch": "N/A",
+      "other": "Other",
+      "bank_transfer": "Bank Transfer"
     },
     "approver": {
       "title": "Approver Dashboard",
@@ -25,6 +78,50 @@
     "admin": {
       "title": "Admin Dashboard",
       "welcome_message": "Welcome to your dashboard. Here you can manage users and system configuration."
+    }
+  },
+  "common": {
+    "status": {
+      "draft": "Draft",
+      "submitted_manager": "Submitted to Manager",
+      "manager_reviewing": "Manager Reviewing",
+      "manager_verified": "Manager Verified",
+      "rejected_manager": "Rejected by Manager",
+      "submitted_approver": "Submitted to Approver",
+      "approver_reviewing": "Approver Reviewing",
+      "approved": "Approved",
+      "rejected_approver": "Rejected by Approver",
+      "paid": "Paid"
+    },
+    "action": {
+      "created": "Created",
+      "edited": "Edited",
+      "submitted": "Submitted",
+      "mgr_review_start": "Manager Review Started",
+      "mgr_verified": "Manager Verified",
+      "mgr_rejected": "Rejected by Manager",
+      "appr_review_start": "Approver Review Started",
+      "approved": "Approved",
+      "appr_rejected": "Rejected by Approver",
+      "payment_completed": "Payment Completed"
+    },
+    "payment_type": {
+      "expense_reimburse": "Expense Reimbursement",
+      "service_payment": "Service Payment",
+      "advance_payment": "Advance Payment",
+      "other": "Other"
+    },
+    "payment_method": {
+      "bank_transfer": "Bank Transfer",
+      "cash": "Cash",
+      "check": "Check"
+    },
+    "role": {
+      "applicant": "Applicant",
+      "manager": "Manager",
+      "approver": "Approver",
+      "accounting": "Accounting",
+      "admin": "Admin"
     }
   }
 }
