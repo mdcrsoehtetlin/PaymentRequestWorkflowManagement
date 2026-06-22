@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Plus, Edit2, RefreshCw } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { apiClient } from '../../services/api-client';
@@ -307,7 +307,7 @@ export function UserManagementWorkspace() {
       </div>
       <DataTable
         columns={columns}
-        data={sortedUsers as unknown as Record<string, unknown>[]}
+        data={sortedUsers}
         isLoading={isLoading}
         emptyMessage="ユーザーが見つかりません"
         sorting={{

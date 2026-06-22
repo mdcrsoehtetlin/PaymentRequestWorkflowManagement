@@ -1,4 +1,3 @@
-import React from 'react';
 import { Menu, Bell } from 'lucide-react';
 import type { JwtPayload } from '../../types';
 import { LanguageSwitcher } from '../shared/LanguageSwitcher';

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Eye } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { apiClient } from '../../services/api-client';
@@ -316,7 +316,7 @@ export function AuditLogWorkspace() {
         <div className="flex-1">
           <DataTable
             columns={columns}
-            data={sortedLogs as unknown as Record<string, unknown>[]}
+            data={sortedLogs}
             isLoading={isLoading}
             emptyMessage="該当するログが見つかりません"
             onRowClick={(row) => setSelectedLog(row as unknown as AuditLogRecord)}

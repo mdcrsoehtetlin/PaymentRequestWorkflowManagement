@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 import { apiClient } from '../../services/api-client';
 import { DataTable, type Column } from '../../components/shared/DataTable';
