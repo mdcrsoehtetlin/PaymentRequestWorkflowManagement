@@ -35,7 +35,7 @@ export function DataTable<T extends Record<string, unknown>>({
   columns,
   data,
   isLoading = false,
-  emptyMessage = 'データがありません',
+  emptyMessage = 'No data available',
   onRowClick,
   pagination,
   sorting,
@@ -107,11 +107,11 @@ export function DataTable<T extends Record<string, unknown>>({
             >
               {[10, 20, 50].map((size) => (
                 <option key={size} value={size}>
-                  {size}件
+                  {size} rows
                 </option>
               ))}
             </select>
-            表示中
+            Showing
             <span className="mx-2 font-medium text-slate-900">
               {Math.min((pagination.page - 1) * pagination.pageSize + 1, pagination.totalItems)}
             </span>
@@ -119,7 +119,7 @@ export function DataTable<T extends Record<string, unknown>>({
             <span className="mx-2 font-medium text-slate-900">
               {Math.min(pagination.page * pagination.pageSize, pagination.totalItems)}
             </span>
-            / 全<span className="mx-1 font-medium text-slate-900">{pagination.totalItems}</span>件
+            of <span className="mx-1 font-medium text-slate-900">{pagination.totalItems}</span> results
           </div>
 
           <div className="flex items-center space-x-2">
@@ -128,7 +128,7 @@ export function DataTable<T extends Record<string, unknown>>({
               disabled={pagination.page <= 1}
               className="px-3 py-1 border border-slate-300 rounded bg-white text-slate-600 disabled:opacity-50 hover:bg-slate-50 text-sm font-medium"
             >
-              前へ
+              Previous
             </button>
             <span className="text-sm text-slate-600 px-2">
               {pagination.page} / {pagination.totalPages || 1}
@@ -138,7 +138,7 @@ export function DataTable<T extends Record<string, unknown>>({
               disabled={pagination.page >= pagination.totalPages}
               className="px-3 py-1 border border-slate-300 rounded bg-white text-slate-600 disabled:opacity-50 hover:bg-slate-50 text-sm font-medium"
             >
-              次へ
+              Next
             </button>
           </div>
         </div>

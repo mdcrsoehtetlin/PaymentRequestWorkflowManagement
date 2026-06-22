@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
 
 // Entities
 import { User } from './entities/user.entity';
@@ -39,6 +40,17 @@ import { AuditLogService } from './services/audit-log.service';
     ]),
   ],
   providers: [
+    {
+      provide: 'REDIS_CLIENT',
+      useFactory: (configService: ConfigService) => {
+        return new Redis({
+          host: configService.get<string>('redis.host', 'localhost'),
+          port: configService.get<number>('redis.port', 6379),
+          password: configService.get<string>('redis.password', '') || undefined,
+        });
+      },
+      inject: [ConfigService],
+    },
     WebsocketGateway,
     RequestNumberService,
     FileUploadService,
@@ -46,6 +58,7 @@ import { AuditLogService } from './services/audit-log.service';
   ],
   exports: [
     TypeOrmModule,
+    'REDIS_CLIENT',
     WebsocketGateway,
     RequestNumberService,
     FileUploadService,

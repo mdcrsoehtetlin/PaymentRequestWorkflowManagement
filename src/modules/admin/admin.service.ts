@@ -10,9 +10,9 @@ export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
   constructor(
-    @InjectRepository(User)
+    @(InjectRepository(User) as ParameterDecorator)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(ApprovalLog)
+    @(InjectRepository(ApprovalLog) as ParameterDecorator)
     private readonly approvalLogRepository: Repository<ApprovalLog>,
   ) {}
 

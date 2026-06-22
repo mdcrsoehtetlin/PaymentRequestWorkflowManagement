@@ -13,7 +13,7 @@ import { JwtPayload } from '../types';
 @Injectable()
 export class OwnershipGuard implements CanActivate {
   constructor(
-    @InjectRepository(PaymentRequest)
+    @(InjectRepository(PaymentRequest) as ParameterDecorator)
     private readonly repo: Repository<PaymentRequest>,
   ) {}
 

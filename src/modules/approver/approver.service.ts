@@ -8,7 +8,7 @@ export class ApproverService {
   private readonly logger = new Logger(ApproverService.name);
 
   constructor(
-    @InjectRepository(PaymentRequest)
+    @(InjectRepository(PaymentRequest) as ParameterDecorator)
     private readonly paymentRequestRepository: Repository<PaymentRequest>,
   ) {}
 
