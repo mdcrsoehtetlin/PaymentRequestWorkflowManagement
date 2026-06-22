@@ -9,6 +9,24 @@ import {
 import { PaymentRequest } from './payment-request.entity';
 import { User } from './user.entity';
 
+/**
+ * @description Immutable audit log entity tracking all workflow state transitions.
+ * Database trigger `protect_approval_logs_immutable` must be active to prevent
+ * UPDATE/DELETE operations on this table, ensuring audit trail integrity.
+ *
+ * Migration SQL:
+ * CREATE OR REPLACE FUNCTION protect_approval_logs_immutability()
+ * RETURNS TRIGGER AS $$
+ * BEGIN
+ *   RAISE EXCEPTION 'Audit logs are immutable. UPDATE/DELETE operations are prohibited.';
+ *   RETURN NULL;
+ * END;
+ * $$ LANGUAGE plpgsql;
+ *
+ * CREATE TRIGGER trg_approval_logs_immutable
+ * BEFORE UPDATE OR DELETE ON approval_logs
+ * FOR EACH ROW EXECUTE FUNCTION protect_approval_logs_immutability();
+ */
 @Entity('approval_logs')
 export class ApprovalLog {
   @PrimaryGeneratedColumn({ name: 'approval_log_id', type: 'bigint' })

@@ -1,32 +1,20 @@
 import {
   IsNotEmpty,
   IsString,
-  IsEmail,
   MaxLength,
   IsInt,
   IsOptional,
   IsBoolean,
+  IsNumber,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export class CreateUserDto {
-  @IsNotEmpty()
-  @IsEmail()
-  @MaxLength(255)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  email!: string;
-
-  @IsNotEmpty()
+export class UpdateUserDto {
+  @IsOptional()
   @IsString()
   @MaxLength(200)
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  fullName!: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(20)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  employeeNumber!: string;
+  fullName?: string;
 
   @IsOptional()
   @IsString()
@@ -34,17 +22,21 @@ export class CreateUserDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   department?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(100)
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  branch!: string;
+  branch?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsInt()
-  roleId!: number;
+  roleId?: number;
 
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsNotEmpty()
+  @IsNumber()
+  version!: number;
 }
