@@ -224,7 +224,7 @@ export function AuditLogWorkspace() {
             <label className="block text-sm font-medium text-slate-700 mb-1">
               リクエストID
             </label>
-            <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+            <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
               <span className="px-2 py-2 text-sm text-slate-500 bg-slate-50 border-r border-slate-300 select-none">PRF-</span>
               <input
                 type="text"
@@ -252,7 +252,7 @@ export function AuditLogWorkspace() {
                 debouncedFetch();
               }}
               placeholder="名前で検索"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           <div className="w-36">
@@ -266,7 +266,7 @@ export function AuditLogWorkspace() {
                 setPagination((prev) => ({ ...prev, page: 1 }));
                 debouncedFetch();
               }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
             >
               {ACTION_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -287,7 +287,7 @@ export function AuditLogWorkspace() {
                 setPagination((prev) => ({ ...prev, page: 1 }));
                 debouncedFetch();
               }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           <div className="w-44">
@@ -302,7 +302,7 @@ export function AuditLogWorkspace() {
                 setPagination((prev) => ({ ...prev, page: 1 }));
                 debouncedFetch();
               }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
         </div>

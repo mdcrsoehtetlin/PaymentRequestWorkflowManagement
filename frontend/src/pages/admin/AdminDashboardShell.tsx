@@ -25,7 +25,7 @@ export function AdminDashboardShell() {
   return (
     <div className="flex h-screen bg-slate-50">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#1E3A8A] text-white flex flex-col">
+      <aside className="w-64 bg-blue-900 text-white flex flex-col shadow-lg">
         <div className="px-6 py-5 border-b border-blue-800">
           <div className="flex items-center gap-2">
             <Shield className="w-6 h-6" />

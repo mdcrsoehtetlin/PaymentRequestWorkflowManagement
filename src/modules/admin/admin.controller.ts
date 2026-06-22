@@ -9,18 +9,52 @@ import {
   ParseIntPipe,
   ParseBoolPipe,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../shared/guards/roles.guard';
 import { Roles } from '../shared/decorators/roles.decorator';
 import { CurrentUser } from '../shared/decorators/current-user.decorator';
-import { RoleCode, JwtPayload } from '../shared/types';
+import { RoleCode, JwtPayload, PaginatedResponse } from '../shared/types';
 import { AdminService } from './admin.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
+
+interface UserResponse {
+  userId: number;
+  employeeNumber: string;
+  fullName: string;
+  email: string;
+  branch: string;
+  roleId: number;
+  isActive: boolean;
+  version: number;
+}
+
+interface CreateUserResponse extends UserResponse {
+  temporaryPassword: string;
+}
+
+interface ResetPasswordResponse {
+  userId: number;
+  temporaryPassword: string;
+  version: number;
+}
+
+interface AuditLogResponse {
+  approvalLogId: string;
+  paymentRequestId: number;
+  actionTakenByUserId: number;
+  actorName: string;
+  actionTypeId: number;
+  previousStatusId: number | null;
+  newStatusId: number | null;
+  comment: string | null;
+  ipAddress: string;
+  userAgent: string;
+  timestamp: Date;
+}
 
 /**
  * @description Controller handling administrative operations: user management, master data, and audit logs.
@@ -33,6 +67,11 @@ export class AdminController {
 
   /**
    * @description Fetches a paginated list of system users.
+   * @param keyword Search filter for employee number or full name.
+   * @param roleId Filter by role ID.
+   * @param isActive Filter by active status.
+   * @param page Page number (default 1).
+   * @param pageSize Items per page (default 20).
    * @returns Paginated user list with metadata.
    */
   @Get('users')
@@ -42,7 +81,7 @@ export class AdminController {
     @Query('isActive') isActive?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
-  ) {
+  ): Promise<PaginatedResponse<UserResponse>> {
     return this.adminService.getUsers(
       keyword,
       roleId,
@@ -56,9 +95,12 @@ export class AdminController {
    * @description Creates a new user with auto-generated temporary password.
    * @param userData The payload containing the new user's details.
    * @returns The created user object with temporary password (displayed once).
+   * @throws {ConflictException} If email or employee number already exists.
    */
   @Post('users')
-  async createUser(@Body() userData: CreateUserDto) {
+  async createUser(
+    @Body() userData: CreateUserDto,
+  ): Promise<CreateUserResponse> {
     return this.adminService.createUser(userData);
   }
 
@@ -67,12 +109,14 @@ export class AdminController {
    * @param id The ID of the user to update.
    * @param dto The update payload including version.
    * @returns The updated user object.
+   * @throws {NotFoundException} If user not found.
+   * @throws {ConflictException} If version mismatch (concurrent edit).
    */
   @Patch('users/:id')
   async updateUser(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
-  ) {
+  ): Promise<UserResponse> {
     return this.adminService.updateUser(id, dto);
   }
 
@@ -80,15 +124,17 @@ export class AdminController {
    * @description Toggles user active status and evicts sessions from Redis.
    * @param id The ID of the user to toggle.
    * @param isActive The new active status.
-   * @param currentUserId The ID of the admin performing the action.
-   * @returns Success status.
+   * @param currentUser The JWT payload of the admin performing the action.
+   * @returns Success status with new active state.
+   * @throws {BadRequestException} If admin tries to deactivate themselves.
+   * @throws {NotFoundException} If user not found.
    */
   @Patch('users/:id/toggle-active')
   async toggleUserActive(
     @Param('id', ParseIntPipe) id: number,
     @Body('isActive', ParseBoolPipe) isActive: boolean,
     @CurrentUser() currentUser: JwtPayload,
-  ) {
+  ): Promise<{ success: boolean; isActive: boolean }> {
     return this.adminService.toggleUserActive(id, isActive, currentUser.sub);
   }
 
@@ -97,22 +143,25 @@ export class AdminController {
    * @param id The ID of the user to reset password for.
    * @param dto Contains version for optimistic locking.
    * @returns New temporary password (displayed once).
+   * @throws {NotFoundException} If user not found.
+   * @throws {ConflictException} If version mismatch.
    */
   @Post('users/:id/reset-password')
   async resetPassword(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ResetPasswordDto,
-  ) {
+  ): Promise<ResetPasswordResponse> {
     return this.adminService.resetPassword(id, dto);
   }
 
   /**
    * @description Fetches master data lookup tables.
-   * @param category The master data category.
+   * @param category The master data category to fetch.
    * @returns Read-only list of configured categories.
+   * @throws {NotFoundException} If category not found.
    */
   @Get('master-data/:category')
-  async getMasterData(@Param('category') category: string) {
+  async getMasterData(@Param('category') category: string): Promise<unknown[]> {
     return this.adminService.getMasterData(category);
   }
 
@@ -122,7 +171,9 @@ export class AdminController {
    * @returns Paginated audit log list.
    */
   @Get('audit-logs')
-  async getAuditLogs(@Query() query: AuditLogQueryDto) {
+  async getAuditLogs(
+    @Query() query: AuditLogQueryDto,
+  ): Promise<PaginatedResponse<AuditLogResponse>> {
     return this.adminService.getAuditLogs(query);
   }
 }

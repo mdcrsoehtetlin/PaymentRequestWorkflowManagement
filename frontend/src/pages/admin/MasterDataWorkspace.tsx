@@ -92,7 +92,7 @@ export function MasterDataWorkspace() {
               onClick={() => setActiveCategory(cat.value)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activeCategory === cat.value
-                  ? 'bg-[#1E3A8A] text-white'
+                  ? 'bg-blue-900 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >

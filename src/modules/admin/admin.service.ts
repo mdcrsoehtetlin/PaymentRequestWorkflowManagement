@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import {
   Injectable,
   Logger,
@@ -6,8 +7,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
-import { randomBytes } from 'crypto';
+import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../shared/entities/user.entity';
 import { ApprovalLog } from '../shared/entities/approval-log.entity';
@@ -57,25 +57,31 @@ export class AdminService {
    * @returns The created user with temporary password displayed once.
    * @throws {ConflictException} If email or employee number already exists.
    */
-  async createUser(dto: CreateUserDto) {
+  async createUser(dto: CreateUserDto): Promise<{
+    userId: number;
+    employeeNumber: string;
+    fullName: string;
+    email: string;
+    branch: string;
+    roleId: number;
+    isActive: boolean;
+    temporaryPassword: string;
+    version: number;
+  }> {
     this.logger.log(`Creating new user with email: ${dto.email}`);
 
     const existingEmail = await this.userRepository.findOne({
       where: { email: dto.email },
     });
     if (existingEmail) {
-      throw new ConflictException(
-        'このメールアドレスは既に登録されています',
-      );
+      throw new ConflictException('このメールアドレスは既に登録されています');
     }
 
     const existingEmpNo = await this.userRepository.findOne({
       where: { employeeNumber: dto.employeeNumber },
     });
     if (existingEmpNo) {
-      throw new ConflictException(
-        'この社員番号は既に登録されています',
-      );
+      throw new ConflictException('この社員番号は既に登録されています');
     }
 
     const temporaryPassword = this.generateTemporaryPassword();
@@ -126,7 +132,24 @@ export class AdminService {
     isActive?: boolean,
     page = 1,
     pageSize = 20,
-  ) {
+  ): Promise<{
+    data: Array<{
+      userId: number;
+      employeeNumber: string;
+      fullName: string;
+      email: string;
+      branch: string;
+      roleId: number;
+      isActive: boolean;
+      version: number;
+    }>;
+    meta: {
+      page: number;
+      pageSize: number;
+      totalItems: number;
+      totalPages: number;
+    };
+  }> {
     this.logger.log(`Fetching users: page=${page} pageSize=${pageSize}`);
 
     const qb = this.userRepository.createQueryBuilder('user');
@@ -179,7 +202,19 @@ export class AdminService {
    * @throws {NotFoundException} If user not found.
    * @throws {ConflictException} If version mismatch (concurrent edit).
    */
-  async updateUser(id: number, dto: UpdateUserDto) {
+  async updateUser(
+    id: number,
+    dto: UpdateUserDto,
+  ): Promise<{
+    userId: number;
+    employeeNumber: string;
+    fullName: string;
+    email: string;
+    branch: string;
+    roleId: number;
+    isActive: boolean;
+    version: number;
+  }> {
     this.logger.log(`Updating user ${id}`);
 
     const user = await this.userRepository.findOne({ where: { userId: id } });
@@ -241,10 +276,8 @@ export class AdminService {
     id: number,
     isActive: boolean,
     currentUserId: number,
-  ) {
-    this.logger.log(
-      `Toggling user ${id} active state to ${isActive}`,
-    );
+  ): Promise<{ success: boolean; isActive: boolean }> {
+    this.logger.log(`Toggling user ${id} active state to ${isActive}`);
 
     if (id === currentUserId && !isActive) {
       throw new BadRequestException(
@@ -263,9 +296,7 @@ export class AdminService {
       await this.evictUserSessions(id);
     }
 
-    this.logger.log(
-      `User ${id} active state toggled to ${isActive}`,
-    );
+    this.logger.log(`User ${id} active state toggled to ${isActive}`);
 
     return { success: true, isActive };
   }
@@ -290,7 +321,10 @@ export class AdminService {
       for (const key of keys) {
         const sessionData = await client.get(key);
         if (sessionData) {
-          const parsed = JSON.parse(sessionData);
+          const parsed = JSON.parse(sessionData) as {
+            userId: number;
+            sub: number;
+          };
           if (parsed.userId === userId || parsed.sub === userId) {
             await client.del(key);
             evictedCount++;
@@ -299,14 +333,9 @@ export class AdminService {
       }
 
       await client.disconnect();
-      this.logger.log(
-        `Evicted ${evictedCount} sessions for user ${userId}`,
-      );
+      this.logger.log(`Evicted ${evictedCount} sessions for user ${userId}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to evict sessions for user ${userId}`,
-        error,
-      );
+      this.logger.error(`Failed to evict sessions for user ${userId}`, error);
     }
   }
 
@@ -318,7 +347,14 @@ export class AdminService {
    * @throws {NotFoundException} If user not found.
    * @throws {ConflictException} If version mismatch.
    */
-  async resetPassword(id: number, dto: ResetPasswordDto) {
+  async resetPassword(
+    id: number,
+    dto: ResetPasswordDto,
+  ): Promise<{
+    userId: number;
+    temporaryPassword: string;
+    version: number;
+  }> {
     this.logger.log(`Resetting password for user ${id}`);
 
     const user = await this.userRepository.findOne({ where: { userId: id } });
@@ -368,15 +404,34 @@ export class AdminService {
    * @param category The master data category to fetch.
    * @returns Read-only list of configured categories.
    */
-  async getMasterData(category: string) {
+  async getMasterData(category: string): Promise<unknown[]> {
     this.logger.log(`Fetching master data: ${category}`);
 
-    const tableMap: Record<string, { table: string; idColumn: string; hasIsActive: boolean }> = {
-      currencies: { table: 'currencies', idColumn: 'currency_id', hasIsActive: true },
+    const tableMap: Record<
+      string,
+      { table: string; idColumn: string; hasIsActive: boolean }
+    > = {
+      currencies: {
+        table: 'currencies',
+        idColumn: 'currency_id',
+        hasIsActive: true,
+      },
       roles: { table: 'user_roles', idColumn: 'role_id', hasIsActive: true },
-      statuses: { table: 'payment_statuses', idColumn: 'status_id', hasIsActive: false },
-      'payment-types': { table: 'payment_types', idColumn: 'payment_type_id', hasIsActive: true },
-      'payment-methods': { table: 'payment_methods', idColumn: 'payment_method_id', hasIsActive: true },
+      statuses: {
+        table: 'payment_statuses',
+        idColumn: 'status_id',
+        hasIsActive: false,
+      },
+      'payment-types': {
+        table: 'payment_types',
+        idColumn: 'payment_type_id',
+        hasIsActive: true,
+      },
+      'payment-methods': {
+        table: 'payment_methods',
+        idColumn: 'payment_method_id',
+        hasIsActive: true,
+      },
     };
 
     const mapping = tableMap[category];
@@ -387,7 +442,7 @@ export class AdminService {
     const query = this.userRepository.manager.connection;
     const whereClause = '';
 
-    const results = await query.query(
+    const results: unknown[] = await query.query(
       `SELECT * FROM ${mapping.table} ${whereClause} ORDER BY ${mapping.idColumn} ASC`,
     );
 
@@ -403,7 +458,27 @@ export class AdminService {
    * @param pageSize Items per page (default 50).
    * @returns Paginated audit log list.
    */
-  async getAuditLogs(query: AuditLogQueryDto) {
+  async getAuditLogs(query: AuditLogQueryDto): Promise<{
+    data: Array<{
+      approvalLogId: string;
+      paymentRequestId: number;
+      actionTakenByUserId: number;
+      actorName: string;
+      actionTypeId: number;
+      previousStatusId: number | null;
+      newStatusId: number | null;
+      comment: string | null;
+      ipAddress: string;
+      userAgent: string;
+      timestamp: Date;
+    }>;
+    meta: {
+      page: number;
+      pageSize: number;
+      totalItems: number;
+      totalPages: number;
+    };
+  }> {
     const { startDate, endDate, actionTypeId, requestId, actorName } = query;
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 50;

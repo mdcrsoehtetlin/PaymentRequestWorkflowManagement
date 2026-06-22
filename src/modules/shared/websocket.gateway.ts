@@ -37,9 +37,9 @@ export class WebsocketGateway
     @MessageBody() payload: { role: string; userId: number },
   ) {
     // Join room based on role (e.g. Managers, Approvers, Accounting)
-    client.join(payload.role);
+    void client.join(payload.role);
     // Join room based on individual userId
-    client.join(`user:${payload.userId}`);
+    void client.join(`user:${payload.userId}`);
     this.logger.log(
       `User ${payload.userId} with role ${payload.role} joined rooms.`,
     );
@@ -51,7 +51,11 @@ export class WebsocketGateway
     this.server.to(role).emit('request:status-changed', message);
   }
 
-  sendPersonalNotification(userId: number, eventName: string, message: unknown) {
+  sendPersonalNotification(
+    userId: number,
+    eventName: string,
+    message: unknown,
+  ) {
     this.server.to(`user:${userId}`).emit(eventName, message);
   }
 }

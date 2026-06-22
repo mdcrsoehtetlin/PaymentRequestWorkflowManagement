@@ -24,7 +24,9 @@ export class AdminGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    const request = context.switchToHttp().getRequest();
+    const request = context
+      .switchToHttp()
+      .getRequest<{ user: { role: string } }>();
     const user = request.user;
 
     if (!user) {
@@ -35,7 +37,7 @@ export class AdminGuard implements CanActivate {
       throw new ForbiddenException('管理者権限がありません');
     }
 
-    if (user.role !== RoleCode.ADMIN) {
+    if (user.role !== (RoleCode.ADMIN as string)) {
       throw new ForbiddenException('管理者権限がありません');
     }
 

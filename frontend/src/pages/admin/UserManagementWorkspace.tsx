@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Plus, Edit2, RefreshCw } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { apiClient } from '../../services/api-client';
@@ -52,6 +52,8 @@ export function UserManagementWorkspace() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'reset'>('create');
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [sorting, setSorting] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
     sortBy: '',
     sortOrder: 'ASC',
@@ -69,15 +71,22 @@ export function UserManagementWorkspace() {
     }
   };
 
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+  const paginationRef = useRef(pagination);
+  paginationRef.current = pagination;
+
   const fetchUsers = useCallback(async () => {
+    const f = filtersRef.current;
+    const p = paginationRef.current;
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filters.keyword) params.set('keyword', filters.keyword);
-      if (filters.roleId) params.set('roleId', filters.roleId);
-      if (filters.isActive) params.set('isActive', filters.isActive);
-      params.set('page', String(pagination.page));
-      params.set('pageSize', String(pagination.pageSize));
+      if (f.keyword) params.set('keyword', f.keyword);
+      if (f.roleId) params.set('roleId', f.roleId);
+      if (f.isActive) params.set('isActive', f.isActive);
+      params.set('page', String(p.page));
+      params.set('pageSize', String(p.pageSize));
 
       const response = await apiClient.get<UsersResponse>(
         `/admin/users?${params.toString()}`,
@@ -93,11 +102,15 @@ export function UserManagementWorkspace() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters, pagination.page, pagination.pageSize]);
+  }, []);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchUsers(), 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [filters, pagination.page, pagination.pageSize, fetchUsers]);
 
   const handleToggleActive = async (user: UserRecord) => {
     try {
@@ -223,7 +236,7 @@ export function UserManagementWorkspace() {
         </div>
         <button
           onClick={handleCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1E3A8A] text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium"
         >
           <Plus className="w-4 h-4" />
           新規ユーザー登録
@@ -245,7 +258,7 @@ export function UserManagementWorkspace() {
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
               placeholder="社員番号または氏名で検索"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           <div className="w-40">
@@ -258,7 +271,7 @@ export function UserManagementWorkspace() {
                 setFilters((prev) => ({ ...prev, roleId: e.target.value }));
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">すべて</option>
               <option value="1">申請者</option>
@@ -278,7 +291,7 @@ export function UserManagementWorkspace() {
                 setFilters((prev) => ({ ...prev, isActive: e.target.value }));
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">すべて</option>
               <option value="true">有効</option>
