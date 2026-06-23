@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-=======
-import type { ApprovalLogWithUser } from '../../types';
-import { ApprovalActionType } from '../../types';
->>>>>>> df0b80fd5be9df331023b22ce1a766501a4b09af
 import { formatDateTime } from '../../utils/format';
 import {
   ACTION_LABELS_JP,
