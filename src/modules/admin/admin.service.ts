@@ -66,7 +66,6 @@ export class AdminService {
     roleId: number;
     isActive: boolean;
     temporaryPassword: string;
-    version: number;
   }> {
     this.logger.log(`Creating new user with email: ${dto.email}`);
 
@@ -113,7 +112,6 @@ export class AdminService {
       roleId: saved.roleId,
       isActive: saved.isActive,
       temporaryPassword,
-      version: saved.version,
     };
   }
 
@@ -141,7 +139,6 @@ export class AdminService {
       branch: string;
       roleId: number;
       isActive: boolean;
-      version: number;
     }>;
     meta: {
       page: number;
@@ -183,7 +180,6 @@ export class AdminService {
         branch: u.branch,
         roleId: u.roleId,
         isActive: u.isActive,
-        version: u.version,
       })),
       meta: {
         page,
@@ -197,10 +193,10 @@ export class AdminService {
   /**
    * @description Updates user details with optimistic locking validation.
    * @param id The user ID to update.
-   * @param dto The update payload including version for optimistic lock.
+   * @param dto The update payload.
    * @returns The updated user object.
    * @throws {NotFoundException} If user not found.
-   * @throws {ConflictException} If version mismatch (concurrent edit).
+   * @throws {ConflictException} If record concurrent edit conflict.
    */
   async updateUser(
     id: number,
@@ -213,7 +209,6 @@ export class AdminService {
     branch: string;
     roleId: number;
     isActive: boolean;
-    version: number;
   }> {
     this.logger.log(`Updating user ${id}`);
 
@@ -231,11 +226,9 @@ export class AdminService {
         branch: dto.branch ?? user.branch,
         roleId: dto.roleId ?? user.roleId,
         isActive: dto.isActive ?? user.isActive,
-        version: () => 'version + 1',
       })
-      .where('userId = :id AND version = :version', {
+      .where('userId = :id', {
         id,
-        version: dto.version,
       })
       .execute();
 
@@ -259,7 +252,6 @@ export class AdminService {
       branch: updated!.branch,
       roleId: updated!.roleId,
       isActive: updated!.isActive,
-      version: updated!.version,
     };
   }
 
@@ -342,10 +334,10 @@ export class AdminService {
   /**
    * @description Generates a new temporary password for a user.
    * @param id The user ID to reset password for.
-   * @param dto Contains version for optimistic locking.
+   * @param dto The reset password payload.
    * @returns The new temporary password (displayed once).
    * @throws {NotFoundException} If user not found.
-   * @throws {ConflictException} If version mismatch.
+   * @throws {ConflictException} If record concurrent edit conflict.
    */
   async resetPassword(
     id: number,
@@ -353,7 +345,6 @@ export class AdminService {
   ): Promise<{
     userId: number;
     temporaryPassword: string;
-    version: number;
   }> {
     this.logger.log(`Resetting password for user ${id}`);
 
@@ -370,11 +361,9 @@ export class AdminService {
       .update(User)
       .set({
         passwordHash,
-        version: () => 'version + 1',
       })
-      .where('userId = :id AND version = :version', {
+      .where('userId = :id', {
         id,
-        version: dto.version,
       })
       .execute();
 
@@ -395,7 +384,6 @@ export class AdminService {
     return {
       userId: id,
       temporaryPassword,
-      version: updated!.version,
     };
   }
 

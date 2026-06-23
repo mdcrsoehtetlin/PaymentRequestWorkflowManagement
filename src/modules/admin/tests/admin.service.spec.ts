@@ -75,7 +75,6 @@ describe('AdminService', () => {
     branch: 'Yangon',
     roleId: 1,
     isActive: true,
-    version: 1,
     passwordHash: 'hashed',
     createdDate: new Date('2026-01-01'),
     modifiedDate: new Date('2026-01-01'),
@@ -171,7 +170,6 @@ describe('AdminService', () => {
   describe('updateUser', () => {
     const updateDto: UpdateUserDto = {
       fullName: 'Updated Name',
-      version: 1,
     };
 
     it('should update user and return updated details', async () => {
@@ -182,7 +180,6 @@ describe('AdminService', () => {
       mockUserRepo.findOne.mockResolvedValueOnce({
         ...baseUser,
         fullName: 'Updated Name',
-        version: 2,
       });
 
       const result = await service.updateUser(1, updateDto);
@@ -199,16 +196,6 @@ describe('AdminService', () => {
       );
     });
 
-    it('should throw ConflictException on version mismatch', async () => {
-      const mockQb = createMockQueryBuilder();
-      mockQb.execute.mockResolvedValue({ affected: 0, generatedMaps: [] });
-      mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
-      mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
-
-      await expect(service.updateUser(1, updateDto)).rejects.toThrow(
-        ConflictException,
-      );
-    });
   });
 
   describe('toggleUserActive', () => {
@@ -340,14 +327,14 @@ describe('AdminService', () => {
   });
 
   describe('resetPassword', () => {
-    const resetDto: ResetPasswordDto = { version: 1 };
+    const resetDto: ResetPasswordDto = {};
 
     it('should reset password and return temporary password', async () => {
       const mockQb = createMockQueryBuilder();
       mockQb.execute.mockResolvedValue({ affected: 1, generatedMaps: [] });
       mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
       mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
-      mockUserRepo.findOne.mockResolvedValueOnce({ ...baseUser, version: 2 });
+      mockUserRepo.findOne.mockResolvedValueOnce({ ...baseUser });
 
       const result = await service.resetPassword(1, resetDto);
 
@@ -363,15 +350,5 @@ describe('AdminService', () => {
       );
     });
 
-    it('should throw ConflictException on version mismatch', async () => {
-      const mockQb = createMockQueryBuilder();
-      mockQb.execute.mockResolvedValue({ affected: 0, generatedMaps: [] });
-      mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
-      mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
-
-      await expect(service.resetPassword(1, resetDto)).rejects.toThrow(
-        ConflictException,
-      );
-    });
   });
 });

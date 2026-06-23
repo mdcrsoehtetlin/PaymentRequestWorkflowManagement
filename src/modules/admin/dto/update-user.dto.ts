@@ -42,7 +42,4 @@ export class UpdateUserDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @IsNotEmpty()
-  @IsNumber()
-  version!: number;
 }

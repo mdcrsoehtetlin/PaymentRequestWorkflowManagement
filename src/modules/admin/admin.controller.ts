@@ -29,7 +29,6 @@ interface UserResponse {
   branch: string;
   roleId: number;
   isActive: boolean;
-  version: number;
 }
 
 interface CreateUserResponse extends UserResponse {
@@ -39,7 +38,6 @@ interface CreateUserResponse extends UserResponse {
 interface ResetPasswordResponse {
   userId: number;
   temporaryPassword: string;
-  version: number;
 }
 
 interface AuditLogResponse {
@@ -105,12 +103,12 @@ export class AdminController {
   }
 
   /**
-   * @description Updates user details with optimistic locking.
+   * @description Updates user details.
    * @param id The ID of the user to update.
-   * @param dto The update payload including version.
+   * @param dto The update payload.
    * @returns The updated user object.
    * @throws {NotFoundException} If user not found.
-   * @throws {ConflictException} If version mismatch (concurrent edit).
+   * @throws {ConflictException} If record concurrent edit conflict.
    */
   @Patch('users/:id')
   async updateUser(
@@ -141,10 +139,10 @@ export class AdminController {
   /**
    * @description Resets a user's password and evicts active sessions.
    * @param id The ID of the user to reset password for.
-   * @param dto Contains version for optimistic locking.
+   * @param dto The reset password payload.
    * @returns New temporary password (displayed once).
    * @throws {NotFoundException} If user not found.
-   * @throws {ConflictException} If version mismatch.
+   * @throws {ConflictException} If record concurrent edit conflict.
    */
   @Post('users/:id/reset-password')
   async resetPassword(
