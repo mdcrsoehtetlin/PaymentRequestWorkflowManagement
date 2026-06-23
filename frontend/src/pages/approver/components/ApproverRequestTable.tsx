@@ -1,8 +1,7 @@
-import React from 'react';
 import { ApproverDataTable } from './ApproverDataTable';
 import { ApproverStatusBadge } from './ApproverStatusBadge';
 import { formatCurrency, formatDate } from '../../../utils/format';
-import type { ApproverRequestListItem } from '../../../types';
+import type { ApproverRequestListItem } from '../types';
 
 interface ApproverRequestTableProps {
   data: ApproverRequestListItem[];
@@ -46,10 +45,10 @@ export function ApproverRequestTable({
       ),
       width: '22%',
     },
-    { key: 'applicationDate', header: 'Applied Date', sortable: true, width: '12%', render: (value) => formatDate(value as string) },
-    { key: 'totalAmount', header: 'Total Amount', sortable: true, width: '15%', render: (value, row) => formatCurrency(row.totalAmount, row.currencyCode) },
-    { key: 'statusId', header: 'Status', sortable: true, width: '16%', render: (value) => <ApproverStatusBadge statusId={value as number} size="sm" /> },
-    { key: 'createdDate', header: 'Created Date', sortable: true, width: '20%', render: (value) => formatDate(value as string) },
+    { key: 'applicationDate', header: 'Applied Date', sortable: true, width: '12%', render: (value: unknown) => formatDate(value as string) },
+    { key: 'totalAmount', header: 'Total Amount', sortable: true, width: '15%', render: (_value: unknown, row: ApproverRequestListItem) => formatCurrency(row.totalAmount, row.currencyCode) },
+    { key: 'statusId', header: 'Status', sortable: true, width: '16%', render: (value: unknown) => <ApproverStatusBadge statusId={value as number} size="sm" /> },
+    { key: 'createdDate', header: 'Created Date', sortable: true, width: '20%', render: (value: unknown) => formatDate(value as string) },
   ];
 
   const rows = data.map((item) => ({

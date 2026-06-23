@@ -1,10 +1,7 @@
 import { useCallback, useState } from 'react';
 import { approverService } from '../services/approver.service';
-import type {
-  ApproverRequestListItem,
-  ApproverRequestQuery,
-  PaginationMeta,
-} from '../../../types';
+import type { PaginationMeta } from '../../../types';
+import type { ApproverRequestListItem, ApproverRequestQuery } from '../types';
 import { DEFAULT_PAGE_SIZE } from '../../../utils/constants';
 
 export function useApproverRequests() {

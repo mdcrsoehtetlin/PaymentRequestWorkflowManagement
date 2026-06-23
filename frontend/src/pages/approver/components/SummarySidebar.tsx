@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface SummarySidebarProps {
   totalQueue: number;
   pendingCount: number;

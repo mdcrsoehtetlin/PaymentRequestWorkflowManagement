@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ConfirmDialog } from '../../../components/shared/ConfirmDialog';
-import type { ApproverRequestDetailView } from '../../../types';
+import type { ApproverRequestDetailView } from '../types';
 
 interface ApproverActionPanelProps {
   request: ApproverRequestDetailView;
@@ -61,23 +61,23 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
         onClose={() => setIsRejectOpen(false)}
         onConfirm={handleReject}
         title="Reject this request?"
-        message={
-          <>
-            <p className="mb-3">Please enter a rejection comment (minimum 10 characters).</p>
-            <textarea
-              value={rejectComment}
-              onChange={(e) => setRejectComment(e.target.value)}
-              rows={4}
-              className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
-              placeholder="Enter rejection reason..."
-            />
-          </>
-        }
+        message="Please enter a rejection comment (minimum 10 characters)."
         confirmLabel="Reject"
         cancelLabel="Cancel"
         variant="danger"
         isLoading={isSubmitting}
       />
+      {isRejectOpen && (
+        <div className="mt-3">
+          <textarea
+            value={rejectComment}
+            onChange={(e) => setRejectComment(e.target.value)}
+            rows={4}
+            className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
+            placeholder="Enter rejection reason..."
+          />
+        </div>
+      )}
     </div>
   );
 }

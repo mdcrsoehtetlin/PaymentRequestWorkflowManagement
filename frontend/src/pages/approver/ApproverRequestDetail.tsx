@@ -1,6 +1,5 @@
-import React from 'react';
 import { formatCurrency, formatDate } from '../../utils/format';
-import type { ApproverRequestDetailView } from '../../types';
+import type { ApproverRequestDetailView, PaymentBreakdownItem } from './types';
 import { ApproverActionPanel } from './components/ApproverActionPanel';
 import { ApproverApprovalTimeline } from './components/ApproverApprovalTimeline';
 import { ApproverStatusBadge } from './components/ApproverStatusBadge';
@@ -91,7 +90,7 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
                     </tr>
                   </thead>
                   <tbody>
-                    {request.breakdownItems.map((item) => (
+                    {request.breakdownItems.map((item: PaymentBreakdownItem) => (
                       <tr key={item.paymentBreakdownItemId} className="border-b border-slate-100 last:border-0">
                         <td className="py-2 text-slate-700">{item.lineNumber}</td>
                         <td className="py-2 text-slate-700">{formatDate(item.itemDate)}</td>

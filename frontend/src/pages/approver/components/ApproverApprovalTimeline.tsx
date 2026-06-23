@@ -1,6 +1,6 @@
-import React from 'react';
 import { formatDateTime } from '../../../utils/format';
 import { ACTION_BADGE_COLORS } from '../../../utils/constants';
+import type { ApprovalActionType } from '../../../types';
 
 const ACTION_LABELS_EN: Record<number, string> = {
   1: 'Created',
@@ -40,7 +40,7 @@ export function ApproverApprovalTimeline({ logs }: ApproverApprovalTimelineProps
     <div className="relative border-l-2 border-slate-200 ml-3 space-y-6">
       {logs.map((log) => {
         const isRejection = log.actionTypeId === 3 || log.actionTypeId === 9;
-        const badgeColor = ACTION_BADGE_COLORS[log.actionTypeId] || 'bg-slate-100 text-slate-800';
+        const badgeColor = ACTION_BADGE_COLORS[log.actionTypeId as ApprovalActionType] || 'bg-slate-100 text-slate-800';
         const actionLabel = ACTION_LABELS_EN[log.actionTypeId] || 'Unknown';
 
         return (

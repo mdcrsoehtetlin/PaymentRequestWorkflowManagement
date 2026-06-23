@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useToast } from '../../hooks/useToast';
-import type { ApproverRequestDetailView } from '../../types';
-import { PaymentStatus } from '../../types';
+import type { ApproverRequestDetailView } from './types';
 import { useApproverRequests } from './hooks/useApproverRequests';
 import { useApproverRequestDetail } from './hooks/useApproverRequestDetail';
 import { SummarySidebar } from './components/SummarySidebar';

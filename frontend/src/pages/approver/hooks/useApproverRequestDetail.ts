@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { approverService } from '../services/approver.service';
-import type { ApproverRequestDetailView } from '../../../types';
+import type { ApproverRequestDetailView } from '../types';
 
 export function useApproverRequestDetail() {
   const [requestDetail, setRequestDetail] = useState<ApproverRequestDetailView | null>(null);

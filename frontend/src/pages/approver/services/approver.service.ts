@@ -1,11 +1,10 @@
 import apiClient from '../../../services/api-client';
+import type { ActionResponse, PaginatedResponse } from '../../../types';
 import type {
-  ActionResponse,
   ApproverRequestDetailView,
   ApproverRequestListItem,
   ApproverRequestQuery,
-  PaginatedResponse,
-} from '../../../types';
+} from '../types';
 
 export const approverService = {
   async fetchRequests(query: ApproverRequestQuery) {

@@ -1,5 +1,5 @@
-import React from 'react';
-import { PaymentStatus, STATUS_LABELS_EN } from '../../../types';
+import { PaymentStatus } from '../../../types';
+import { STATUS_LABELS_EN } from '../types';
 import { CustomDropdown } from './CustomDropdown';
 
 interface FilterSearchBarProps {
