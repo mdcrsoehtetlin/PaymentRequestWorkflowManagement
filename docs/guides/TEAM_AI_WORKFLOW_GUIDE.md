@@ -28,6 +28,7 @@
 13. [AI Prompt Template Library](#13--ai-prompt-template-library)
 14. [Code Review Checklist for AI-Generated Code](#14--code-review-checklist-for-ai-generated-code)
 15. [Team Commitment Agreement](#15--team-commitment-agreement)
+16. [📦 Shared Component Library — UI Consistency Mandate (NEW)](#16--shared-component-library--ui-consistency-mandate-new)
 
 ---
 
@@ -525,7 +526,7 @@ The shared layer (`src/modules/shared/` and `frontend/src/components/shared/`) i
 | `src/modules/shared/pipes/` | Validation pipes | 🟡 **MEDIUM** |
 | `src/modules/shared/interceptors/` | Logging, transform interceptors | 🟡 **MEDIUM** |
 | `src/modules/shared/dto/` | Shared DTOs | 🟠 **HIGH** |
-| `frontend/src/components/shared/` | StatusBadge, ConfirmDialog, etc. | 🟠 **HIGH** — UI consistency |
+| `frontend/src/components/shared/` | StatusBadge, DataTable, KpiCard, SearchFilterBar, etc. | 🟠 **HIGH** — UI consistency |
 | `frontend/src/services/` | API client, WebSocket service | 🔴 **EXTREME** |
 | `frontend/src/hooks/` | useAuth, useWebSocket | 🔴 **EXTREME** |
 
@@ -539,7 +540,36 @@ The shared layer (`src/modules/shared/` and `frontend/src/components/shared/`) i
 | **Modify existing** shared entities or interfaces | ⚠️ RESTRICTED | Project Leader **written** approval + full regression test | ❌ **NO** |
 | **Delete** any shared file | 🚫 FORBIDDEN | **NOT permitted under any circumstances** | ❌ **ABSOLUTELY NO** |
 
-### 8.3 Emergency Shared Layer Change Process
+### 8.3 Shared Frontend Components — MANDATORY Usage
+
+> 🆕 **NEW ENFORCEMENT (2026-06-23):** All dashboard pages MUST use these shared components. Creating local copies is FORBIDDEN and will be detected by CI (`verify-all.sh` STEP 4).
+
+| Need | MUST Use | Import |
+|:---|:---|:---|
+| Dashboard KPI cards | `KpiCard` | `import { KpiCard } from '../../components/shared/KpiCard';` |
+| KPI card grid layout | `DashboardKpiGrid` | `import { DashboardKpiGrid } from '../../components/shared/DashboardKpiGrid';` |
+| Status pills/badges | `StatusBadge` | `import { StatusBadge } from '../../components/shared/StatusBadge';` |
+| Data tables | `DataTable` | `import { DataTable } from '../../components/shared/DataTable';` |
+| Page title/header | `PageHeader` | `import { PageHeader } from '../../components/shared/PageHeader';` |
+| Search & filter bar | `SearchFilterBar` | `import { SearchFilterBar } from '../../components/shared/SearchFilterBar';` |
+| Refresh button | `RefreshButton` | `import { RefreshButton } from '../../components/shared/RefreshButton';` |
+| Empty states | `EmptyState` | `import { EmptyState } from '../../components/shared/EmptyState';` |
+| Confirm modals | `ConfirmDialog` | `import { ConfirmDialog } from '../../components/shared/ConfirmDialog';` |
+| Date picker | `DatePicker` | `import { DatePicker } from '../../components/shared/DatePicker';` |
+| Loading indicator | `LoadingSpinner` | `import { LoadingSpinner } from '../../components/shared/LoadingSpinner';` |
+
+**FORBIDDEN patterns that CI will detect and BLOCK:**
+```typescript
+// ❌ BLOCKED by verify-all.sh STEP 4
+const StatusBadge: React.FC<{ statusId: number }> = ({ statusId }) => { ... };
+export function ApproverStatusBadge({ statusId }: Props) { ... }
+export function ApproverDataTable<T>({ columns }: Props) { ... }
+
+// ✅ CORRECT — always import from shared
+import { StatusBadge, DataTable, KpiCard } from '../../components/shared';
+```
+
+### 8.4 Emergency Shared Layer Change Process
 
 If you genuinely need a shared layer change:
 
@@ -988,6 +1018,12 @@ When reviewing a teammate's PR that contains AI-generated code, use this extende
 □ Modal uses backdrop-blur-sm, not browser alert()
 □ Table follows Section 9.5.2 spec
 □ Responsive breakpoints: mobile default, md:768px, lg:1024px, xl:1280px
+□ 🆕 Uses shared KpiCard, NOT inline KPI card implementation
+□ 🆕 Uses shared StatusBadge, NOT local StatusBadge copy
+□ 🆕 Uses shared DataTable, NOT local DataTable copy
+□ 🆕 Uses shared SearchFilterBar for all filter/search UIs
+□ 🆕 Uses shared RefreshButton for refresh actions
+□ 🆕 No inline component duplicates (verify-all.sh STEP 4 passes)
 ```
 
 ### 14.7 Testing
@@ -1065,6 +1101,14 @@ git commit -m "test: add tests for [description]"
 git log --oneline -5                # Find bad commit
 git revert <hash>                   # Revert cleanly
 
+# ─── FULL PROJECT HEALTH CHECK (ONE COMMAND) ─────
+bash scripts/verify-all.sh          # Runs ALL 5 checks:
+                                    # 1. Cross-module import scan
+                                    # 2. Shared layer modification audit
+                                    # 3. Quality gates (lint/build/test)
+                                    # 4. 🆕 Inline component duplication scanner
+                                    # 5. Consolidated report
+
 # ─── CROSS-MODULE IMPORT CHECK ───────────────────
 # Run this to find forbidden imports in your module:
 grep -rn "from '\.\.\/(applicant|manager|approver|accounting|admin)" src/modules/{your-role}/
@@ -1091,3 +1135,68 @@ grep -rn "from '\.\.\/(applicant|manager|approver|accounting|admin)" src/modules
 ---
 
 *Document maintained by the Principal Software Architect. Last updated: 2026-06-18.*
+## 16. 📦 Shared Component Library  EUI Consistency Mandate (NEW)
+
+> **Effective Date:** 2026-06-23  
+> **Target:** All frontend developers  
+
+This section is a quick-start guide for the new UI consistency enforcement mechanism. To ensure all 5 dashboards look identical and follow the design system (§9 of `02_開発ルール`), we have completed the shared component library and added strict CI enforcement.
+
+### 16.1 The Problem Being Solved
+
+Previously, developers were reading the design system document but building their own components (e.g., inline `<span>` tags for status badges, custom tables, custom filter bars). This resulted in 5 different UI layouts.
+
+**The Fix:** The design system is now codified into reusable React components. You **must** import these components instead of building your own.
+
+### 16.2 The Mandatory Components
+
+You must use these components for all dashboard UI construction. You can import them individually or via the barrel export (`import { KpiCard, StatusBadge } from '../../components/shared';`).
+
+| Component | What it does | Required Usage |
+|:---|:---|:---|
+| `DashboardKpiGrid` | Wrapper that enforces exactly 4 columns and correct spacing (§9.5.7) | Use to wrap all KPI cards at the top of your dashboard. |
+| `KpiCard` | Individual summary metric card with trend/icon (§9.5.7) | Place inside `DashboardKpiGrid`. |
+| `StatusBadge` | Colored pill for workflow state (§9.2.2) | Use anywhere a `statusId` is displayed (tables, details). |
+| `SearchFilterBar` | Composable top bar with inputs, dropdowns, dates, and buttons | Use for all list/table filtering. Handles the mandatory 300ms debounce automatically. |
+| `DataTable` | Sortable, paginated table structure (§9.5.2) | Use for all list views. |
+| `RefreshButton` | Standardized refresh action (§9.5.4 Secondary variant) | Use for manual data refetching. |
+| `PageHeader` | Standardized title, subtitle, and action area | Use at the top of all main pages. |
+
+### 16.3 Step-by-Step Migration Guide (Phase 2)
+
+If you are working on a feature branch created before June 23, 2026, you must complete these steps before your next PR:
+
+#### Step 1: Rebase to get the new components
+```bash
+git checkout feature/{your-role}-{your-name}
+git fetch origin
+git rebase origin/develop
+# Or `git merge origin/develop` if you prefer merging
+```
+
+#### Step 2: Run the CI Scanner locally
+We added STEP 4 to `verify-all.sh`. It will scan your module and tell you exactly which local components you need to delete.
+```bash
+bash scripts/verify-all.sh
+```
+
+#### Step 3: Delete local duplicates and replace with imports
+If the scanner finds a duplicate (e.g., `ApplicantStatusBadge`), delete that file. Go to where it was used and import the shared version instead:
+```tsx
+// ❁EDelete this:
+// import { ApplicantStatusBadge } from './components/ApplicantStatusBadge';
+
+// ✁EAdd this:
+import { StatusBadge } from '../../components/shared';
+
+// Usage is the same:
+<StatusBadge statusId={request.status_id} />
+```
+
+#### Step 4: Verify
+Run `bash scripts/verify-all.sh` again. It should report:
+`✁ENo inline component duplicates detected.`
+
+### 16.4 AI Guardrails
+
+We have updated `.github/copilot-instructions.md`. Your AI agent is now explicitly instructed to use these shared components and forbidden from generating local copies. If your AI agent generates a duplicate `StatusBadge` or custom filter bar, **reject the output** and tell it to use the shared library.
