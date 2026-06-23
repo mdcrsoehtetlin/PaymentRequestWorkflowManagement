@@ -4,3 +4,7 @@ build/
 coverage/
 package-lock.json
 *.log
+yarn.lock
+pnpm-lock.yaml
+frontend/dist/
+backend/dist/
