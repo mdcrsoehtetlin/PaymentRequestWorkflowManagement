@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -37,7 +37,7 @@ export class AuthService {
     return map[roleId] || RoleCode.APPLICANT;
   }
 
-  async login(user: User) {
+  login(user: User) {
     const payload: Omit<JwtPayload, 'iat' | 'exp'> = {
       sub: user.userId,
       email: user.email,
@@ -53,7 +53,7 @@ export class AuthService {
       refreshToken: this.jwtService.sign(payload, {
         expiresIn: this.configService.get<string>(
           'jwt.refreshExpiration',
-        ) as any,
+        ) as `${number}m`,
       }),
       user: payload,
     };
