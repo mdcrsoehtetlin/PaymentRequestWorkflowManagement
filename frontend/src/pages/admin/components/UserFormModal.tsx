@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Copy, Check } from 'lucide-react';
 import { apiClient } from '../../../services/api-client';
 
@@ -21,6 +21,14 @@ interface UserFormModalProps {
   onSuccess: () => void;
 }
 
+interface UserFormData {
+  employeeNumber: string;
+  fullName: string;
+  email: string;
+  branch: string;
+  roleId: number;
+}
+
 const BRANCHES = ['Yangon', 'Mandalay', 'Naypyidaw'];
 
 const ROLE_OPTIONS = [
@@ -30,6 +38,14 @@ const ROLE_OPTIONS = [
   { value: 4, label: 'Accounting' },
   { value: 5, label: 'Admin' },
 ];
+
+const DEFAULT_FORM_DATA: UserFormData = {
+  employeeNumber: '',
+  fullName: '',
+  email: '',
+  branch: 'Yangon',
+  roleId: 1,
+};
 
 /**
  * @description Modal component for creating, editing users, and resetting passwords.
@@ -41,43 +57,59 @@ export function UserFormModal({
   user,
   onClose,
   onSuccess,
-}: UserFormModalProps) {
-  const [formData, setFormData] = useState({
-    employeeNumber: '',
-    fullName: '',
-    email: '',
-    branch: 'Yangon',
-    roleId: 1,
-  });
+}: UserFormModalProps): React.JSX.Element | null {
+  if (!isOpen) return null;
+
+  return (
+    <UserFormModalContent
+      key={`${mode}-${user?.userId ?? 'new'}`}
+      mode={mode}
+      user={user}
+      onClose={onClose}
+      onSuccess={onSuccess}
+    />
+  );
+}
+
+interface UserFormModalContentProps {
+  mode: 'create' | 'edit' | 'reset';
+  user: UserRecord | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function createInitialFormData(
+  mode: 'create' | 'edit' | 'reset',
+  user: UserRecord | null,
+): UserFormData {
+  if (mode === 'edit' && user) {
+    return {
+      employeeNumber: user.employeeNumber.replace(/^EMP-/, ''),
+      fullName: user.fullName,
+      email: user.email,
+      branch: user.branch,
+      roleId: user.roleId,
+    };
+  }
+
+  return DEFAULT_FORM_DATA;
+}
+
+function UserFormModalContent({
+  mode,
+  user,
+  onClose,
+  onSuccess,
+}: UserFormModalContentProps): React.JSX.Element {
+  const [formData, setFormData] = useState<UserFormData>(() =>
+    createInitialFormData(mode, user),
+  );
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (mode === 'edit' && user) {
-      setFormData({
-        employeeNumber: user.employeeNumber.replace(/^EMP-/, ''),
-        fullName: user.fullName,
-        email: user.email,
-        branch: user.branch,
-        roleId: user.roleId,
-      });
-    } else {
-      setFormData({
-        employeeNumber: '',
-        fullName: '',
-        email: '',
-        branch: 'Yangon',
-        roleId: 1,
-      });
-    }
-    setTemporaryPassword(null);
-    setError(null);
-    setCopied(false);
-  }, [mode, user, isOpen]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -87,8 +119,8 @@ export function UserFormModal({
         const usersRes = await apiClient.get('/admin/users?pageSize=100');
         const existing = usersRes.data.data as { employeeNumber: string }[];
         const maxNum = existing.reduce((max, u) => {
-          const m = u.employeeNumber.match(/EMP-\d+-(\d+)/);
-          return m ? Math.max(max, parseInt(m[1])) : max;
+          const match = u.employeeNumber.match(/EMP-\d+-(\d+)/);
+          return match ? Math.max(max, Number.parseInt(match[1], 10)) : max;
         }, 0);
         const year = new Date().getFullYear();
         const employeeNumber = `EMP-${year}-${String(maxNum + 1).padStart(3, '0')}`;
@@ -114,23 +146,19 @@ export function UserFormModal({
       }
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { message?: string } } };
-      setError(
-        apiError.response?.data?.message ?? 'Operation failed',
-      );
+      setError(apiError.response?.data?.message ?? 'Operation failed');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCopyPassword = () => {
+  const handleCopyPassword = (): void => {
     if (temporaryPassword) {
-      navigator.clipboard.writeText(temporaryPassword);
+      void navigator.clipboard.writeText(temporaryPassword);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      window.setTimeout(() => setCopied(false), 2000);
     }
   };
-
-  if (!isOpen) return null;
 
   const title =
     mode === 'create'
@@ -145,6 +173,7 @@ export function UserFormModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-1 text-slate-400 hover:text-slate-600 rounded"
           >
@@ -164,6 +193,7 @@ export function UserFormModal({
                     {temporaryPassword}
                   </code>
                   <button
+                    type="button"
                     onClick={handleCopyPassword}
                     className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded transition-colors"
                     title="Copy"
@@ -176,10 +206,11 @@ export function UserFormModal({
                   </button>
                 </div>
               </div>
-                <p className="text-xs text-slate-500 mb-4">
-                  This password will only be shown once. Please save it in a secure place.
-                </p>
+              <p className="text-xs text-slate-500 mb-4">
+                This password will only be shown once. Please save it in a secure place.
+              </p>
               <button
+                type="button"
                 onClick={onSuccess}
                 className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium"
               >
@@ -196,7 +227,9 @@ export function UserFormModal({
                         Employee Number
                       </label>
                       <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-slate-50">
-                        <span className="px-2 py-2 text-sm text-slate-400 bg-slate-50 border-r border-slate-300 select-none">EMP-</span>
+                        <span className="px-2 py-2 text-sm text-slate-400 bg-slate-50 border-r border-slate-300 select-none">
+                          EMP-
+                        </span>
                         <input
                           type="text"
                           value={formData.employeeNumber}
@@ -208,8 +241,8 @@ export function UserFormModal({
                   )}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Full Name <span className="text-red-500">*</span>
-                      </label>
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       value={formData.fullName}
@@ -220,13 +253,13 @@ export function UserFormModal({
                         }))
                       }
                       required
-                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Email <span className="text-red-500">*</span>
-                      </label>
+                      Email <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="email"
                       value={formData.email}
@@ -238,13 +271,13 @@ export function UserFormModal({
                       }
                       disabled={mode === 'edit'}
                       required
-                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 disabled:bg-slate-50 disabled:text-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 disabled:bg-slate-50 disabled:text-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Branch <span className="text-red-500">*</span>
-                      </label>
+                      Branch <span className="text-red-500">*</span>
+                    </label>
                     <select
                       value={formData.branch}
                       onChange={(e) =>
@@ -256,17 +289,17 @@ export function UserFormModal({
                       required
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
                     >
-                      {BRANCHES.map((b) => (
-                        <option key={b} value={b}>
-                          {b}
+                      {BRANCHES.map((branch) => (
+                        <option key={branch} value={branch}>
+                          {branch}
                         </option>
                       ))}
                     </select>
                   </div>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Role <span className="text-red-500">*</span>
-                      </label>
+                      Role <span className="text-red-500">*</span>
+                    </label>
                     <select
                       value={formData.roleId}
                       onChange={(e) =>
@@ -277,9 +310,9 @@ export function UserFormModal({
                       }
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
                     >
-                      {ROLE_OPTIONS.map((r) => (
-                        <option key={r.value} value={r.value}>
-                          {r.label}
+                      {ROLE_OPTIONS.map((role) => (
+                        <option key={role.value} value={role.value}>
+                          {role.label}
                         </option>
                       ))}
                     </select>
@@ -308,7 +341,7 @@ export function UserFormModal({
                 <button
                   type="button"
                   onClick={onClose}
-                   className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                  className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
                 >
                   Cancel
                 </button>

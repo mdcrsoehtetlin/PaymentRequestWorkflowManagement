@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Plus, Edit2, RefreshCw, Search, RotateCcw } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { apiClient } from '../../services/api-client';
@@ -72,9 +72,15 @@ export function UserManagementWorkspace() {
   };
 
   const filtersRef = useRef(filters);
-  filtersRef.current = filters;
   const paginationRef = useRef(pagination);
-  paginationRef.current = pagination;
+
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
 
   const fetchUsers = useCallback(async () => {
     const f = filtersRef.current;

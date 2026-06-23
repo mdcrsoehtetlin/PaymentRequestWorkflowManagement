@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Eye, Search, RotateCcw } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { apiClient } from '../../services/api-client';
@@ -30,6 +30,13 @@ interface AuditLogResponse {
   };
 }
 
+interface AuditLogFetchResult {
+  logs: AuditLogRecord[];
+  totalItems: number;
+  totalPages: number;
+  dateError: string;
+}
+
 const ACTION_OPTIONS = [
   { value: '', label: 'All' },
   { value: '1', label: 'Created' },
@@ -57,6 +64,21 @@ const ACTION_LABELS: Record<number, string> = {
   10: 'Payment Completed',
 };
 
+const INITIAL_AUDIT_LOG_FILTERS = {
+  startDate: '',
+  endDate: '',
+  actionTypeId: '',
+  requestId: '',
+  actorName: '',
+};
+
+const INITIAL_AUDIT_LOG_PAGINATION = {
+  page: 1,
+  pageSize: 50,
+  totalItems: 0,
+  totalPages: 0,
+};
+
 /**
  * @description Audit Log workspace component.
  * Displays global transaction audit logs with search filters and metadata panel.
@@ -64,24 +86,9 @@ const ACTION_LABELS: Record<number, string> = {
 export function AuditLogWorkspace() {
   const [logs, setLogs] = useState<AuditLogRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    startDate: '',
-    endDate: '',
-    actionTypeId: '',
-    requestId: '',
-    actorName: '',
-  });
-  const [pagination, setPagination] = useState({
-    page: 1,
-    pageSize: 50,
-    totalItems: 0,
-    totalPages: 0,
-  });
+  const [filters, setFilters] = useState(INITIAL_AUDIT_LOG_FILTERS);
+  const [pagination, setPagination] = useState(INITIAL_AUDIT_LOG_PAGINATION);
   const [dateError, setDateError] = useState('');
-  const filtersRef = useRef(filters);
-  filtersRef.current = filters;
-  const paginationRef = useRef(pagination);
-  paginationRef.current = pagination;
   const [selectedLog, setSelectedLog] = useState<AuditLogRecord | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [sorting, setSorting] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
@@ -101,58 +108,92 @@ export function AuditLogWorkspace() {
     }
   };
 
-  const doFetchLogs = useCallback(async () => {
-    const f = filtersRef.current;
-    const p = paginationRef.current;
-    setIsLoading(true);
-    setDateError('');
-    try {
-      if (f.startDate && f.endDate && f.startDate > f.endDate) {
-        setDateError('Start date cannot be after end date');
-        setIsLoading(false);
-        return;
+  const loadAuditLogs = useCallback(
+    async (
+      currentFilters: typeof filters,
+      currentPagination: typeof pagination,
+    ): Promise<AuditLogFetchResult> => {
+      if (
+        currentFilters.startDate &&
+        currentFilters.endDate &&
+        currentFilters.startDate > currentFilters.endDate
+      ) {
+        return {
+          logs: [],
+          totalItems: 0,
+          totalPages: 0,
+          dateError: 'Start date cannot be after end date',
+        };
       }
+
       const params = new URLSearchParams();
-      if (f.startDate) params.set('startDate', f.startDate);
-      if (f.endDate) params.set('endDate', f.endDate);
-      if (f.actionTypeId) params.set('actionTypeId', f.actionTypeId);
-      if (f.requestId) params.set('requestId', f.requestId);
-      if (f.actorName) params.set('actorName', f.actorName);
-      params.set('page', String(p.page));
-      params.set('pageSize', String(p.pageSize));
+      if (currentFilters.startDate) params.set('startDate', currentFilters.startDate);
+      if (currentFilters.endDate) params.set('endDate', currentFilters.endDate);
+      if (currentFilters.actionTypeId) params.set('actionTypeId', currentFilters.actionTypeId);
+      if (currentFilters.requestId) params.set('requestId', currentFilters.requestId);
+      if (currentFilters.actorName) params.set('actorName', currentFilters.actorName);
+      params.set('page', String(currentPagination.page));
+      params.set('pageSize', String(currentPagination.pageSize));
 
       const response = await apiClient.get<AuditLogResponse>(
         `/admin/audit-logs?${params.toString()}`,
       );
-      setLogs(response.data.data);
-      setPagination((prev) => ({
-        ...prev,
+
+      return {
+        logs: response.data.data,
         totalItems: response.data.meta.totalItems,
         totalPages: response.data.meta.totalPages,
-      }));
-    } catch (error) {
-      console.error('Failed to fetch audit logs:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+        dateError: '',
+      };
+    },
+    [],
+  );
+
+  const refreshAuditLogs = useCallback(
+    async (
+      currentFilters: typeof filters,
+      currentPagination: typeof pagination,
+    ): Promise<void> => {
+      try {
+        const result = await loadAuditLogs(currentFilters, currentPagination);
+        setDateError(result.dateError);
+        if (!result.dateError) {
+          setLogs(result.logs);
+          setPagination((prev) => ({
+            ...prev,
+            totalItems: result.totalItems,
+            totalPages: result.totalPages,
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch audit logs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [loadAuditLogs],
+  );
 
   const handleSearch = useCallback(() => {
     setIsSearching(true);
-    doFetchLogs().finally(() => setIsSearching(false));
-  }, [doFetchLogs]);
+    setIsLoading(true);
+    void refreshAuditLogs(filters, pagination).finally(() => setIsSearching(false));
+  }, [filters, pagination, refreshAuditLogs]);
 
   const handleReset = useCallback(() => {
-    setFilters({
-      startDate: '',
-      endDate: '',
-      actionTypeId: '',
-      requestId: '',
-      actorName: '',
-    });
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    const nextFilters = {
+      ...INITIAL_AUDIT_LOG_FILTERS,
+    };
+    const nextPagination = {
+      ...pagination,
+      page: 1,
+    };
+    setFilters(nextFilters);
+    setPagination(nextPagination);
     setDateError('');
-  }, []);
+    setIsLoading(true);
+    void refreshAuditLogs(nextFilters, nextPagination);
+  }, [pagination, refreshAuditLogs]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -164,12 +205,12 @@ export function AuditLogWorkspace() {
   );
 
   useEffect(() => {
-    doFetchLogs();
-  }, []);
+    const timeoutId = window.setTimeout(() => {
+      void refreshAuditLogs(INITIAL_AUDIT_LOG_FILTERS, INITIAL_AUDIT_LOG_PAGINATION);
+    }, 0);
 
-  useEffect(() => {
-    doFetchLogs();
-  }, [pagination.page, pagination.pageSize]);
+    return () => window.clearTimeout(timeoutId);
+  }, [refreshAuditLogs]);
 
   const sortedLogs = useMemo(() => {
     if (!sorting.sortBy) return logs;
@@ -368,10 +409,18 @@ export function AuditLogWorkspace() {
             }}
             pagination={{
               ...pagination,
-              onPageChange: (page) =>
-                setPagination((prev) => ({ ...prev, page })),
-              onPageSizeChange: (size) =>
-                setPagination((prev) => ({ ...prev, pageSize: size, page: 1 })),
+              onPageChange: (page) => {
+                const nextPagination = { ...pagination, page };
+                setPagination((prev) => ({ ...prev, page }));
+                setIsLoading(true);
+                void refreshAuditLogs(filters, nextPagination);
+              },
+              onPageSizeChange: (size) => {
+                const nextPagination = { ...pagination, pageSize: size, page: 1 };
+                setPagination((prev) => ({ ...prev, pageSize: size, page: 1 }));
+                setIsLoading(true);
+                void refreshAuditLogs(filters, nextPagination);
+              },
             }}
           />
         </div>

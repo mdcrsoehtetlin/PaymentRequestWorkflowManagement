@@ -520,7 +520,8 @@ export class AdminService {
       data: data.map((log) => ({
         approvalLogId: log.approvalLogId,
         paymentRequestId: log.paymentRequestId,
-        requestNumber: log.paymentRequest?.requestNumber ?? `PRF-${log.paymentRequestId}`,
+        requestNumber:
+          log.paymentRequest?.requestNumber ?? `PRF-${log.paymentRequestId}`,
         actionTakenByUserId: log.actionTakenByUserId,
         actorName: log.actionTakenByUser?.fullName ?? 'Unknown',
         actionTypeId: log.actionTypeId,
