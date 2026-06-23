@@ -11,20 +11,20 @@ export function formatCurrency(amount: string | number, currencyCode = 'MMK'): s
   })} ${currencyCode}`;
 }
 
-/** Format ISO date to YYYY/MM/DD */
+/** Format ISO date to YYYY/M/D */
 export function formatDate(isoDate: string | null | undefined): string {
   if (!isoDate) return '—';
   return new Date(isoDate).toLocaleDateString('ja-JP', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
+    year: 'numeric', month: 'numeric', day: 'numeric',
   });
 }
 
-/** Format ISO date to YYYY/MM/DD HH:mm */
+/** Format ISO date to YYYY/M/D HH:mm:ss */
 export function formatDateTime(isoDate: string | null | undefined): string {
   if (!isoDate) return '—';
   return new Date(isoDate).toLocaleString('ja-JP', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
+    year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
   });
 }
 

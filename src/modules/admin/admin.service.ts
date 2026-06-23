@@ -74,14 +74,14 @@ export class AdminService {
       where: { email: dto.email },
     });
     if (existingEmail) {
-      throw new ConflictException('このメールアドレスは既に登録されています');
+      throw new ConflictException('This email is already registered');
     }
 
     const existingEmpNo = await this.userRepository.findOne({
       where: { employeeNumber: dto.employeeNumber },
     });
     if (existingEmpNo) {
-      throw new ConflictException('この社員番号は既に登録されています');
+      throw new ConflictException('This employee number is already registered');
     }
 
     const temporaryPassword = this.generateTemporaryPassword();
@@ -219,7 +219,7 @@ export class AdminService {
 
     const user = await this.userRepository.findOne({ where: { userId: id } });
     if (!user) {
-      throw new NotFoundException('ユーザーが見つかりません');
+      throw new NotFoundException('User not found');
     }
 
     const result = await this.userRepository
@@ -241,7 +241,7 @@ export class AdminService {
 
     if (result.affected === 0) {
       throw new ConflictException(
-        'このレコードは他のユーザーによって変更されました。更新してやり直してください。',
+        'This record was modified by another user. Please refresh and try again.',
       );
     }
 
@@ -280,14 +280,12 @@ export class AdminService {
     this.logger.log(`Toggling user ${id} active state to ${isActive}`);
 
     if (id === currentUserId && !isActive) {
-      throw new BadRequestException(
-        '自分のアカウトを無効にすることはできません',
-      );
+      throw new BadRequestException('You cannot deactivate your own account');
     }
 
     const user = await this.userRepository.findOne({ where: { userId: id } });
     if (!user) {
-      throw new NotFoundException('ユーザーが見つかりません');
+      throw new NotFoundException('User not found');
     }
 
     await this.userRepository.update(id, { isActive });
@@ -359,7 +357,7 @@ export class AdminService {
 
     const user = await this.userRepository.findOne({ where: { userId: id } });
     if (!user) {
-      throw new NotFoundException('ユーザーが見つかりません');
+      throw new NotFoundException('User not found');
     }
 
     const temporaryPassword = this.generateTemporaryPassword();
@@ -380,7 +378,7 @@ export class AdminService {
 
     if (result.affected === 0) {
       throw new ConflictException(
-        'このレコードは他のユーザーによって変更されました。更新してやり直してください。',
+        'This record was modified by another user. Please refresh and try again.',
       );
     }
 
@@ -436,7 +434,7 @@ export class AdminService {
 
     const mapping = tableMap[category];
     if (!mapping) {
-      throw new NotFoundException('カテゴリが見つかりません');
+      throw new NotFoundException('Category not found');
     }
 
     const query = this.userRepository.manager.connection;
@@ -462,6 +460,7 @@ export class AdminService {
     data: Array<{
       approvalLogId: string;
       paymentRequestId: number;
+      requestNumber: string;
       actionTakenByUserId: number;
       actorName: string;
       actionTypeId: number;
@@ -521,6 +520,7 @@ export class AdminService {
       data: data.map((log) => ({
         approvalLogId: log.approvalLogId,
         paymentRequestId: log.paymentRequestId,
+        requestNumber: log.paymentRequest?.requestNumber ?? `PRF-${log.paymentRequestId}`,
         actionTakenByUserId: log.actionTakenByUserId,
         actorName: log.actionTakenByUser?.fullName ?? 'Unknown',
         actionTypeId: log.actionTypeId,

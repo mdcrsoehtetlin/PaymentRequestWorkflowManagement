@@ -16,9 +16,9 @@ export function AdminDashboardShell() {
   };
 
   const navItems = [
-    { to: '/admin/users', label: 'ユーザー管理' },
-    { to: '/admin/master-data', label: 'マスターデータ' },
-    { to: '/admin/audit-logs', label: '監査ログ' },
+    { to: '/admin/users', label: 'User Management' },
+    { to: '/admin/master-data', label: 'Master Data' },
+    { to: '/admin/audit-logs', label: 'Audit Logs' },
   ];
 
   return (
@@ -61,7 +61,7 @@ export function AdminDashboardShell() {
             className="w-full flex items-center gap-2 px-3 py-2 mt-2 text-sm text-blue-100 hover:bg-blue-700/50 rounded-lg transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            ログアウト
+            Logout
           </button>
         </div>
       </aside>

@@ -13,22 +13,24 @@ interface AuditLogRecord {
   timestamp: string;
 }
 
+import { formatDateTime } from '../../../utils/format';
+
 interface MetadataDetailPanelProps {
   log: AuditLogRecord;
   onClose: () => void;
 }
 
 const ACTION_LABELS: Record<number, string> = {
-  1: '作成',
-  2: '編集',
-  3: '提出',
-  4: 'マネージャー確認開始',
-  5: 'マネージャー確認',
-  6: 'マネージャー差戻し',
-  7: '承認者確認開始',
-  8: '承認',
-  9: '承認者差戻し',
-  10: '支払完了',
+  1: 'Created',
+  2: 'Edited',
+  3: 'Submitted',
+  4: 'Manager Review Started',
+  5: 'Manager Verified',
+  6: 'Rejected by Manager',
+  7: 'Approver Review Started',
+  8: 'Approved',
+  9: 'Rejected by Approver',
+  10: 'Payment Completed',
 };
 
 /**
@@ -39,7 +41,7 @@ export function MetadataDetailPanel({ log, onClose }: MetadataDetailPanelProps) 
   return (
     <div className="w-80 bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-fit">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-900">ログ詳細</h3>
+        <h3 className="text-sm font-semibold text-slate-900">Log Details</h3>
         <button
           onClick={onClose}
           className="p-1 text-slate-400 hover:text-slate-600 rounded"
@@ -50,42 +52,42 @@ export function MetadataDetailPanel({ log, onClose }: MetadataDetailPanelProps) 
 
       <div className="space-y-3">
         <div>
-          <p className="text-xs text-slate-500">ログID</p>
+          <p className="text-xs text-slate-500">Log ID</p>
           <p className="text-sm font-medium text-slate-900">{log.approvalLogId}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">リクエストID</p>
+          <p className="text-xs text-slate-500">Request ID</p>
           <p className="text-sm font-medium text-slate-900">
             PRF-{log.paymentRequestId}
           </p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">実行者</p>
+          <p className="text-xs text-slate-500">Actor</p>
           <p className="text-sm font-medium text-slate-900">{log.actorName}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">アクション</p>
+          <p className="text-xs text-slate-500">Action</p>
           <p className="text-sm font-medium text-slate-900">
-            {ACTION_LABELS[log.actionTypeId] ?? '不明'}
+            {ACTION_LABELS[log.actionTypeId] ?? 'Unknown'}
           </p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">日時</p>
+          <p className="text-xs text-slate-500">Timestamp</p>
           <p className="text-sm font-medium text-slate-900">
-            {new Date(log.timestamp).toLocaleString('ja-JP')}
+            {formatDateTime(log.timestamp)}
           </p>
         </div>
 
         <hr className="border-slate-200" />
 
         <div>
-          <p className="text-xs text-slate-500">IPアドレス</p>
+          <p className="text-xs text-slate-500">IP Address</p>
           <p className="text-sm font-medium text-slate-900 font-mono">
             {log.ipAddress}
           </p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">ユーザーエージェント</p>
+          <p className="text-xs text-slate-500">User Agent</p>
           <p className="text-xs text-slate-700 break-all leading-relaxed">
             {log.userAgent}
           </p>
@@ -95,7 +97,7 @@ export function MetadataDetailPanel({ log, onClose }: MetadataDetailPanelProps) 
           <>
             <hr className="border-slate-200" />
             <div>
-              <p className="text-xs text-slate-500">コメント</p>
+              <p className="text-xs text-slate-500">Comment</p>
               <p className="text-sm text-slate-700">{log.comment}</p>
             </div>
           </>

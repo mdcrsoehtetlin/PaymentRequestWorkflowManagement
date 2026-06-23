@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, Search, RotateCcw } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { apiClient } from '../../services/api-client';
 import { MetadataDetailPanel } from './components/MetadataDetailPanel';
+import { formatDateTime } from '../../utils/format';
 
 interface AuditLogRecord {
   approvalLogId: string;
   paymentRequestId: number;
+  requestNumber: string;
   actionTakenByUserId: number;
   actorName: string;
   actionTypeId: number;
@@ -29,30 +31,30 @@ interface AuditLogResponse {
 }
 
 const ACTION_OPTIONS = [
-  { value: '', label: 'すべて' },
-  { value: '1', label: '作成' },
-  { value: '2', label: '編集' },
-  { value: '3', label: '提出' },
-  { value: '4', label: 'マネージャー確認開始' },
-  { value: '5', label: 'マネージャー確認' },
-  { value: '6', label: 'マネージャー差戻し' },
-  { value: '7', label: '承認者確認開始' },
-  { value: '8', label: '承認' },
-  { value: '9', label: '承認者差戻し' },
-  { value: '10', label: '支払完了' },
+  { value: '', label: 'All' },
+  { value: '1', label: 'Created' },
+  { value: '2', label: 'Edited' },
+  { value: '3', label: 'Submitted' },
+  { value: '4', label: 'Manager Review Started' },
+  { value: '5', label: 'Manager Verified' },
+  { value: '6', label: 'Rejected by Manager' },
+  { value: '7', label: 'Approver Review Started' },
+  { value: '8', label: 'Approved' },
+  { value: '9', label: 'Rejected by Approver' },
+  { value: '10', label: 'Payment Completed' },
 ];
 
 const ACTION_LABELS: Record<number, string> = {
-  1: '作成',
-  2: '編集',
-  3: '提出',
-  4: 'マネージャー確認開始',
-  5: 'マネージャー確認',
-  6: 'マネージャー差戻し',
-  7: '承認者確認開始',
-  8: '承認',
-  9: '承認者差戻し',
-  10: '支払完了',
+  1: 'Created',
+  2: 'Edited',
+  3: 'Submitted',
+  4: 'Manager Review Started',
+  5: 'Manager Verified',
+  6: 'Rejected by Manager',
+  7: 'Approver Review Started',
+  8: 'Approved',
+  9: 'Rejected by Approver',
+  10: 'Payment Completed',
 };
 
 /**
@@ -76,12 +78,12 @@ export function AuditLogWorkspace() {
     totalPages: 0,
   });
   const [dateError, setDateError] = useState('');
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
   const paginationRef = useRef(pagination);
   paginationRef.current = pagination;
   const [selectedLog, setSelectedLog] = useState<AuditLogRecord | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [sorting, setSorting] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
     sortBy: '',
     sortOrder: 'ASC',
@@ -106,7 +108,7 @@ export function AuditLogWorkspace() {
     setDateError('');
     try {
       if (f.startDate && f.endDate && f.startDate > f.endDate) {
-        setDateError('開始日は終了日より後に設定できません');
+        setDateError('Start date cannot be after end date');
         setIsLoading(false);
         return;
       }
@@ -135,10 +137,31 @@ export function AuditLogWorkspace() {
     }
   }, []);
 
-  const debouncedFetch = useCallback(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => doFetchLogs(), 300);
+  const handleSearch = useCallback(() => {
+    setIsSearching(true);
+    doFetchLogs().finally(() => setIsSearching(false));
   }, [doFetchLogs]);
+
+  const handleReset = useCallback(() => {
+    setFilters({
+      startDate: '',
+      endDate: '',
+      actionTypeId: '',
+      requestId: '',
+      actorName: '',
+    });
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    setDateError('');
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleSearch();
+      }
+    },
+    [handleSearch],
+  );
 
   useEffect(() => {
     doFetchLogs();
@@ -164,31 +187,32 @@ export function AuditLogWorkspace() {
   const columns: Column<AuditLogRecord>[] = [
     {
       key: 'paymentRequestId',
-      header: 'リクエストID',
+      header: 'Request Number',
       sortable: true,
-      render: (_val, row) => `PRF-${row.paymentRequestId}`,
+      render: (_val, row) => row.requestNumber,
     },
     {
       key: 'actorName',
-      header: '実行者',
+      header: 'Actor',
       sortable: true,
     },
     {
       key: 'actionTypeId',
-      header: 'アクション',
+      header: 'Action',
       sortable: true,
-      render: (_val, row) => ACTION_LABELS[row.actionTypeId] ?? '不明',
+      width: '180px',
+      render: (_val, row) => ACTION_LABELS[row.actionTypeId] ?? 'Unknown',
     },
     {
       key: 'ipAddress',
-      header: 'IPアドレス',
+      header: 'IP Address',
       sortable: true,
     },
     {
       key: 'timestamp',
-      header: '日時',
+      header: 'Timestamp',
       sortable: true,
-      render: (_val, row) => new Date(row.timestamp).toLocaleString('ja-JP'),
+      render: (_val, row) => formatDateTime(row.timestamp),
     },
     {
       key: 'actions',
@@ -200,7 +224,7 @@ export function AuditLogWorkspace() {
             setSelectedLog(row);
           }}
           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-          title="詳細を見る"
+          title="View Details"
         >
           <Eye className="w-4 h-4" />
         </button>
@@ -211,9 +235,9 @@ export function AuditLogWorkspace() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">監査ログ</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Audit Logs</h1>
         <p className="text-sm text-slate-500 mt-1">
-          グローバルトランザクション履歴を確認できます
+          View global transaction history
         </p>
       </div>
 
@@ -221,9 +245,9 @@ export function AuditLogWorkspace() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
         <div className="flex items-end gap-4">
           <div className="w-40">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              リクエストID
-            </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Request Number
+              </label>
             <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
               <span className="px-2 py-2 text-sm text-slate-500 bg-slate-50 border-r border-slate-300 select-none">PRF-</span>
               <input
@@ -232,8 +256,8 @@ export function AuditLogWorkspace() {
                 onChange={(e) => {
                   setFilters((prev) => ({ ...prev, requestId: e.target.value }));
                   setPagination((prev) => ({ ...prev, page: 1 }));
-                  debouncedFetch();
                 }}
+                onKeyDown={handleKeyDown}
                 placeholder="ID"
                 className="w-full px-2 py-2 text-sm outline-none border-0"
               />
@@ -241,31 +265,31 @@ export function AuditLogWorkspace() {
           </div>
           <div className="flex-1">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              実行者名
-            </label>
-            <input
-              type="text"
-              value={filters.actorName}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, actorName: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-                debouncedFetch();
-              }}
-              placeholder="名前で検索"
+                Actor Name
+              </label>
+              <input
+                type="text"
+                value={filters.actorName}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, actorName: e.target.value }));
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Search by name"
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
-          <div className="w-36">
+          <div className="w-[216px]">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              アクション種別
-            </label>
+                Action Type
+              </label>
             <select
               value={filters.actionTypeId}
               onChange={(e) => {
                 setFilters((prev) => ({ ...prev, actionTypeId: e.target.value }));
                 setPagination((prev) => ({ ...prev, page: 1 }));
-                debouncedFetch();
               }}
+              onKeyDown={handleKeyDown}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
             >
               {ACTION_OPTIONS.map((opt) => (
@@ -277,33 +301,50 @@ export function AuditLogWorkspace() {
           </div>
           <div className="w-44">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              開始日
-            </label>
+                Start Date
+              </label>
             <input
               type="date"
               value={filters.startDate}
               onChange={(e) => {
                 setFilters((prev) => ({ ...prev, startDate: e.target.value }));
                 setPagination((prev) => ({ ...prev, page: 1 }));
-                debouncedFetch();
               }}
+              onKeyDown={handleKeyDown}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           <div className="w-44">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              終了日
-            </label>
+                End Date
+              </label>
             <input
               type="date"
               value={filters.endDate}
               onChange={(e) => {
                 setFilters((prev) => ({ ...prev, endDate: e.target.value }));
                 setPagination((prev) => ({ ...prev, page: 1 }));
-                debouncedFetch();
               }}
+              onKeyDown={handleKeyDown}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
+          </div>
+          <div className="flex items-end gap-2">
+            <button
+              onClick={handleSearch}
+              disabled={isSearching}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Search className="w-4 h-4" />
+              {isSearching ? 'Searching...' : 'Search'}
+            </button>
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </button>
           </div>
         </div>
         {dateError && (
@@ -318,7 +359,7 @@ export function AuditLogWorkspace() {
             columns={columns}
             data={sortedLogs}
             isLoading={isLoading}
-            emptyMessage="該当するログが見つかりません"
+            emptyMessage="No matching logs found"
             onRowClick={(row) => setSelectedLog(row as unknown as AuditLogRecord)}
             sorting={{
               sortBy: sorting.sortBy,

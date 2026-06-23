@@ -136,51 +136,51 @@ export const CURRENCY_CODES: Record<Currency, string> = {
   [Currency.THB]: 'THB',
 };
 
-export const STATUS_LABELS_JP: Record<PaymentStatus, string> = {
-  [PaymentStatus.DRAFT]: '下書き',
-  [PaymentStatus.SUBMITTED_MANAGER]: 'マネージャーに提出済み',
-  [PaymentStatus.MANAGER_REVIEWING]: 'マネージャー確認中',
-  [PaymentStatus.MANAGER_VERIFIED]: 'マネージャー確認済み',
-  [PaymentStatus.REJECTED_MANAGER]: 'マネージャー差戻し',
-  [PaymentStatus.SUBMITTED_APPROVER]: '承認者に提出済み',
-  [PaymentStatus.APPROVER_REVIEWING]: '承認者確認中',
-  [PaymentStatus.APPROVED]: '承認済み',
-  [PaymentStatus.REJECTED_APPROVER]: '承認者差戻し',
-  [PaymentStatus.PAID]: '支払完了',
+export const STATUS_LABELS_EN: Record<PaymentStatus, string> = {
+  [PaymentStatus.DRAFT]: 'Draft',
+  [PaymentStatus.SUBMITTED_MANAGER]: 'Submitted to Manager',
+  [PaymentStatus.MANAGER_REVIEWING]: 'Manager Reviewing',
+  [PaymentStatus.MANAGER_VERIFIED]: 'Manager Verified',
+  [PaymentStatus.REJECTED_MANAGER]: 'Rejected by Manager',
+  [PaymentStatus.SUBMITTED_APPROVER]: 'Submitted to Approver',
+  [PaymentStatus.APPROVER_REVIEWING]: 'Approver Reviewing',
+  [PaymentStatus.APPROVED]: 'Approved',
+  [PaymentStatus.REJECTED_APPROVER]: 'Rejected by Approver',
+  [PaymentStatus.PAID]: 'Paid',
 };
 
-export const ACTION_LABELS_JP: Record<ApprovalActionType, string> = {
-  [ApprovalActionType.CREATED]: '作成',
-  [ApprovalActionType.EDITED]: '編集',
-  [ApprovalActionType.SUBMITTED]: '提出',
-  [ApprovalActionType.MGR_REVIEW_START]: 'マネージャー確認開始',
-  [ApprovalActionType.MGR_VERIFIED]: 'マネージャー確認',
-  [ApprovalActionType.MGR_REJECTED]: 'マネージャー差戻し',
-  [ApprovalActionType.APPR_REVIEW_START]: '承認者確認開始',
-  [ApprovalActionType.APPROVED]: '承認',
-  [ApprovalActionType.APPR_REJECTED]: '承認者差戻し',
-  [ApprovalActionType.PAYMENT_COMPLETED]: '支払完了',
+export const ACTION_LABELS_EN: Record<ApprovalActionType, string> = {
+  [ApprovalActionType.CREATED]: 'Created',
+  [ApprovalActionType.EDITED]: 'Edited',
+  [ApprovalActionType.SUBMITTED]: 'Submitted',
+  [ApprovalActionType.MGR_REVIEW_START]: 'Manager Review Started',
+  [ApprovalActionType.MGR_VERIFIED]: 'Manager Verified',
+  [ApprovalActionType.MGR_REJECTED]: 'Rejected by Manager',
+  [ApprovalActionType.APPR_REVIEW_START]: 'Approver Review Started',
+  [ApprovalActionType.APPROVED]: 'Approved',
+  [ApprovalActionType.APPR_REJECTED]: 'Rejected by Approver',
+  [ApprovalActionType.PAYMENT_COMPLETED]: 'Payment Completed',
 };
 
-export const PAYMENT_TYPE_LABELS_JP: Record<PaymentType, string> = {
-  [PaymentType.EXPENSE_REIMBURSE]: '経費精算',
-  [PaymentType.SERVICE_PAYMENT]: 'サービス支払',
-  [PaymentType.ADVANCE_PAYMENT]: '前払い',
-  [PaymentType.OTHER]: 'その他',
+export const PAYMENT_TYPE_LABELS_EN: Record<PaymentType, string> = {
+  [PaymentType.EXPENSE_REIMBURSE]: 'Expense Reimbursement',
+  [PaymentType.SERVICE_PAYMENT]: 'Service Payment',
+  [PaymentType.ADVANCE_PAYMENT]: 'Advance Payment',
+  [PaymentType.OTHER]: 'Other',
 };
 
-export const PAYMENT_METHOD_LABELS_JP: Record<PaymentMethod, string> = {
-  [PaymentMethod.BANK_TRANSFER]: '銀行振込',
-  [PaymentMethod.CASH]: '現金',
-  [PaymentMethod.CHECK]: '小切手',
+export const PAYMENT_METHOD_LABELS_EN: Record<PaymentMethod, string> = {
+  [PaymentMethod.BANK_TRANSFER]: 'Bank Transfer',
+  [PaymentMethod.CASH]: 'Cash',
+  [PaymentMethod.CHECK]: 'Check',
 };
 
-export const ROLE_LABELS_JP: Record<UserRole, string> = {
-  [UserRole.APPLICANT]: '申請者',
-  [UserRole.MANAGER]: '担当マネージャー',
-  [UserRole.APPROVER]: '最終承認者',
-  [UserRole.ACCOUNTING]: '経理担当者',
-  [UserRole.ADMIN]: 'システム管理者',
+export const ROLE_LABELS_EN: Record<UserRole, string> = {
+  [UserRole.APPLICANT]: 'Applicant',
+  [UserRole.MANAGER]: 'Manager',
+  [UserRole.APPROVER]: 'Approver',
+  [UserRole.ACCOUNTING]: 'Accounting',
+  [UserRole.ADMIN]: 'Admin',
 };
 
 // ------------------------------------------------------------------

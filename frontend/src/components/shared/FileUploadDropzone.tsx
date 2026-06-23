@@ -35,11 +35,11 @@ export function FileUploadDropzone({
     const validFiles: File[] = [];
     Array.from(files).forEach((file) => {
       if (!ALLOWED_MIME_TYPES.includes(file.type as any)) {
-        error(`${file.name}: 許可されていないファイル形式です`);
+        error(`${file.name}: File type not allowed`);
         return;
       }
       if (file.size > MAX_FILE_SIZE) {
-        error(`${file.name}: ファイルサイズが上限（10MB）を超えています`);
+        error(`${file.name}: File size exceeds the limit (10MB)`);
         return;
       }
       validFiles.push(file);
@@ -83,8 +83,8 @@ export function FileUploadDropzone({
         onClick={() => !disabled && document.getElementById('file-upload')?.click()}
       >
         <Upload className="mx-auto h-12 w-12 text-slate-400 mb-4" />
-        <p className="text-sm text-slate-600 font-medium">クリックまたはドラッグ＆ドロップでファイルをアップロード</p>
-        <p className="text-xs text-slate-500 mt-2">PDF, PNG, JPEG (最大 10MB)</p>
+        <p className="text-sm text-slate-600 font-medium">Click or drag & drop to upload files</p>
+        <p className="text-xs text-slate-500 mt-2">PDF, PNG, JPEG (max 10MB)</p>
         <input
           id="file-upload"
           type="file"
@@ -109,7 +109,7 @@ export function FileUploadDropzone({
                   type="button"
                   onClick={() => onFileRemove(file.receiptFileId)}
                   className="text-slate-400 hover:text-red-500 p-1 transition-colors rounded"
-                  title="削除"
+                  title="Remove"
                 >
                   <X className="h-4 w-4" />
                 </button>

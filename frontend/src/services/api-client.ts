@@ -39,21 +39,21 @@ apiClient.interceptors.response.use(
         window.location.href = '/login';
         break;
       case 403:
-        triggerToast('error', data?.message || 'この操作を実行する権限がありません');
+        triggerToast('error', data?.message || 'You do not have permission to perform this action');
         break;
       case 409:
-        triggerToast('warning', 'この申請は他のユーザーによって更新されました');
+        triggerToast('warning', 'This request was updated by another user');
         // Auto-refresh the page data (optional implementation)
         break;
       case 422:
         // Business rule error — display to user
-        triggerToast('error', data?.message || 'ビジネスルールエラーが発生しました');
+        triggerToast('error', data?.message || 'A business rule error occurred');
         break;
       case 500:
-        triggerToast('error', 'システムエラーが発生しました。管理者に連絡してください');
+        triggerToast('error', 'A system error occurred. Please contact the administrator.');
         break;
       default:
-        triggerToast('error', data?.message || 'エラーが発生しました');
+        triggerToast('error', data?.message || 'An error occurred');
     }
 
     return Promise.reject(error);

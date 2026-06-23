@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Plus, Edit2, RefreshCw } from 'lucide-react';
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { Plus, Edit2, RefreshCw, Search, RotateCcw } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { apiClient } from '../../services/api-client';
 import { UserFormModal } from './components/UserFormModal';
@@ -52,7 +52,7 @@ export function UserManagementWorkspace() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'reset'>('create');
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   const [sorting, setSorting] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
     sortBy: '',
@@ -104,13 +104,24 @@ export function UserManagementWorkspace() {
     }
   }, []);
 
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchUsers(), 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [filters, pagination.page, pagination.pageSize, fetchUsers]);
+  const handleSearch = useCallback(() => {
+    setIsSearching(true);
+    fetchUsers().finally(() => setIsSearching(false));
+  }, [fetchUsers]);
+
+  const handleReset = useCallback(() => {
+    setFilters({ keyword: '', roleId: '', isActive: '' });
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleSearch();
+      }
+    },
+    [handleSearch],
+  );
 
   const handleToggleActive = async (user: UserRecord) => {
     try {
@@ -155,28 +166,28 @@ export function UserManagementWorkspace() {
   }, [users, sorting]);
 
   const columns: Column<UserRecord>[] = [
-    { key: 'employeeNumber', header: '社員番号', sortable: true },
-    { key: 'fullName', header: '氏名', sortable: true },
-    { key: 'email', header: 'メールアドレス', sortable: true },
-    { key: 'branch', header: '拠点', sortable: true },
+    { key: 'employeeNumber', header: 'Employee No.', sortable: true },
+    { key: 'fullName', header: 'Full Name', sortable: true },
+    { key: 'email', header: 'Email', sortable: true },
+    { key: 'branch', header: 'Branch', sortable: true },
     {
       key: 'roleId',
-      header: '役割',
+      header: 'Role',
       sortable: true,
       render: (_val, row) => {
         const roleMap: Record<number, string> = {
-          1: '申請者',
-          2: 'マネージャー',
-          3: '承認者',
-          4: '経理',
-          5: '管理者',
+          1: 'Applicant',
+          2: 'Manager',
+          3: 'Approver',
+          4: 'Accounting',
+          5: 'Admin',
         };
-        return roleMap[row.roleId] ?? '不明';
+        return roleMap[row.roleId] ?? 'Unknown';
       },
     },
     {
       key: 'isActive',
-      header: 'ステータス',
+      header: 'Status',
       sortable: true,
       render: (_val, row) => (
         <button
@@ -191,13 +202,13 @@ export function UserManagementWorkspace() {
               : 'bg-slate-100 text-slate-500 border-slate-200'
           } ${row.userId === 1 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-80'}`}
         >
-          {row.isActive ? '有効' : '無効'}
+          {row.isActive ? 'Active' : 'Inactive'}
         </button>
       ),
     },
     {
       key: 'actions',
-      header: '操作',
+      header: 'Actions',
       render: (_val, row) => (
         <div className="flex items-center gap-1">
           <button
@@ -206,7 +217,7 @@ export function UserManagementWorkspace() {
               handleEdit(row);
             }}
             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-            title="編集"
+            title="Edit"
           >
             <Edit2 className="w-4 h-4" />
           </button>
@@ -216,7 +227,7 @@ export function UserManagementWorkspace() {
               handleResetPassword(row);
             }}
             className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
-            title="パスワードリセット"
+            title="Reset Password"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -229,9 +240,9 @@ export function UserManagementWorkspace() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">ユーザーアカウント管理</h1>
+          <h1 className="text-2xl font-bold text-slate-900">User Account Management</h1>
           <p className="text-sm text-slate-500 mt-1">
-            アプリケーションユーザーの管理、役割の割り当て、アクセスの切り替え
+            Manage application users, assign roles, and toggle access
           </p>
         </div>
         <button
@@ -239,7 +250,7 @@ export function UserManagementWorkspace() {
           className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium"
         >
           <Plus className="w-4 h-4" />
-          新規ユーザー登録
+          New User Registration
         </button>
       </div>
 
@@ -248,68 +259,88 @@ export function UserManagementWorkspace() {
         <div className="flex items-end gap-4">
           <div className="w-60">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              キーワード
-            </label>
-            <input
-              type="text"
-              value={filters.keyword}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, keyword: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              placeholder="社員番号または氏名で検索"
+                Keyword
+              </label>
+              <input
+                type="text"
+                value={filters.keyword}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, keyword: e.target.value }));
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Search by employee number or name"
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           <div className="w-40">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              役割
-            </label>
-            <select
-              value={filters.roleId}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, roleId: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="">すべて</option>
-              <option value="1">申請者</option>
-              <option value="2">マネージャー</option>
-              <option value="3">承認者</option>
-              <option value="4">経理</option>
-              <option value="5">管理者</option>
-            </select>
+                Role
+              </label>
+              <select
+                value={filters.roleId}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, roleId: e.target.value }));
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
+                onKeyDown={handleKeyDown}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">All</option>
+                <option value="1">Applicant</option>
+                <option value="2">Manager</option>
+                <option value="3">Approver</option>
+                <option value="4">Accounting</option>
+                <option value="5">Admin</option>
+              </select>
           </div>
           <div className="w-32">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              ステータス
-            </label>
-            <select
-              value={filters.isActive}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, isActive: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
+                Status
+              </label>
+              <select
+                value={filters.isActive}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, isActive: e.target.value }));
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
+                onKeyDown={handleKeyDown}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">All</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+          </div>
+          <div className="flex items-end gap-2">
+            <button
+              onClick={handleSearch}
+              disabled={isSearching}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">すべて</option>
-              <option value="true">有効</option>
-              <option value="false">無効</option>
-            </select>
+              <Search className="w-4 h-4" />
+              {isSearching ? 'Searching...' : 'Search'}
+            </button>
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </button>
           </div>
         </div>
       </div>
 
       {/* Users Grid */}
       <div className="mb-2 text-sm text-slate-500">
-        登録ユーザー数 ({pagination.totalItems})
+         Total Users ({pagination.totalItems})
       </div>
       <DataTable
         columns={columns}
         data={sortedUsers}
         isLoading={isLoading}
-        emptyMessage="ユーザーが見つかりません"
+        emptyMessage="No users found"
         sorting={{
           sortBy: sorting.sortBy,
           sortOrder: sorting.sortOrder,

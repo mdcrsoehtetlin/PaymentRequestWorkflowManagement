@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 import { apiClient } from '../../services/api-client';
 import { DataTable, type Column } from '../../components/shared/DataTable';
+import { formatDate } from '../../utils/format';
 
 type MasterCategory = 'currencies' | 'roles' | 'statuses' | 'payment-types' | 'payment-methods';
 
 const CATEGORIES: { value: MasterCategory; label: string }[] = [
-  { value: 'currencies', label: '通貨' },
-  { value: 'roles', label: '役割' },
-  { value: 'statuses', label: 'ステータス' },
-  { value: 'payment-types', label: '支払タイプ' },
-  { value: 'payment-methods', label: '支払方法' },
+  { value: 'currencies', label: 'Currencies' },
+  { value: 'roles', label: 'Roles' },
+  { value: 'statuses', label: 'Statuses' },
+  { value: 'payment-types', label: 'Payment Types' },
+  { value: 'payment-methods', label: 'Payment Methods' },
 ];
 
 /**
@@ -40,9 +41,9 @@ export function MasterDataWorkspace() {
 
   const getColumns = (): Column<Record<string, unknown>>[] => {
     if (data.length === 0) return [];
-    const hiddenKeys = ['is_editable_state', 'is_terminal_state'];
+    const hiddenKeys = ['is_editable_state', 'is_terminal_state', 'display_order'];
     const keys = Object.keys(data[0]).filter(
-      (k) => !hiddenKeys.includes(k) && (!k.endsWith('_id') || k === `${activeCategory.replace(/-/g, '_').replace(/s$/, '')}_id`),
+      (k) => !hiddenKeys.includes(k) && !k.endsWith('_id'),
     );
     return keys.map((key) => ({
       key,
@@ -60,16 +61,7 @@ export function MasterDataWorkspace() {
           ),
       }),
       ...(key === 'created_date' && {
-        render: (val: unknown) => {
-          if (!val) return '—';
-          const d = new Date(val as string);
-          const y = d.getFullYear();
-          const m = String(d.getMonth() + 1).padStart(2, '0');
-          const day = String(d.getDate()).padStart(2, '0');
-          const h = String(d.getHours()).padStart(2, '0');
-          const min = String(d.getMinutes()).padStart(2, '0');
-          return `${y}-${m}-${day} ${h}:${min}`;
-        },
+        render: (val: unknown) => val ? formatDate(val as string) : '—',
       }),
     }));
   };
@@ -77,9 +69,9 @@ export function MasterDataWorkspace() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">マスターデータ設定</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Master Data Settings</h1>
         <p className="text-sm text-slate-500 mt-1">
-          システムのルックアップテーブルを確認できます
+          View system lookup tables
         </p>
       </div>
 
@@ -107,7 +99,7 @@ export function MasterDataWorkspace() {
         columns={getColumns()}
         data={data}
         isLoading={isLoading}
-        emptyMessage="データがありません"
+        emptyMessage="No data found"
       />
     </div>
   );
