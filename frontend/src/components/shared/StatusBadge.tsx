@@ -1,5 +1,4 @@
-import React from 'react';
-import { STATUS_LABELS_EN, STATUS_COLORS } from '../../types';
+import { STATUS_LABELS_JP, STATUS_COLORS } from '../../types';
 
 interface StatusBadgeProps {
   statusId: number;

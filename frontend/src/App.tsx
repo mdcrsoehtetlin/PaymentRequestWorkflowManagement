@@ -1,7 +1,7 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import { AdminRoute } from './components/guards/AdminRoute';
 import { ToastContainer } from './components/shared/Toast';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ApplicantDashboard } from './pages/applicant/ApplicantDashboard';
@@ -9,7 +9,10 @@ import { ManagerDashboard } from './pages/manager/ManagerDashboard';
 import { ApproverDashboard } from './pages/approver/ApproverDashboard';
 import { AccountingDashboard } from './pages/accounting/AccountingDashboard';
 import { PaymentDetailPage } from './pages/accounting/PaymentDetailPage';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminDashboardShell } from './pages/admin/AdminDashboardShell';
+import { UserManagementWorkspace } from './pages/admin/UserManagementWorkspace';
+import { MasterDataWorkspace } from './pages/admin/MasterDataWorkspace';
+import { AuditLogWorkspace } from './pages/admin/AuditLogWorkspace';
 import { RoleCode } from './types';
 
 export default function App() {
@@ -49,11 +52,14 @@ export default function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/admin/*" element={
-            <ProtectedRoute allowedRoles={[RoleCode.ADMIN]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
+          <Route path="/admin" element={<AdminRoute />}>
+            <Route element={<AdminDashboardShell />}>
+              <Route path="users" element={<UserManagementWorkspace />} />
+              <Route path="master-data" element={<MasterDataWorkspace />} />
+              <Route path="audit-logs" element={<AuditLogWorkspace />} />
+              <Route index element={<Navigate to="users" replace />} />
+            </Route>
+          </Route>
           
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/unauthorized" element={
