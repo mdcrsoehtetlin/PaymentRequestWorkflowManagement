@@ -22,27 +22,19 @@ export class PaymentRequest {
   requestNumber!: string;
 
   @Column({ name: 'applicant_user_id', type: 'int' })
-  applicant_user_id!: number;
+  applicantUserId!: number;
 
   @Column({ name: 'manager_user_id', type: 'int', nullable: true })
-  manager_user_id!: number | null;
-
-  @Column({ name: 'final_approver_user_id', type: 'int', nullable: true })
-  final_approver_user_id!: number | null;
-
-  @Column({ name: 'accounting_user_id', type: 'int', nullable: true })
-  accounting_user_id!: number | null;
-
-  @Column({ name: 'current_assigned_to_user_id', type: 'int', nullable: true })
-  current_assigned_to_user_id!: number | null;
-  @Column({ type: 'int' })
-  status_id!: number;
+  managerUserId!: number | null;
 
   @Column({ name: 'final_approver_user_id', type: 'int', nullable: true })
   finalApproverUserId!: number | null;
 
   @Column({ name: 'accounting_user_id', type: 'int', nullable: true })
   accountingUserId!: number | null;
+
+  @Column({ name: 'current_assigned_to_user_id', type: 'int', nullable: true })
+  currentAssignedToUserId!: number | null;
 
   @Column({ name: 'status_id', type: 'int' })
   statusId!: number;
@@ -74,55 +66,61 @@ export class PaymentRequest {
     length: 200,
     nullable: true,
   })
-  bank_account_info!: string | null;
+  bankAccountInfo!: string | null;
 
-  @Column({ type: 'text' })
-  request_content!: string;
-  @Column({ type: 'boolean', default: false })
-  has_receipt!: boolean;
+  @Column({ name: 'request_content', type: 'text' })
+  requestContent!: string;
+
+  @Column({ name: 'has_receipt', default: false })
+  hasReceipt!: boolean;
 
   @Column({
     name: 'submitted_to_manager_date',
-    type: 'timestamptz',
+    type: 'timestamp with time zone',
     nullable: true,
   })
-  submitted_to_manager_date!: Date | null;
+  submittedToManagerDate!: Date | null;
 
   @Column({
     name: 'manager_verification_date',
-    type: 'timestamptz',
+    type: 'timestamp with time zone',
     nullable: true,
   })
-  manager_verification_date!: Date | null;
+  managerVerificationDate!: Date | null;
 
   @Column({
     name: 'submitted_to_approver_date',
-    type: 'timestamptz',
+    type: 'timestamp with time zone',
     nullable: true,
   })
-  submitted_to_approver_date!: Date | null;
+  submittedToApproverDate!: Date | null;
 
-  @Column({ name: 'approval_date', type: 'timestamptz', nullable: true })
-  approval_date!: Date | null;
+  @Column({
+    name: 'approval_date',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  approvalDate!: Date | null;
 
   @Column({
     name: 'payment_completed_date',
-    type: 'timestamptz',
+    type: 'timestamp with time zone',
     nullable: true,
   })
-  payment_completed_date!: Date | null;
+  paymentCompletedDate!: Date | null;
 
-  @Column({ type: 'boolean', default: false })
-  is_deleted!: boolean;
-  @CreateDateColumn({ name: 'created_date' })
-  created_at!: Date;
+  @Column({ name: 'is_deleted', default: false })
+  isDeleted!: boolean;
 
-  @UpdateDateColumn({ name: 'modified_date' })
-  updated_at!: Date;
+  @CreateDateColumn({ name: 'created_date', type: 'timestamp with time zone' })
+  createdDate!: Date;
 
-  @ManyToOne(() => User, { eager: false })
+  @UpdateDateColumn({ name: 'modified_date', type: 'timestamp with time zone' })
+  modifiedDate!: Date;
+
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'final_approver_user_id' })
-  final_approver!: User | null;
+  finalApprover!: User | null;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'applicant_user_id' })
@@ -131,76 +129,15 @@ export class PaymentRequest {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'manager_user_id' })
   manager!: User | null;
-  @OneToMany(() => PaymentBreakdownItem, (item) => item.paymentRequest)
+
+  @OneToMany(() => PaymentBreakdownItem, (item) => item.paymentRequest, {
+    cascade: true,
+  })
   breakdowns!: PaymentBreakdownItem[];
 
   @OneToMany(() => ReceiptFile, (file) => file.paymentRequest)
   receipts!: ReceiptFile[];
 
-  @Column({ name: 'bank_account_info', length: 200, nullable: true })
-  bankAccountInfo!: string;
-
-  @Column({ name: 'request_content', type: 'text' })
-  requestContent!: string;
-
-  @Column({ name: 'has_receipt', default: true })
-  hasReceipt!: boolean;
-
-  @Column({
-    name: 'submitted_to_manager_date',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  submittedToManagerDate!: Date;
-
-  @Column({
-    name: 'manager_verification_date',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  managerVerificationDate!: Date;
-
-  @Column({
-    name: 'submitted_to_approver_date',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  submittedToApproverDate!: Date;
-
-  @Column({
-    name: 'approval_date',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  approvalDate!: Date;
-
-  @Column({
-    name: 'payment_completed_date',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  paymentCompletedDate!: Date;
-
-  @CreateDateColumn({ name: 'created_date', type: 'timestamp with time zone' })
-  createdDate!: Date;
-
-  @UpdateDateColumn({ name: 'modified_date', type: 'timestamp with time zone' })
-  modifiedDate!: Date;
-
-  @Column({ name: 'is_deleted', default: false })
-  isDeleted!: boolean;
-
-  @Column({ name: 'current_assigned_to_user_id', type: 'int', nullable: true })
-  currentAssignedToUserId!: number | null;
-
-  @OneToMany('PaymentBreakdownItem', 'paymentRequest', {
-    cascade: true,
-  })
-  breakdownItems!: PaymentBreakdownItem[];
-
-  @OneToMany('ApprovalLog', 'paymentRequest')
+  @OneToMany(() => ApprovalLog, (log) => log.payment_request)
   approvalLogs!: ApprovalLog[];
-
-  @OneToMany('ReceiptFile', 'paymentRequest')
-  receiptFiles!: ReceiptFile[];
 }

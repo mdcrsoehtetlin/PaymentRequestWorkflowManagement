@@ -120,7 +120,7 @@ export class AccountingService {
         branch: req.applicant.branch,
         totalAmount: req.totalAmount,
         currencyCode: req.currencyId === 1 ? 'MMK' : 'USD',
-        statusId: req.status_id,
+        statusId: req.statusId,
         applicationDate: req.applicationDate,
         desiredPaymentDate: req.desiredPaymentDate,
       })),
@@ -183,7 +183,7 @@ export class AccountingService {
     this.logger.log(`Fetching details for payment request ${id}`);
 
     const request = await this.paymentRequestRepository.findOne({
-      where: { id: Number(id), status_id: 8, is_deleted: false },
+      where: { id: Number(id), statusId: 8, isDeleted: false },
       relations: [
         'applicant',
         'manager',
@@ -213,10 +213,10 @@ export class AccountingService {
     return {
       paymentRequestId: Number(request.id),
       requestNumber: request.requestNumber,
-      statusId: request.status_id,
-      hasReceipt: request.has_receipt,
+      statusId: request.statusId,
+      hasReceipt: request.hasReceipt,
       applicant: {
-        userId: Number(request.applicant_user_id),
+        userId: Number(request.applicantUserId),
         fullName: request.applicant.fullName,
         employeeNumber: request.applicant.employeeNumber,
         branch: request.applicant.branch,
@@ -230,8 +230,8 @@ export class AccountingService {
         paymentMethodName:
           PAYMENT_METHOD_BY_ID[request.paymentMethodId] ?? 'Unknown',
         purpose: request.purpose,
-        requestContent: request.request_content,
-        bankAccountInfo: request.bank_account_info ?? null,
+        requestContent: request.requestContent,
+        bankAccountInfo: request.bankAccountInfo ?? null,
         applicationDate: request.applicationDate,
         desiredPaymentDate: request.desiredPaymentDate,
       },
@@ -287,8 +287,8 @@ export class AccountingService {
       const request = await manager.findOne(PaymentRequest, {
         where: {
           id: Number(id),
-          status_id: Number(PaymentStatus.APPROVED),
-          is_deleted: false,
+          statusId: Number(PaymentStatus.APPROVED),
+          isDeleted: false,
         },
         lock: { mode: 'pessimistic_write' },
       });
@@ -300,19 +300,19 @@ export class AccountingService {
       }
 
       // 2. Guard: payment_completed is a terminal state — cannot re-process
-      if (request.status_id === Number(PaymentStatus.PAID)) {
+      if (request.statusId === Number(PaymentStatus.PAID)) {
         throw new ConflictException(
           `Payment request ${id} has already been marked as PAID`,
         );
       }
 
-      const previousStatusId = request.status_id;
+      const previousStatusId = request.statusId;
 
       // 3. Update the payment request fields atomically
       await manager.update(PaymentRequest, id, {
-        status_id: PaymentStatus.PAID,
-        accounting_user_id: ctx.accountingUserId,
-        payment_completed_date: new Date().toISOString().split('T')[0],
+        statusId: PaymentStatus.PAID,
+        accountingUserId: ctx.accountingUserId,
+        paymentCompletedDate: new Date().toISOString().split('T')[0],
       });
 
       // 4. Write immutable audit log (inside same transaction)

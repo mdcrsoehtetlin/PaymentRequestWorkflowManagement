@@ -131,7 +131,7 @@ export class ManagerService {
 
       if (updatedRequest) {
         this.websocketGateway.sendPersonalNotification(
-          updatedRequest.applicant_user_id,
+          updatedRequest.applicantUserId,
           'statusUpdate',
           {
             event: 'statusUpdate',
@@ -213,7 +213,7 @@ export class ManagerService {
         request.statusId = PaymentStatus.MANAGER_VERIFIED;
         request.managerVerificationDate = new Date();
         request.modifiedDate = new Date();
-        request.currentAssignedToUserId = request.applicant_user_id;
+        request.currentAssignedToUserId = request.applicantUserId;
         await entityManager.save(request);
 
         await this.auditLogService.createLog(entityManager, {
@@ -228,7 +228,7 @@ export class ManagerService {
         });
 
         this.websocketGateway.sendPersonalNotification(
-          request.applicant_user_id,
+          request.applicantUserId,
           'statusUpdate',
           {
             event: 'statusUpdate',
@@ -307,7 +307,7 @@ export class ManagerService {
 
         request.statusId = PaymentStatus.REJECTED_MANAGER;
         request.modifiedDate = new Date();
-        request.currentAssignedToUserId = request.applicant_user_id;
+        request.currentAssignedToUserId = request.applicantUserId;
         await entityManager.save(request);
 
         await this.auditLogService.createLog(entityManager, {
@@ -322,7 +322,7 @@ export class ManagerService {
         });
 
         this.websocketGateway.sendPersonalNotification(
-          request.applicant_user_id,
+          request.applicantUserId,
           'statusUpdate',
           {
             event: 'statusUpdate',

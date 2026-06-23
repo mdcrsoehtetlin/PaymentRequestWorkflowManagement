@@ -80,8 +80,8 @@ export class ApplicantService {
     }
 
     const [items, total] = await this.paymentRequestRepo.findAndCount({
-      where: { applicant_user_id: applicantId, is_deleted: false },
-      order: { updated_at: 'DESC' },
+      where: { applicantUserId: applicantId, isDeleted: false },
+      order: { modifiedDate: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -121,8 +121,8 @@ export class ApplicantService {
     const request = await this.paymentRequestRepo.findOne({
       where: {
         id: requestId,
-        applicant_user_id: applicantId,
-        is_deleted: false,
+        applicantUserId: applicantId,
+        isDeleted: false,
       },
       relations: ['breakdowns', 'receipts', 'approvalLogs'],
     });
@@ -214,8 +214,8 @@ export class ApplicantService {
       const request = await manager.findOne(PaymentRequest, {
         where: {
           id: requestId,
-          applicant_user_id: applicantId,
-          is_deleted: false,
+          applicantUserId: applicantId,
+          isDeleted: false,
         },
         relations: ['breakdowns', 'receipts'],
       });
@@ -235,7 +235,7 @@ export class ApplicantService {
         throw new BadRequestException('Desired payment date is required');
       if (!request.paymentMethodId)
         throw new BadRequestException('Payment method is required');
-      if (!request.breakdownItems || request.breakdownItems.length === 0)
+      if (!request.breakdowns || request.breakdowns.length === 0)
         throw new BadRequestException(
           'At least one breakdown item is required',
         );
@@ -249,9 +249,7 @@ export class ApplicantService {
 
       const previousStatus = request.statusId;
       request.statusId = 2;
-      request.hasReceipt = !!(
-        request.receiptFiles && request.receiptFiles.length > 0
-      );
+      request.hasReceipt = !!(request.receipts && request.receipts.length > 0);
 
       const savedRequest = await manager.save(request);
 
@@ -272,7 +270,7 @@ export class ApplicantService {
       this.applicantGateway.notifyStatusUpdate(String(applicantId), {
         paymentRequestId: Number(savedRequest.id),
         requestNumber: savedRequest.requestNumber,
-        previousStatusId: request.status_id,
+        previousStatusId: request.statusId,
         newStatusId: 2,
         actionByUserId: Number(applicantId),
         actionByUserName: 'Applicant',
@@ -291,8 +289,8 @@ export class ApplicantService {
     const request = await this.paymentRequestRepo.findOne({
       where: {
         id: requestId,
-        applicant_user_id: applicantId,
-        is_deleted: false,
+        applicantUserId: applicantId,
+        isDeleted: false,
       },
     });
 
@@ -339,8 +337,8 @@ export class ApplicantService {
       const request = await manager.findOne(PaymentRequest, {
         where: {
           id: requestId,
-          applicant_user_id: applicantId,
-          is_deleted: false,
+          applicantUserId: applicantId,
+          isDeleted: false,
         },
       });
 
@@ -395,8 +393,8 @@ export class ApplicantService {
       const request = await manager.findOne(PaymentRequest, {
         where: {
           id: requestId,
-          applicant_user_id: applicantId,
-          is_deleted: false,
+          applicantUserId: applicantId,
+          isDeleted: false,
         },
         relations: ['breakdowns'],
       });
@@ -463,8 +461,8 @@ export class ApplicantService {
       const request = await manager.findOne(PaymentRequest, {
         where: {
           id: requestId,
-          applicant_user_id: applicantId,
-          is_deleted: false,
+          applicantUserId: applicantId,
+          isDeleted: false,
         },
       });
 

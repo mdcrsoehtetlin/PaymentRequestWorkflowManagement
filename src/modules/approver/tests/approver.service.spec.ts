@@ -69,7 +69,7 @@ describe('ApproverService', () => {
       applicant: mockApplicantUser,
       manager_user_id: 5,
       manager: mockManagerUser,
-      final_approver_user_id: undefined,
+      finalApproverUserId: undefined,
       final_approver: undefined,
       current_assigned_to_user_id: null,
       accounting_user_id: null,
@@ -335,7 +335,7 @@ describe('ApproverService', () => {
     });
 
     it('should throw ForbiddenException when status is not accessible', async () => {
-      const mockRequest = buildMockRequest({ status_id: PaymentStatus.DRAFT });
+      const mockRequest = buildMockRequest({ statusId: PaymentStatus.DRAFT });
       paymentRequestRepo.findOne.mockResolvedValue(mockRequest);
 
       await expect(
@@ -345,8 +345,8 @@ describe('ApproverService', () => {
 
     it('should throw ForbiddenException when APPROVER_REVIEWING request assigned to different approver', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVER_REVIEWING,
-        final_approver_user_id: 99,
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: 99,
       });
       paymentRequestRepo.findOne.mockResolvedValue(mockRequest);
 
@@ -357,8 +357,8 @@ describe('ApproverService', () => {
 
     it('should auto-transition SUBMITTED_APPROVER to APPROVER_REVIEWING', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.SUBMITTED_APPROVER,
-        final_approver_user_id: undefined,
+        statusId: PaymentStatus.SUBMITTED_APPROVER,
+        finalApproverUserId: undefined,
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
@@ -394,8 +394,8 @@ describe('ApproverService', () => {
 
     it('should throw ConflictException when request already being reviewed by another user during auto-transition', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.SUBMITTED_APPROVER,
-        final_approver_user_id: undefined,
+        statusId: PaymentStatus.SUBMITTED_APPROVER,
+        finalApproverUserId: undefined,
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
@@ -416,8 +416,8 @@ describe('ApproverService', () => {
 
     it('should return detail view for APPROVER_REVIEWING request assigned to current approver', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVER_REVIEWING,
-        final_approver_user_id: mockApproverUserId,
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
         approvalLogs: [],
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
@@ -435,8 +435,8 @@ describe('ApproverService', () => {
 
     it('should return detail view for APPROVED request (read-only)', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVED,
-        final_approver_user_id: mockApproverUserId,
+        statusId: PaymentStatus.APPROVED,
+        finalApproverUserId: mockApproverUserId,
         approvalLogs: [],
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
@@ -463,7 +463,7 @@ describe('ApproverService', () => {
 
     it('should throw ConflictException when request is not in APPROVER_REVIEWING status', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.SUBMITTED_APPROVER,
+        statusId: PaymentStatus.SUBMITTED_APPROVER,
       });
       paymentRequestRepo.findOne.mockResolvedValue(mockRequest);
 
@@ -474,8 +474,8 @@ describe('ApproverService', () => {
 
     it('should throw ForbiddenException when approver is not assigned to the request', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVER_REVIEWING,
-        final_approver_user_id: 99,
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: 99,
       });
       paymentRequestRepo.findOne.mockResolvedValue(mockRequest);
 
@@ -486,8 +486,8 @@ describe('ApproverService', () => {
 
     it('should successfully approve a request and transition to APPROVED', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVER_REVIEWING,
-        final_approver_user_id: mockApproverUserId,
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
@@ -527,8 +527,8 @@ describe('ApproverService', () => {
 
     it('should evict Redis cache after approval', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVER_REVIEWING,
-        final_approver_user_id: mockApproverUserId,
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
@@ -551,8 +551,8 @@ describe('ApproverService', () => {
 
     it('should throw ConflictException when request modified during transaction', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVER_REVIEWING,
-        final_approver_user_id: mockApproverUserId,
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
@@ -588,7 +588,7 @@ describe('ApproverService', () => {
 
     it('should throw ConflictException when request is not in APPROVER_REVIEWING status', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVED,
+        statusId: PaymentStatus.APPROVED,
       });
       paymentRequestRepo.findOne.mockResolvedValue(mockRequest);
 
@@ -604,8 +604,8 @@ describe('ApproverService', () => {
 
     it('should throw ForbiddenException when approver is not assigned to the request', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVER_REVIEWING,
-        final_approver_user_id: 99,
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: 99,
       });
       paymentRequestRepo.findOne.mockResolvedValue(mockRequest);
 
@@ -621,8 +621,8 @@ describe('ApproverService', () => {
 
     it('should successfully reject a request and transition to REJECTED_APPROVER', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVER_REVIEWING,
-        final_approver_user_id: mockApproverUserId,
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
@@ -660,9 +660,9 @@ describe('ApproverService', () => {
 
     it('should reassign request to applicant after rejection', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVER_REVIEWING,
-        final_approver_user_id: mockApproverUserId,
-        applicant_user_id: 1,
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+        applicantUserId: 1,
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
@@ -691,14 +691,14 @@ describe('ApproverService', () => {
         mockAuditContext,
       );
 
-      expect(savedRequest.current_assigned_to_user_id).toBe(1);
-      expect(savedRequest.status_id).toBe(PaymentStatus.REJECTED_APPROVER);
+      expect(savedRequest.currentAssignedToUserId).toBe(1);
+      expect(savedRequest.statusId).toBe(PaymentStatus.REJECTED_APPROVER);
     });
 
     it('should throw ConflictException when request modified during rejection transaction', async () => {
       const mockRequest = buildMockRequest({
-        status_id: PaymentStatus.APPROVER_REVIEWING,
-        final_approver_user_id: mockApproverUserId,
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
