@@ -1,0 +1,11 @@
+TypeError: Cannot read properties of undefined (reading 'databaseName')\nTypeError: Cannot read properties of undefined (reading 'databaseName')
+    at <anonymous> (C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3698:41)
+    at Array.map (<anonymous>)
+    at SelectQueryBuilder.createOrderByCombinedWithSelectExpression (C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3682:14)
+    at SelectQueryBuilder.executeEntitiesAndRawResults (C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3442:22)
+    at SelectQueryBuilder.getManyAndCount (C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1820:47)
+    at AccountingService.findApprovedRequests (C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\accounting\accounting.service.ts:116:10)
+    at AccountingController.getApprovedRequests (C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\accounting\accounting.controller.ts:40:35)
+    at C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\node_modules\@nestjs\core\router\router-execution-context.js:38:29
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\node_modules\@nestjs\core\router\router-execution-context.js:47:62

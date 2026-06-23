@@ -180,17 +180,17 @@ export class ApproverService {
 
     const orderDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
     if (sortBy === ApproverRequestSortFields.TOTAL_AMOUNT) {
-      qb.orderBy('request.total_amount', orderDirection);
+      qb.orderBy('request.totalAmount', orderDirection);
     } else if (sortBy === ApproverRequestSortFields.STATUS) {
-      qb.orderBy('request.status_id', orderDirection);
+      qb.orderBy('request.statusId', orderDirection);
     } else if (sortBy === ApproverRequestSortFields.APPLICATION_DATE) {
-      qb.orderBy('request.application_date', orderDirection);
+      qb.orderBy('request.applicationDate', orderDirection);
     } else if (sortBy === ApproverRequestSortFields.DESIRED_PAYMENT_DATE) {
-      qb.orderBy('request.desired_payment_date', orderDirection);
+      qb.orderBy('request.desiredPaymentDate', orderDirection);
     } else if (sortBy === ApproverRequestSortFields.CREATED_DATE) {
-      qb.orderBy('request.uploadedDate', orderDirection);
+      qb.orderBy('request.createdDate', orderDirection);
     } else {
-      qb.orderBy('request.manager_verification_date', orderDirection);
+      qb.orderBy('request.managerVerificationDate', orderDirection);
     }
 
     const [data, total] = await qb

@@ -57,7 +57,7 @@ export class ManagerService {
     }
 
     if (applicant) {
-      qb.andWhere('applicant.fullName ILIKE :applicantName', {
+      qb.andWhere('applicant.full_name ILIKE :applicantName', {
         applicantName: `%${applicant}%`,
       });
     }

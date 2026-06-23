@@ -84,7 +84,7 @@ export class AccountingService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(pr.request_number ILIKE :search OR applicant.fullName ILIKE :search)',
+        '(pr.request_number ILIKE :search OR applicant.full_name ILIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -103,9 +103,9 @@ export class AccountingService {
 
     // Sort: desired_payment_date ASC, application_date ASC, request_number ASC
     queryBuilder
-      .orderBy('pr.desired_payment_date', 'ASC')
-      .addOrderBy('pr.application_date', 'ASC')
-      .addOrderBy('pr.request_number', 'ASC');
+      .orderBy('pr.desiredPaymentDate', 'ASC')
+      .addOrderBy('pr.applicationDate', 'ASC')
+      .addOrderBy('pr.requestNumber', 'ASC');
 
     const [data, total] = await queryBuilder
       .skip((page - 1) * pageSize)
