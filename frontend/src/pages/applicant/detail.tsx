@@ -129,7 +129,7 @@ const PaymentRequestDetail: React.FC = () => {
     try {
       setSubmitting(true);
       setError(null);
-      await updatePaymentRequest(id!, editData as Record<string, unknown>);
+      await updatePaymentRequest(id!, editData ?? {});
       setIsEditing(false);
       await loadData();
     } catch (err: unknown) {
@@ -283,7 +283,8 @@ const PaymentRequestDetail: React.FC = () => {
                           type="text"
                           value={item.description}
                           onChange={(e) => {
-                            const newB = [...(editData.breakdowns ?? [])];
+                            if (!editData?.breakdowns) return;
+                            const newB = [...editData.breakdowns];
                             newB[i].description = e.target.value;
                             setEditData({...editData, breakdowns: newB});
                           }}
@@ -299,7 +300,8 @@ const PaymentRequestDetail: React.FC = () => {
                           type="number"
                           value={item.amount}
                           onChange={(e) => {
-                            const newB = [...(editData.breakdowns ?? [])];
+                            if (!editData?.breakdowns) return;
+                            const newB = [...editData.breakdowns];
                             newB[i].amount = parseFloat(e.target.value) || 0;
                             setEditData({...editData, breakdowns: newB});
                           }}
@@ -317,7 +319,7 @@ const PaymentRequestDetail: React.FC = () => {
               {isEditing && (
                 <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
                   <button 
-                    onClick={() => { if (editData) setEditData({...editData, breakdowns: [...(editData.breakdowns ?? []), { description: '', amount: 0 }]}); }}
+                    onClick={() => editData && setEditData({...editData, breakdowns: [...(editData.breakdowns ?? []), { description: '', amount: 0 }]})}
                     className="text-sm text-blue-600 font-medium hover:underline"
                   >
                     + Add Item
@@ -372,7 +374,7 @@ const PaymentRequestDetail: React.FC = () => {
               <div>
                 <p className="text-xs text-slate-500 font-medium mb-1">Application Date</p>
                 {isEditing && editData ? (
-                  <input type="date" value={editData.application_date} onChange={e => setEditData({...editData, application_date: e.target.value})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white" />
+                  <input type="date" value={editData.application_date ?? ''} onChange={e => setEditData({...editData, application_date: e.target.value})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white" />
                 ) : (
                   <p className="text-sm text-slate-900 font-medium">{new Date(data.application_date).toLocaleDateString()}</p>
                 )}
@@ -381,7 +383,7 @@ const PaymentRequestDetail: React.FC = () => {
               <div>
                 <p className="text-xs text-slate-500 font-medium mb-1">Desired Payment Date</p>
                 {isEditing && editData ? (
-                  <input type="date" value={editData.desired_payment_date} onChange={e => setEditData({...editData, desired_payment_date: e.target.value})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white" />
+                  <input type="date" value={editData.desired_payment_date ?? ''} onChange={e => setEditData({...editData, desired_payment_date: e.target.value})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white" />
                 ) : (
                   <p className="text-sm text-slate-900 font-medium">{new Date(data.desired_payment_date).toLocaleDateString()}</p>
                 )}
@@ -390,7 +392,7 @@ const PaymentRequestDetail: React.FC = () => {
               <div>
                 <p className="text-xs text-slate-500 font-medium mb-1">Payment Method</p>
                 {isEditing && editData ? (
-                  <select value={editData.payment_method_id} onChange={e => setEditData({...editData, payment_method_id: Number(e.target.value)})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white">
+                  <select value={editData.payment_method_id ?? ''} onChange={e => setEditData({...editData, payment_method_id: Number(e.target.value)})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white">
                     <option value={1}>Bank Transfer</option>
                     <option value={2}>Credit Card</option>
                     <option value={3}>Cash</option>

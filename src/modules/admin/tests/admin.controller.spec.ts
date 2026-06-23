@@ -87,6 +87,7 @@ describe('AdminController', () => {
     it('should call adminService.createUser with DTO', async () => {
       const dto: CreateUserDto = {
         email: 'new@example.com',
+        password: 'securePass123',
         fullName: 'New User',
         employeeNumber: 'EMP-002',
         branch: 'Yangon',
@@ -158,7 +159,7 @@ describe('AdminController', () => {
   });
 
   describe('POST /users/:id/reset-password', () => {
-    it('should call adminService.resetPassword with id', async () => {
+    it('should call adminService.resetPassword with id and DTO', async () => {
       mockService.resetPassword.mockResolvedValue({
         userId: 1,
         temporaryPassword: 'newpass',

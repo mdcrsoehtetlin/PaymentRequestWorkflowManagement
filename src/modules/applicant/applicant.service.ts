@@ -42,7 +42,7 @@ export class ApplicantService {
   ) {}
 
   async getDashboardData(
-    applicantId: string,
+    applicantId: number,
     page: number = 1,
     limit: number = 10,
   ): Promise<DashboardResponseDto> {
@@ -52,11 +52,11 @@ export class ApplicantService {
 
     const kpiQuery = this.paymentRequestRepo
       .createQueryBuilder('pr')
-      .select('pr.statusId', 'status_id')
-      .addSelect('COUNT(pr.paymentRequestId)', 'count')
-      .where('pr.applicantUserId = :applicantId', { applicantId })
-      .andWhere('pr.isDeleted = false')
-      .groupBy('pr.statusId');
+      .select('pr.status_id', 'status_id')
+      .addSelect('COUNT(pr.id)', 'count')
+      .where('pr.applicant_user_id = :applicantId', { applicantId })
+      .andWhere('pr.is_deleted = false')
+      .groupBy('pr.status_id');
 
     const kpiRaw = await kpiQuery.getRawMany<{
       status_id: number;
@@ -80,8 +80,8 @@ export class ApplicantService {
     }
 
     const [items, total] = await this.paymentRequestRepo.findAndCount({
-      where: { applicantUserId: Number(applicantId), isDeleted: false },
-      order: { modifiedDate: 'DESC' },
+      where: { applicant_user_id: applicantId, is_deleted: false },
+      order: { updated_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -115,38 +115,35 @@ export class ApplicantService {
   }
 
   async getPaymentRequestDetail(
-    applicantId: string,
-    requestId: string,
+    applicantId: number,
+    requestId: number,
   ): Promise<PaymentRequest> {
     const request = await this.paymentRequestRepo.findOne({
       where: {
-        paymentRequestId: Number(requestId),
-        applicantUserId: Number(applicantId),
-        isDeleted: false,
+        id: requestId,
+        applicant_user_id: applicantId,
+        is_deleted: false,
       },
-      relations: ['breakdownItems', 'receiptFiles', 'approvalLogs'],
+      relations: ['breakdowns', 'receipts', 'logs'],
     });
 
     if (!request) {
       throw new NotFoundException('Payment request not found');
     }
 
-    if (request.breakdownItems)
-      request.breakdownItems.sort(
-        (a: PaymentBreakdownItem, b: PaymentBreakdownItem) =>
-          Number(b.amount) - Number(a.amount),
-      );
-    if (request.approvalLogs)
-      request.approvalLogs.sort(
-        (a: ApprovalLog, b: ApprovalLog) =>
-          b.timestamp.getTime() - a.timestamp.getTime(),
+    // Sort breakdowns and logs
+    if (request.breakdowns)
+      request.breakdowns.sort((a, b) => b.amount - a.amount);
+    if (request.logs)
+      request.logs.sort(
+        (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
       );
 
     return request;
   }
 
   async createDraft(
-    applicantId: string,
+    applicantId: number,
     dto: CreatePaymentRequestDraftDto,
   ): Promise<PaymentRequest> {
     const requestNumber = await this.requestNumberService.generateNext();
@@ -161,12 +158,12 @@ export class ApplicantService {
       }
 
       const request = manager.create(PaymentRequest, {
-        requestNumber,
-        applicantUserId: Number(applicantId),
-        statusId: 1,
-        totalAmount: totalAmount.toString(),
-        currencyId: dto.currency_id || 1,
-        applicationDate:
+        request_number: requestNumber,
+        applicant_user_id: applicantId,
+        status_id: 1, // Draft
+        total_amount: totalAmount.toString(),
+        currency_id: dto.currency_id || 1,
+        application_date:
           dto.application_date || new Date().toISOString().split('T')[0],
         desiredPaymentDate:
           dto.desired_payment_date || new Date().toISOString().split('T')[0],
@@ -186,7 +183,7 @@ export class ApplicantService {
             itemDate:
               dto.application_date || new Date().toISOString().split('T')[0],
             description: b.description,
-            amount: b.amount.toString(),
+            amount: b.amount,
           }),
         );
         await manager.save(items);
@@ -210,17 +207,17 @@ export class ApplicantService {
   }
 
   async submitToManager(
-    applicantId: string,
-    requestId: string,
+    applicantId: number,
+    requestId: number,
   ): Promise<PaymentRequest> {
     return this.dataSource.transaction(async (manager) => {
       const request = await manager.findOne(PaymentRequest, {
         where: {
-          paymentRequestId: Number(requestId),
-          applicantUserId: Number(applicantId),
-          isDeleted: false,
+          id: requestId,
+          applicant_user_id: applicantId,
+          is_deleted: false,
         },
-        relations: ['breakdownItems', 'receiptFiles'],
+        relations: ['breakdowns', 'receipts'],
       });
 
       if (!request) throw new NotFoundException('Payment request not found');
@@ -243,8 +240,8 @@ export class ApplicantService {
           'At least one breakdown item is required',
         );
 
-      const total = request.breakdownItems.reduce(
-        (sum: number, item: PaymentBreakdownItem) => sum + Number(item.amount),
+      const total = request.breakdowns.reduce(
+        (sum, item) => sum + item.amount,
         0,
       );
       if (total <= 0)
@@ -272,10 +269,10 @@ export class ApplicantService {
 
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
-      this.applicantGateway.notifyStatusUpdate(applicantId, {
-        paymentRequestId: savedRequest.paymentRequestId,
-        requestNumber: savedRequest.requestNumber,
-        previousStatusId: previousStatus,
+      this.applicantGateway.notifyStatusUpdate(String(applicantId), {
+        paymentRequestId: Number(savedRequest.id),
+        requestNumber: savedRequest.request_number,
+        previousStatusId: request.status_id,
         newStatusId: 2,
         actionByUserId: Number(applicantId),
         actionByUserName: 'Applicant',
@@ -287,15 +284,15 @@ export class ApplicantService {
   }
 
   async uploadReceipt(
-    applicantId: string,
-    requestId: string,
+    applicantId: number,
+    requestId: number,
     file: UploadedFile,
   ): Promise<ReceiptFile> {
     const request = await this.paymentRequestRepo.findOne({
       where: {
-        paymentRequestId: Number(requestId),
-        applicantUserId: Number(applicantId),
-        isDeleted: false,
+        id: requestId,
+        applicant_user_id: applicantId,
+        is_deleted: false,
       },
     });
 
@@ -335,15 +332,15 @@ export class ApplicantService {
   }
 
   async submitToApprover(
-    applicantId: string,
-    requestId: string,
+    applicantId: number,
+    requestId: number,
   ): Promise<PaymentRequest> {
     return this.dataSource.transaction(async (manager) => {
       const request = await manager.findOne(PaymentRequest, {
         where: {
-          paymentRequestId: Number(requestId),
-          applicantUserId: Number(applicantId),
-          isDeleted: false,
+          id: requestId,
+          applicant_user_id: applicantId,
+          is_deleted: false,
         },
       });
 
@@ -375,9 +372,9 @@ export class ApplicantService {
 
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
-      this.applicantGateway.notifyStatusUpdate(applicantId, {
-        paymentRequestId: savedRequest.paymentRequestId,
-        requestNumber: savedRequest.requestNumber,
+      this.applicantGateway.notifyStatusUpdate(String(applicantId), {
+        paymentRequestId: Number(savedRequest.id),
+        requestNumber: savedRequest.request_number,
         previousStatusId: 4,
         newStatusId: 6,
         actionByUserId: Number(applicantId),
@@ -390,18 +387,18 @@ export class ApplicantService {
   }
 
   async updatePaymentRequest(
-    applicantId: string,
-    requestId: string,
+    applicantId: number,
+    requestId: number,
     dto: UpdatePaymentRequestDto,
   ): Promise<PaymentRequest> {
     return this.dataSource.transaction(async (manager) => {
       const request = await manager.findOne(PaymentRequest, {
         where: {
-          paymentRequestId: Number(requestId),
-          applicantUserId: Number(applicantId),
-          isDeleted: false,
+          id: requestId,
+          applicant_user_id: applicantId,
+          is_deleted: false,
         },
-        relations: ['breakdownItems'],
+        relations: ['breakdowns'],
       });
 
       if (!request) throw new NotFoundException('Payment request not found');
@@ -432,12 +429,12 @@ export class ApplicantService {
               request.applicationDate ||
               new Date().toISOString().split('T')[0],
             description: b.description,
-            amount: b.amount.toString(),
+            amount: b.amount,
           }),
         );
         await manager.save(items);
-        request.totalAmount = dto.breakdowns
-          .reduce((sum, item) => sum + Number(item.amount), 0)
+        request.total_amount = dto.breakdowns
+          .reduce((sum, item) => sum + item.amount, 0)
           .toString();
       }
 
@@ -461,13 +458,13 @@ export class ApplicantService {
     });
   }
 
-  async deleteDraft(applicantId: string, requestId: string): Promise<void> {
+  async deleteDraft(applicantId: number, requestId: number): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
       const request = await manager.findOne(PaymentRequest, {
         where: {
-          paymentRequestId: Number(requestId),
-          applicantUserId: Number(applicantId),
-          isDeleted: false,
+          id: requestId,
+          applicant_user_id: applicantId,
+          is_deleted: false,
         },
       });
 

@@ -11,10 +11,10 @@ import { PaymentRequest } from './payment-request.entity';
 @Entity('payment_breakdown_items')
 export class PaymentBreakdownItem {
   @PrimaryGeneratedColumn({ name: 'payment_breakdown_item_id' })
-  paymentBreakdownItemId!: number;
+  id!: number;
 
-  @Column({ name: 'payment_request_id', type: 'int' })
-  paymentRequestId!: number;
+  @Column({ type: 'int' })
+  payment_request_id!: number;
 
   @Column({ name: 'line_number', type: 'int', default: 1 })
   lineNumber!: number;
@@ -22,14 +22,14 @@ export class PaymentBreakdownItem {
   @Column({ name: 'item_date', type: 'date', nullable: true })
   itemDate!: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   description!: string;
 
   @Column({ type: 'numeric', precision: 12, scale: 2 })
-  amount!: string;
+  amount!: number;
 
   @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
-  quantity!: string;
+  quantity!: number;
 
   @Column({
     name: 'unit_price',
@@ -38,7 +38,10 @@ export class PaymentBreakdownItem {
     scale: 2,
     nullable: true,
   })
-  unitPrice!: string;
+  unit_price!: number;
+
+  @CreateDateColumn({ name: 'created_date' })
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'modified_date' })
   modifiedDate!: Date;

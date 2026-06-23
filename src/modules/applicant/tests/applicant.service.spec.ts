@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ApplicantService } from '../applicant.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { DataSource } from 'typeorm';
 import { PaymentRequest } from '../../shared/entities/payment-request.entity';
 import { PaymentBreakdownItem } from '../../shared/entities/payment-breakdown-item.entity';
@@ -10,6 +11,8 @@ import { User } from '../../shared/entities/user.entity';
 import { RequestNumberService } from '../../shared/services/request-number.service';
 import { FileUploadService } from '../../shared/services/file-upload.service';
 import { ApplicantGateway } from '../applicant.gateway';
+import { RequestNumberService } from '../../shared/services/request-number.service';
+import { FileUploadService } from '../../shared/services/file-upload.service';
 
 describe('ApplicantService', () => {
   let service: ApplicantService;
@@ -39,14 +42,12 @@ describe('ApplicantService', () => {
           useValue: {},
         },
         {
-          provide: 'CACHE_MANAGER',
+          provide: CACHE_MANAGER,
           useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() },
         },
         {
           provide: DataSource,
-          useValue: {
-            transaction: jest.fn(),
-          },
+          useValue: {},
         },
         {
           provide: RequestNumberService,

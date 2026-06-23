@@ -8,7 +8,7 @@ import {
   IsNotEmpty,
   MaxLength,
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class PaymentBreakdownItemDto {
   @IsString()
@@ -26,33 +26,29 @@ export class CreatePaymentRequestDraftDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(500)
-  @Transform(({ value }: { value: string }) =>
+  @Transform(({ value }): string =>
     typeof value === 'string' ? value.trim() : value,
   )
   purpose!: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   @MaxLength(200)
-  @Transform(({ value }: { value: string }) =>
+  @Transform(({ value }): string =>
     typeof value === 'string' ? value.trim() : value,
   )
-  bankAccountInfo?: string;
+  bank_account_info?: string;
 
-  @IsString()
   @IsOptional()
-  @Transform(({ value }: { value: string }) =>
+  @IsString()
+  @Transform(({ value }): string =>
     typeof value === 'string' ? value.trim() : value,
   )
-  requestContent?: string;
+  request_content?: string;
 
   @IsNumber()
   @IsOptional()
   payment_method_id?: number;
-
-  @IsString()
-  @IsOptional()
-  request_content?: string;
 
   @IsDateString()
   @IsOptional()

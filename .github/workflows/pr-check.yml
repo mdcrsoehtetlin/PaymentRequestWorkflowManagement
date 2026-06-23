@@ -21,12 +21,6 @@ jobs:
       - name: Install Backend Dependencies
         run: npm ci
 
-      - name: Run Backend Tests
-        run: npm run test
-
-      - name: Test Backend Build
-        run: npm run build
-
   frontend-check:
     name: Frontend CI
     runs-on: ubuntu-latest

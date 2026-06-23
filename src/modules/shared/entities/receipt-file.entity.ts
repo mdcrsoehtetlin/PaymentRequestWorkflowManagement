@@ -11,10 +11,10 @@ import { PaymentRequest } from './payment-request.entity';
 @Entity('receipt_files')
 export class ReceiptFile {
   @PrimaryGeneratedColumn({ name: 'receipt_file_id' })
-  receiptFileId!: number;
+  id!: number;
 
-  @Column({ name: 'payment_request_id', type: 'int' })
-  paymentRequestId!: number;
+  @Column({ type: 'int' })
+  payment_request_id!: number;
 
   @Column({
     name: 'original_file_name',
@@ -32,14 +32,19 @@ export class ReceiptFile {
   })
   storedFileName!: string;
 
-  @Column({ name: 'file_size', type: 'bigint' })
-  fileSize!: number;
+  @Column({ type: 'bigint', nullable: true })
+  file_size!: number;
 
-  @Column({ name: 'mime_type', type: 'varchar', length: 100 })
-  mimeType!: string;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  mime_type!: string;
 
-  @Column({ name: 'file_storage_path', type: 'varchar', length: 1024 })
-  fileStoragePath!: string;
+  @Column({
+    name: 'file_storage_path',
+    type: 'varchar',
+    length: 1024,
+    nullable: true,
+  })
+  storage_key!: string;
 
   @Column({ name: 'uploaded_by_user_id', type: 'int', nullable: true })
   uploadedByUserId!: number;

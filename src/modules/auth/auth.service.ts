@@ -53,7 +53,7 @@ export class AuthService {
       refreshToken: this.jwtService.sign(payload, {
         expiresIn: this.configService.get<string>(
           'jwt.refreshExpiration',
-        ) as `${number}m`,
+        ) as `${number}s`,
       }),
       user: payload,
     };

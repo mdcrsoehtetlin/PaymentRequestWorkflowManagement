@@ -61,7 +61,7 @@ export class ApplicantController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ): Promise<DashboardResponseDto> {
-    const applicantId = req.user.sub;
+    const applicantId = Number(req.user.sub);
     return this.applicantService.getDashboardData(
       applicantId,
       Number(page),
@@ -74,8 +74,11 @@ export class ApplicantController {
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
   ) {
-    const applicantId = req.user.sub;
-    return this.applicantService.getPaymentRequestDetail(applicantId, id);
+    const applicantId = Number(req.user.sub);
+    return this.applicantService.getPaymentRequestDetail(
+      applicantId,
+      Number(id),
+    );
   }
 
   @Post('draft')
@@ -83,7 +86,7 @@ export class ApplicantController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: CreatePaymentRequestDraftDto,
   ) {
-    const applicantId = req.user.sub;
+    const applicantId = Number(req.user.sub);
     const request = await this.applicantService.createDraft(applicantId, dto);
     return {
       message: 'Draft created successfully',
@@ -99,10 +102,10 @@ export class ApplicantController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: SubmitManagerDto,
   ) {
-    const applicantId = req.user.sub;
+    const applicantId = Number(req.user.sub);
     const request = await this.applicantService.submitToManager(
       applicantId,
-      dto.id,
+      Number(dto.id),
     );
     return {
       message: 'Request submitted to Manager successfully',
@@ -124,10 +127,10 @@ export class ApplicantController {
       throw new BadRequestException('File is required');
     }
 
-    const applicantId = req.user.sub;
+    const applicantId = Number(req.user.sub);
     const receipt = await this.applicantService.uploadReceipt(
       applicantId,
-      id,
+      Number(id),
       file,
     );
 
@@ -146,10 +149,10 @@ export class ApplicantController {
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
   ) {
-    const applicantId = req.user.sub;
+    const applicantId = Number(req.user.sub);
     const request = await this.applicantService.submitToApprover(
       applicantId,
-      id,
+      Number(id),
     );
     return {
       message: 'Request submitted to Final Approver successfully',
@@ -166,10 +169,10 @@ export class ApplicantController {
     @Param('id') id: string,
     @Body() dto: UpdatePaymentRequestDto,
   ) {
-    const applicantId = req.user.sub;
+    const applicantId = Number(req.user.sub);
     const request = await this.applicantService.updatePaymentRequest(
       applicantId,
-      id,
+      Number(id),
       dto,
     );
     return {
@@ -185,7 +188,7 @@ export class ApplicantController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteDraft(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    const applicantId = req.user.sub;
-    await this.applicantService.deleteDraft(applicantId, id);
+    const applicantId = Number(req.user.sub);
+    await this.applicantService.deleteDraft(applicantId, Number(id));
   }
 }

@@ -1,10 +1,6 @@
+import type { ApprovalActionType, ApprovalLogWithUser } from '../../types';
 import { formatDateTime } from '../../utils/format';
-import {
-  ACTION_LABELS_JP,
-  ACTION_BADGE_COLORS,
-  type ApprovalLogWithUser,
-  type ApprovalActionType
-} from '../../types';
+import { ACTION_LABELS_EN, ACTION_BADGE_COLORS } from '../../utils/constants';
 
 interface ApprovalTimelineProps {
   logs: ApprovalLogWithUser[];
@@ -12,15 +8,15 @@ interface ApprovalTimelineProps {
 
 export function ApprovalTimeline({ logs }: ApprovalTimelineProps) {
   if (!logs || logs.length === 0) {
-    return <p className="text-sm text-slate-500 italic">承認履歴はありません</p>;
+    return <p className="text-sm text-slate-500 italic">No approval history</p>;
   }
 
   return (
     <div className="relative border-l-2 border-slate-200 ml-3 space-y-6">
       {logs.map((log) => {
-        const isRejection = log.actionTypeId === 6 || log.actionTypeId === 9; // MGR_REJECTED or APPR_REJECTED
+        const isRejection = log.actionTypeId === 3 || log.actionTypeId === 4; // REJECTED or RETURNED
         const badgeColor = ACTION_BADGE_COLORS[log.actionTypeId as ApprovalActionType] || 'bg-slate-100 text-slate-800';
-        const actionLabel = ACTION_LABELS_JP[log.actionTypeId as ApprovalActionType] || '不明';
+        const actionLabel = ACTION_LABELS_EN[log.actionTypeId as ApprovalActionType] || 'Unknown';
 
         return (
           <div key={log.approvalLogId} className="relative pl-6">
@@ -28,12 +24,7 @@ export function ApprovalTimeline({ logs }: ApprovalTimelineProps) {
 
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
               <div>
-                <span className="font-semibold text-slate-900 mr-2">
-                  {log.actionTakenByUser?.fullName || 'システム'}
-                </span>
-                <span className="text-xs text-slate-500">
-                  {log.actionTakenByUser?.branch ? `(${log.actionTakenByUser.branch})` : ''}
-                </span>
+                <span className="font-semibold text-slate-900 mr-2">{log.actionTakenByUser.fullName}</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColor}`}>

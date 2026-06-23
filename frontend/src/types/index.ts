@@ -120,6 +120,22 @@ export const STATUS_LABELS_EN: Record<PaymentStatus, string> = {
 };
 
 /**
+ * English labels for each payment status.
+ */
+export const STATUS_LABELS_EN: Record<PaymentStatus, string> = {
+  [PaymentStatus.DRAFT]: 'Draft',
+  [PaymentStatus.SUBMITTED_MANAGER]: 'Submitted to Manager',
+  [PaymentStatus.MANAGER_REVIEWING]: 'Manager Reviewing',
+  [PaymentStatus.MANAGER_VERIFIED]: 'Manager Verified',
+  [PaymentStatus.REJECTED_MANAGER]: 'Rejected by Manager',
+  [PaymentStatus.SUBMITTED_APPROVER]: 'Submitted to Approver',
+  [PaymentStatus.APPROVER_REVIEWING]: 'Approver Reviewing',
+  [PaymentStatus.APPROVED]: 'Approved',
+  [PaymentStatus.REJECTED_APPROVER]: 'Rejected by Approver',
+  [PaymentStatus.PAID]: 'Paid',
+};
+
+/**
  * Tailwind CSS classes for status badges.
  * Includes `border` class as required by Design System §9.2.2.
  * Each value is a complete self-contained class string for the badge.

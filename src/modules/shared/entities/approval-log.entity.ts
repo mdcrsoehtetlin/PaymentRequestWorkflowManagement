@@ -6,6 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { PaymentRequest } from './payment-request.entity';
+import { User } from './user.entity';
 
 /**
  * @description Immutable audit log entity tracking all workflow state transitions.
@@ -17,34 +18,38 @@ export class ApprovalLog {
   @PrimaryGeneratedColumn({ name: 'approval_log_id', type: 'bigint' })
   approvalLogId!: string;
 
-  @Column({ name: 'payment_request_id', type: 'int' })
-  paymentRequestId!: number;
+  @Column({ type: 'int' })
+  payment_request_id!: number;
 
-  @Column({ name: 'action_taken_by_user_id', type: 'int' })
-  actionTakenByUserId!: number;
+  @Column({ type: 'int', nullable: true })
+  action_taken_by_user_id!: number;
 
-  @Column({ name: 'action_type_id', type: 'int' })
-  actionTypeId!: number;
+  @Column({ type: 'int', nullable: true })
+  action_type_id!: number;
 
   @Column({ name: 'previous_status_id', type: 'int', nullable: true })
   previousStatusId!: number;
 
-  @Column({ name: 'new_status_id', type: 'int' })
-  newStatusId!: number;
+  @Column({ type: 'int', nullable: true })
+  new_status_id!: number;
 
   @Column({ type: 'text', nullable: true })
   comment!: string;
 
-  @Column({ name: 'ip_address', type: 'varchar', length: 45 })
-  ipAddress!: string;
+  @Column({ type: 'varchar', length: 45, nullable: true })
+  ip_address!: string;
 
-  @Column({ name: 'user_agent', type: 'varchar', length: 255 })
-  userAgent!: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  user_agent!: string;
 
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   timestamp!: Date;
 
   @ManyToOne('PaymentRequest', 'approvalLogs')
   @JoinColumn({ name: 'payment_request_id' })
-  paymentRequest!: PaymentRequest;
+  payment_request!: PaymentRequest;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'action_taken_by_user_id' })
+  action_taken_by_user!: User;
 }

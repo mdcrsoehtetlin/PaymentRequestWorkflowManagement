@@ -9,6 +9,7 @@ import { ManagerDashboard } from './pages/manager/ManagerDashboard';
 import { ManagerRequestDetail } from './pages/manager/ManagerRequestDetail';
 import { ApproverDashboard } from './pages/approver/ApproverDashboard';
 import { AccountingDashboard } from './pages/accounting/AccountingDashboard';
+import { PaymentDetailPage } from './pages/accounting/PaymentDetailPage';
 import { AdminDashboardShell } from './pages/admin/AdminDashboardShell';
 import { UserManagementWorkspace } from './pages/admin/UserManagementWorkspace';
 import { MasterDataWorkspace } from './pages/admin/MasterDataWorkspace';
@@ -46,9 +47,14 @@ export default function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/accounting/*" element={
+          <Route path="/accounting" element={
             <ProtectedRoute allowedRoles={[RoleCode.ACCOUNTING]}>
               <AccountingDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/payment/:id" element={
+            <ProtectedRoute allowedRoles={[RoleCode.ACCOUNTING]}>
+              <PaymentDetailPage />
             </ProtectedRoute>
           } />
           
