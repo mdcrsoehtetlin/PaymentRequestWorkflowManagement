@@ -20,9 +20,9 @@ export class RequestNumberService {
 
     const result = await this.repo
       .createQueryBuilder('r')
-      .select('MAX(r.request_number)', 'maxNum')
-      .where('r.request_number LIKE :prefix', { prefix: `${prefix}%` })
-      .getRawOne();
+      .select('MAX(r.requestNumber)', 'maxNum')
+      .where('r.requestNumber LIKE :prefix', { prefix: `${prefix}%` })
+      .getRawOne<{ maxNum: string | null }>();
 
     let nextSeq = 1;
     if (result?.maxNum) {

@@ -1,5 +1,4 @@
-
-import { Routes, Route } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import Dashboard from './dashboard';
 import Form from './form';
