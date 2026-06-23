@@ -9,7 +9,6 @@ import { ManagerDashboard } from './pages/manager/ManagerDashboard';
 import { ApproverDashboard } from './pages/approver/ApproverDashboard';
 import { AccountingDashboard } from './pages/accounting/AccountingDashboard';
 import { PaymentDetailPage } from './pages/accounting/PaymentDetailPage';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminDashboardShell } from './pages/admin/AdminDashboardShell';
 import { UserManagementWorkspace } from './pages/admin/UserManagementWorkspace';
 import { MasterDataWorkspace } from './pages/admin/MasterDataWorkspace';
