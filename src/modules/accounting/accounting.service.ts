@@ -17,10 +17,10 @@ export class AccountingService {
    * @returns A list of approved payment requests ready for payment.
    * @throws {Error} If retrieval fails.
    */
-  async getPendingPayments() {
+  async getPendingPayments(): Promise<PaymentRequest[]> {
     this.logger.log('Fetching pending payments for accounting');
     return this.paymentRequestRepository.find({
-      where: { statusId: 8 }, // APPROVED
+      where: { status_id: 8 }, // APPROVED
       relations: ['applicant'],
     });
   }

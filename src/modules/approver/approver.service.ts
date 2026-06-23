@@ -17,12 +17,12 @@ export class ApproverService {
    * @returns A list of pending payment requests.
    * @throws {Error} If database query fails.
    */
-  async getPendingRequests() {
+  async getPendingRequests(): Promise<PaymentRequest[]> {
     this.logger.log('Fetching pending requests for final approver');
     return this.paymentRequestRepository.find({
       where: [
-        { statusId: 6 }, // SUBMITTED_APPROVER
-        { statusId: 7 }, // APPROVER_REVIEWING
+        { status_id: 6 }, // SUBMITTED_APPROVER
+        { status_id: 7 }, // APPROVER_REVIEWING
       ],
       relations: ['applicant'],
     });

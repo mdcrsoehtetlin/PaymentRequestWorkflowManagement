@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Eye } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';

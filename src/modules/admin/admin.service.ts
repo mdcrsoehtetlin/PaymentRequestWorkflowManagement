@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto';
+
 import {
   Injectable,
   Logger,
@@ -6,11 +7,14 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+
 import { User } from '../shared/entities/user.entity';
 import { ApprovalLog } from '../shared/entities/approval-log.entity';
+
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
@@ -192,10 +196,10 @@ export class AdminService {
   /**
    * @description Updates user details with optimistic locking validation.
    * @param id The user ID to update.
-   * @param dto The update payload including version for optimistic lock.
+   * @param dto The update payload.
    * @returns The updated user object.
    * @throws {NotFoundException} If user not found.
-   * @throws {ConflictException} If version mismatch (concurrent edit).
+   * @throws {ConflictException} If record concurrent edit conflict.
    */
   async updateUser(
     id: number,
@@ -439,8 +443,13 @@ export class AdminService {
 
     const qb = this.approvalLogRepository
       .createQueryBuilder('log')
-      .leftJoinAndSelect('log.actionTakenByUser', 'user')
-      .leftJoinAndSelect('log.paymentRequest', 'request');
+      .leftJoinAndMapOne(
+        'log.actionTakenByUser',
+        User,
+        'user',
+        'user.userId = log.action_taken_by_user_id',
+      )
+      .leftJoinAndSelect('log.payment_request', 'request');
 
     if (startDate) {
       qb.andWhere('log.timestamp >= :startDate', { startDate });
@@ -449,10 +458,10 @@ export class AdminService {
       qb.andWhere('log.timestamp <= :endDate', { endDate });
     }
     if (actionTypeId) {
-      qb.andWhere('log.actionTypeId = :actionTypeId', { actionTypeId });
+      qb.andWhere('log.action_type_id = :actionTypeId', { actionTypeId });
     }
     if (requestId) {
-      qb.andWhere('log.paymentRequestId = :requestId', { requestId });
+      qb.andWhere('log.payment_request_id = :requestId', { requestId });
     }
     if (actorName) {
       qb.andWhere('user.fullName ILike :actorName', {
@@ -469,16 +478,18 @@ export class AdminService {
 
     return {
       data: data.map((log) => ({
-        approvalLogId: log.approvalLogId,
-        paymentRequestId: log.paymentRequestId,
-        actionTakenByUserId: log.actionTakenByUserId,
-        actorName: log.actionTakenByUser?.fullName ?? 'Unknown',
-        actionTypeId: log.actionTypeId,
-        previousStatusId: log.previousStatusId,
-        newStatusId: log.newStatusId,
+        approvalLogId: log.id,
+        paymentRequestId: Number(log.payment_request_id),
+        actionTakenByUserId: Number(log.action_taken_by_user_id),
+        actorName:
+          (log as ApprovalLog & { actionTakenByUser?: User }).actionTakenByUser
+            ?.fullName ?? 'Unknown',
+        actionTypeId: log.action_type_id,
+        previousStatusId: log.previous_status_id,
+        newStatusId: log.new_status_id,
         comment: log.comment,
-        ipAddress: log.ipAddress,
-        userAgent: log.userAgent,
+        ipAddress: log.ip_address,
+        userAgent: log.user_agent,
         timestamp: log.timestamp,
       })),
       meta: {
