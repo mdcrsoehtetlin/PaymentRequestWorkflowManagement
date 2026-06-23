@@ -40,18 +40,10 @@ export function ApproverDashboard() {
   const [statusId, setStatusId] = useState<number | undefined>(undefined);
   const [summary, setSummary] = useState({ totalQueue: 0, pendingCount: 0, reviewingCount: 0, approvedCount: 0, rejectedCount: 0 });
 
-  const loadSummary = async () => {
-    try {
-      const data = await approverService.fetchSummary();
-      setSummary(data);
-    } catch {
-      // Summary is non-critical
-    }
-  };
-
   useEffect(() => {
     loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
-    loadSummary();
+    approverService.fetchSummary().then(setSummary).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRowClick = async (item: ApproverRequestDetailView) => {
@@ -68,7 +60,7 @@ export function ApproverDashboard() {
     clearRequestDetail();
     setSelectedRequestId(null);
     loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
-    loadSummary();
+    approverService.fetchSummary().then(setSummary).catch(() => {});
   };
 
   const handleSidebarFilter = (newStatusId?: number) => {
@@ -88,7 +80,7 @@ export function ApproverDashboard() {
     clearRequestDetail();
     setSelectedRequestId(null);
     loadRequests();
-    loadSummary();
+    approverService.fetchSummary().then(setSummary).catch(() => {});
   };
 
   const handleApprove = async (payload: { comment?: string; accountingUserId?: number }) => {
@@ -97,7 +89,7 @@ export function ApproverDashboard() {
       await approverService.approveRequest(selectedRequestId, payload);
       success('Request approved successfully.');
       await handleBack();
-    } catch (err) {
+    } catch {
       error('Failed to approve request.');
     }
   };
@@ -108,7 +100,7 @@ export function ApproverDashboard() {
       await approverService.rejectRequest(selectedRequestId, payload);
       success('Request rejected successfully.');
       await handleBack();
-    } catch (err) {
+    } catch {
       error('Failed to reject request.');
     }
   };

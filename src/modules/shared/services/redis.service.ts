@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, RedisClientType } from 'redis';
 
@@ -25,7 +30,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       : `redis://${host}:${port}`;
 
     this.logger.log(`Connecting to Redis at ${host}:${port}`);
-    
+
     try {
       this.client = createClient({
         url,
@@ -68,7 +73,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    */
   async del(key: string): Promise<void> {
     if (!this.isConnected || !this.client) {
-      this.logger.debug(`Redis not connected, skipping cache eviction for: ${key}`);
+      this.logger.debug(
+        `Redis not connected, skipping cache eviction for: ${key}`,
+      );
       return;
     }
     try {

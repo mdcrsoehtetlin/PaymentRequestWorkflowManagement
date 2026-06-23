@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ApproverController } from '../approver.controller';
-import { ApproverService, AuditContext } from '../approver.service';
+import { ApproverService } from '../approver.service';
 import { QueryApproverRequestsDto } from '../dto/query-approver-requests.dto';
 import { ApprovePaymentRequestDto } from '../dto/approve-payment-request.dto';
 import { RejectPaymentRequestDto } from '../dto/reject-payment-request.dto';
@@ -28,7 +28,7 @@ describe('ApproverController', () => {
       findOneForReview: jest.fn(),
       approve: jest.fn(),
       reject: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<ApproverService>;
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ApproverController],
@@ -47,11 +47,11 @@ describe('ApproverController', () => {
     it('should call service.findAssignedRequests with approver userId and query params', async () => {
       const query: QueryApproverRequestsDto = { page: 1, pageSize: 10 };
       const expected = { data: [], meta: { totalItems: 0 } };
-      service.findAssignedRequests.mockResolvedValue(expected as any);
+      service.findAssignedRequests.mockResolvedValue(expected as never);
 
       const result = await controller.getRequests(mockRequest, query);
 
-      expect(service.findAssignedRequests).toHaveBeenCalledWith(10, query);
+      expect(service['findAssignedRequests']).toHaveBeenCalledWith(10, query);
       expect(result).toEqual(expected);
     });
 
@@ -67,11 +67,11 @@ describe('ApproverController', () => {
       service.findAssignedRequests.mockResolvedValue({
         data: [],
         meta: {},
-      } as any);
+      } as never);
 
       await controller.getRequests(mockRequest, query);
 
-      expect(service.findAssignedRequests).toHaveBeenCalledWith(10, query);
+      expect(service['findAssignedRequests']).toHaveBeenCalledWith(10, query);
     });
   });
 
@@ -79,7 +79,7 @@ describe('ApproverController', () => {
     it('should call service.findOneForReview with request ID, approver userId, and audit context', async () => {
       const id = 100;
       const expected = { paymentRequestId: id, canApprove: true };
-      service.findOneForReview.mockResolvedValue(expected as any);
+      service.findOneForReview.mockResolvedValue(expected as never);
 
       const result = await controller.getRequest(
         mockRequest,
@@ -88,7 +88,7 @@ describe('ApproverController', () => {
         mockUserAgent,
       );
 
-      expect(service.findOneForReview).toHaveBeenCalledWith(id, 10, {
+      expect(service['findOneForReview']).toHaveBeenCalledWith(id, 10, {
         ipAddress: mockIpAddress,
         userAgent: mockUserAgent,
       });
@@ -97,16 +97,16 @@ describe('ApproverController', () => {
 
     it('should default userAgent to unknown when header is missing', async () => {
       const id = 100;
-      service.findOneForReview.mockResolvedValue({} as any);
+      service.findOneForReview.mockResolvedValue({} as never);
 
       await controller.getRequest(
         mockRequest,
         id,
         mockIpAddress,
-        undefined as any,
+        undefined as unknown as string,
       );
 
-      expect(service.findOneForReview).toHaveBeenCalledWith(id, 10, {
+      expect(service['findOneForReview']).toHaveBeenCalledWith(id, 10, {
         ipAddress: mockIpAddress,
         userAgent: 'unknown',
       });
@@ -134,7 +134,7 @@ describe('ApproverController', () => {
         mockUserAgent,
       );
 
-      expect(service.approve).toHaveBeenCalledWith(id, 10, dto, {
+      expect(service['approve']).toHaveBeenCalledWith(id, 10, dto, {
         ipAddress: mockIpAddress,
         userAgent: mockUserAgent,
       });
@@ -151,10 +151,10 @@ describe('ApproverController', () => {
         id,
         dto,
         mockIpAddress,
-        undefined as any,
+        undefined as unknown as string,
       );
 
-      expect(service.approve).toHaveBeenCalledWith(id, 10, dto, {
+      expect(service['approve']).toHaveBeenCalledWith(id, 10, dto, {
         ipAddress: mockIpAddress,
         userAgent: 'unknown',
       });
@@ -181,7 +181,7 @@ describe('ApproverController', () => {
         mockUserAgent,
       );
 
-      expect(service.reject).toHaveBeenCalledWith(id, 10, dto, {
+      expect(service['reject']).toHaveBeenCalledWith(id, 10, dto, {
         ipAddress: mockIpAddress,
         userAgent: mockUserAgent,
       });
@@ -200,10 +200,10 @@ describe('ApproverController', () => {
         id,
         dto,
         mockIpAddress,
-        undefined as any,
+        undefined as unknown as string,
       );
 
-      expect(service.reject).toHaveBeenCalledWith(id, 10, dto, {
+      expect(service['reject']).toHaveBeenCalledWith(id, 10, dto, {
         ipAddress: mockIpAddress,
         userAgent: 'unknown',
       });

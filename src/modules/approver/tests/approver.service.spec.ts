@@ -11,11 +11,10 @@ import {
 import { ApproverService, AuditContext } from '../approver.service';
 import { PaymentRequest } from '../../shared/entities/payment-request.entity';
 import { User } from '../../shared/entities/user.entity';
-import { ApprovalLog } from '../../shared/entities/approval-log.entity';
 import { AuditLogService } from '../../shared/services/audit-log.service';
 import { RedisService } from '../../shared/services/redis.service';
 import { WebsocketGateway } from '../../shared/websocket.gateway';
-import { PaymentStatus, ApprovalActionType } from '../../shared/types';
+import { PaymentStatus } from '../../shared/types';
 import {
   QueryApproverRequestsDto,
   ApproverRequestSortFields,
@@ -108,29 +107,30 @@ describe('ApproverService', () => {
       createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
       findOne: jest.fn(),
       save: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<Repository<PaymentRequest>>;
 
     userRepo = {
       findOne: jest.fn().mockResolvedValue(mockUser),
-    } as any;
+    } as unknown as jest.Mocked<Repository<User>>;
 
     dataSource = {
       transaction: jest.fn(),
       getRepository: jest.fn(),
-    } as any;
+      query: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<DataSource>;
 
     auditLogService = {
       createLog: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<AuditLogService>;
 
     redisService = {
       del: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<RedisService>;
 
     websocketGateway = {
       sendPersonalNotification: jest.fn(),
       sendStatusUpdate: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<WebsocketGateway>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -158,11 +158,12 @@ describe('ApproverService', () => {
     it('should return paginated list of requests for approver', async () => {
       const query: QueryApproverRequestsDto = { page: 1, pageSize: 10 };
       const mockRequest = buildMockRequest();
-      const mockApplicant = { ...mockApplicantUser };
-      const mockManager = { ...mockManagerUser };
 
       const qb = paymentRequestRepo.createQueryBuilder();
-      (qb.getManyAndCount as jest.Mock).mockResolvedValue([[mockRequest], 1]);
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([
+        [mockRequest],
+        1,
+      ]);
 
       const result = await service.findAssignedRequests(
         mockApproverUserId,
@@ -194,13 +195,14 @@ describe('ApproverService', () => {
       };
 
       const qb = paymentRequestRepo.createQueryBuilder();
-      (qb.getManyAndCount as jest.Mock).mockResolvedValue([[], 0]);
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
 
       await service.findAssignedRequests(mockApproverUserId, query);
 
-      expect(qb.andWhere).toHaveBeenCalledWith('request.statusId = :statusId', {
-        statusId: PaymentStatus.SUBMITTED_APPROVER,
-      });
+      expect(qb['andWhere']).toHaveBeenCalledWith(
+        'request.statusId = :statusId',
+        { statusId: PaymentStatus.SUBMITTED_APPROVER },
+      );
     });
 
     it('should filter by status when valid APPROVER_REVIEWING status provided', async () => {
@@ -211,13 +213,14 @@ describe('ApproverService', () => {
       };
 
       const qb = paymentRequestRepo.createQueryBuilder();
-      (qb.getManyAndCount as jest.Mock).mockResolvedValue([[], 0]);
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
 
       await service.findAssignedRequests(mockApproverUserId, query);
 
-      expect(qb.andWhere).toHaveBeenCalledWith('request.statusId = :statusId', {
-        statusId: PaymentStatus.APPROVER_REVIEWING,
-      });
+      expect(qb['andWhere']).toHaveBeenCalledWith(
+        'request.statusId = :statusId',
+        { statusId: PaymentStatus.APPROVER_REVIEWING },
+      );
     });
 
     it('should apply branch filter when provided', async () => {
@@ -228,13 +231,14 @@ describe('ApproverService', () => {
       };
 
       const qb = paymentRequestRepo.createQueryBuilder();
-      (qb.getManyAndCount as jest.Mock).mockResolvedValue([[], 0]);
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
 
       await service.findAssignedRequests(mockApproverUserId, query);
 
-      expect(qb.andWhere).toHaveBeenCalledWith('applicant.branch = :branch', {
-        branch: 'Tokyo',
-      });
+      expect(qb['andWhere']).toHaveBeenCalledWith(
+        'LOWER(applicant.branch) LIKE LOWER(:branch)',
+        { branch: '%Tokyo%' },
+      );
     });
 
     it('should apply date range filters when provided', async () => {
@@ -246,17 +250,17 @@ describe('ApproverService', () => {
       };
 
       const qb = paymentRequestRepo.createQueryBuilder();
-      (qb.getManyAndCount as jest.Mock).mockResolvedValue([[], 0]);
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
 
       await service.findAssignedRequests(mockApproverUserId, query);
 
-      expect(qb.andWhere).toHaveBeenCalledWith(
+      expect(qb['andWhere']).toHaveBeenCalledWith(
         'request.submittedToApproverDate >= :dateFrom',
         {
           dateFrom: '2026-06-01',
         },
       );
-      expect(qb.andWhere).toHaveBeenCalledWith(
+      expect(qb['andWhere']).toHaveBeenCalledWith(
         'request.submittedToApproverDate <= :dateTo',
         {
           dateTo: '2026-06-30',
@@ -272,11 +276,11 @@ describe('ApproverService', () => {
       };
 
       const qb = paymentRequestRepo.createQueryBuilder();
-      (qb.getManyAndCount as jest.Mock).mockResolvedValue([[], 0]);
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
 
       await service.findAssignedRequests(mockApproverUserId, query);
 
-      expect(qb.andWhere).toHaveBeenCalled();
+      expect(qb['andWhere']).toHaveBeenCalled();
     });
 
     it('should sort by totalAmount when sortBy is totalAmount', async () => {
@@ -288,11 +292,11 @@ describe('ApproverService', () => {
       };
 
       const qb = paymentRequestRepo.createQueryBuilder();
-      (qb.getManyAndCount as jest.Mock).mockResolvedValue([[], 0]);
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
 
       await service.findAssignedRequests(mockApproverUserId, query);
 
-      expect(qb.orderBy).toHaveBeenCalledWith('request.totalAmount', 'DESC');
+      expect(qb['orderBy']).toHaveBeenCalledWith('request.totalAmount', 'DESC');
     });
 
     it('should sort by managerVerificationDate by default', async () => {
@@ -302,11 +306,11 @@ describe('ApproverService', () => {
       };
 
       const qb = paymentRequestRepo.createQueryBuilder();
-      (qb.getManyAndCount as jest.Mock).mockResolvedValue([[], 0]);
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
 
       await service.findAssignedRequests(mockApproverUserId, query);
 
-      expect(qb.orderBy).toHaveBeenCalledWith(
+      expect(qb['orderBy']).toHaveBeenCalledWith(
         'request.managerVerificationDate',
         'DESC',
       );
@@ -354,12 +358,14 @@ describe('ApproverService', () => {
         ...mockRequest,
         statusId: PaymentStatus.SUBMITTED_APPROVER,
       };
-      dataSource.transaction.mockImplementation(async (cb: any) => {
+      dataSource.transaction.mockImplementation((cb) => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue(freshRequest),
           save: jest.fn(),
         } as unknown as EntityManager;
-        return cb(mockManager);
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
       });
 
       dataSource.getRepository = jest.fn().mockReturnValue({
@@ -372,7 +378,7 @@ describe('ApproverService', () => {
         mockAuditContext,
       );
 
-      expect(dataSource.transaction).toHaveBeenCalled();
+      expect(dataSource['transaction']).toHaveBeenCalled();
       expect(result.statusId).toBe(PaymentStatus.APPROVER_REVIEWING);
       expect(result.canApprove).toBe(true);
       expect(result.canReject).toBe(true);
@@ -385,12 +391,14 @@ describe('ApproverService', () => {
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
-      dataSource.transaction.mockImplementation(async (cb: any) => {
+      dataSource.transaction.mockImplementation((cb) => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue(null),
           save: jest.fn(),
         } as unknown as EntityManager;
-        return cb(mockManager);
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
       });
 
       await expect(
@@ -414,7 +422,7 @@ describe('ApproverService', () => {
 
       expect(result.canApprove).toBe(true);
       expect(result.canReject).toBe(true);
-      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(dataSource['transaction']).not.toHaveBeenCalled();
     });
 
     it('should return detail view for APPROVED request (read-only)', async () => {
@@ -479,12 +487,14 @@ describe('ApproverService', () => {
         ...mockRequest,
         statusId: PaymentStatus.APPROVER_REVIEWING,
       };
-      dataSource.transaction.mockImplementation(async (cb: any) => {
+      dataSource.transaction.mockImplementation((cb) => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue(freshRequest),
           save: jest.fn(),
         } as unknown as EntityManager;
-        return cb(mockManager);
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
       });
 
       const dto: ApprovePaymentRequestDto = { comment: 'Looks good' };
@@ -496,12 +506,12 @@ describe('ApproverService', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(dataSource.transaction).toHaveBeenCalled();
-      expect(redisService.del).toHaveBeenCalledWith(
+      expect(dataSource['transaction']).toHaveBeenCalled();
+      expect(redisService['del']).toHaveBeenCalledWith(
         'payment_request:payload:100',
       );
-      expect(websocketGateway.sendPersonalNotification).toHaveBeenCalled();
-      expect(websocketGateway.sendStatusUpdate).toHaveBeenCalledWith(
+      expect(websocketGateway['sendPersonalNotification']).toHaveBeenCalled();
+      expect(websocketGateway['sendStatusUpdate']).toHaveBeenCalledWith(
         'ACCOUNTING',
         expect.any(Object),
       );
@@ -514,17 +524,19 @@ describe('ApproverService', () => {
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
-      dataSource.transaction.mockImplementation(async (cb: any) => {
+      dataSource.transaction.mockImplementation((cb) => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue({ ...mockRequest }),
           save: jest.fn(),
         } as unknown as EntityManager;
-        return cb(mockManager);
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
       });
 
       await service.approve(100, mockApproverUserId, {}, mockAuditContext);
 
-      expect(redisService.del).toHaveBeenCalledWith(
+      expect(redisService['del']).toHaveBeenCalledWith(
         'payment_request:payload:100',
       );
     });
@@ -536,12 +548,14 @@ describe('ApproverService', () => {
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
-      dataSource.transaction.mockImplementation(async (cb: any) => {
+      dataSource.transaction.mockImplementation((cb) => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue(null),
           save: jest.fn(),
         } as unknown as EntityManager;
-        return cb(mockManager);
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
       });
 
       await expect(
@@ -608,12 +622,14 @@ describe('ApproverService', () => {
         ...mockRequest,
         statusId: PaymentStatus.APPROVER_REVIEWING,
       };
-      dataSource.transaction.mockImplementation(async (cb: any) => {
+      dataSource.transaction.mockImplementation((cb) => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue(freshRequest),
           save: jest.fn(),
         } as unknown as EntityManager;
-        return cb(mockManager);
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
       });
 
       const dto: RejectPaymentRequestDto = {
@@ -627,11 +643,11 @@ describe('ApproverService', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(dataSource.transaction).toHaveBeenCalled();
-      expect(redisService.del).toHaveBeenCalledWith(
+      expect(dataSource['transaction']).toHaveBeenCalled();
+      expect(redisService['del']).toHaveBeenCalledWith(
         'payment_request:payload:100',
       );
-      expect(websocketGateway.sendPersonalNotification).toHaveBeenCalled();
+      expect(websocketGateway['sendPersonalNotification']).toHaveBeenCalled();
     });
 
     it('should reassign request to applicant after rejection', async () => {
@@ -642,16 +658,22 @@ describe('ApproverService', () => {
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
-      let savedRequest: any;
-      dataSource.transaction.mockImplementation(async (cb: any) => {
+      let savedRequest!: PaymentRequest;
+      dataSource.transaction.mockImplementation((cb) => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue({ ...mockRequest }),
-          save: jest.fn().mockImplementation((_, entity) => {
-            savedRequest = entity;
-            return Promise.resolve(entity);
-          }),
+          save: jest
+            .fn()
+            .mockImplementation(
+              (_target: unknown, entity: unknown): Promise<unknown> => {
+                savedRequest = entity as PaymentRequest;
+                return Promise.resolve(entity);
+              },
+            ),
         } as unknown as EntityManager;
-        return cb(mockManager);
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
       });
 
       await service.reject(
@@ -672,12 +694,14 @@ describe('ApproverService', () => {
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
-      dataSource.transaction.mockImplementation(async (cb: any) => {
+      dataSource.transaction.mockImplementation((cb) => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue(null),
           save: jest.fn(),
         } as unknown as EntityManager;
-        return cb(mockManager);
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
       });
 
       await expect(

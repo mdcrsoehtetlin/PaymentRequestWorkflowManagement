@@ -37,7 +37,7 @@ export class ManagerService {
    * @returns A success status message.
    * @throws {Error} If update fails.
    */
-  async verifyRequest(id: number, managerId: number, comment?: string) {
+  verifyRequest(id: number, managerId: number, comment?: string) {
     this.logger.log(
       `Verifying request ${id} by manager ${managerId} with comment: ${comment}`,
     );
@@ -53,7 +53,7 @@ export class ManagerService {
    * @returns A success status message.
    * @throws {Error} If update fails.
    */
-  async rejectRequest(id: number, managerId: number, comment: string) {
+  rejectRequest(id: number, managerId: number, comment: string) {
     this.logger.log(
       `Rejecting request ${id} by manager ${managerId} with comment: ${comment}`,
     );

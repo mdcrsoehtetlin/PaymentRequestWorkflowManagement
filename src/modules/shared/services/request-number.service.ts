@@ -22,7 +22,7 @@ export class RequestNumberService {
       .createQueryBuilder('r')
       .select('MAX(r.requestNumber)', 'maxNum')
       .where('r.requestNumber LIKE :prefix', { prefix: `${prefix}%` })
-      .getRawOne();
+      .getRawOne<{ maxNum?: string }>();
 
     let nextSeq = 1;
     if (result?.maxNum) {

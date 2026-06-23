@@ -26,9 +26,6 @@ import { buildPaginationMeta } from '../shared/utils/pagination.util';
 import {
   PaymentStatus,
   ApprovalActionType,
-  Currency,
-  PaymentType,
-  PaymentMethod,
   CURRENCY_CODES,
   PAYMENT_TYPE_LABELS_JP,
   PAYMENT_METHOD_LABELS_JP,
@@ -52,6 +49,19 @@ export interface AuditContext {
   userAgent: string;
 }
 
+interface BreakdownItemRow {
+  payment_breakdown_item_id: number;
+  payment_request_id: number;
+  line_number: number;
+  item_date: string;
+  description: string;
+  amount: number;
+  quantity: number;
+  unit_price: number;
+  created_date: string;
+  modified_date: string;
+}
+
 /**
  * @description Service for the Final Approver dashboard.
  *
@@ -72,11 +82,6 @@ export interface AuditContext {
  *
  * @see {@link ApproverController} for HTTP route definitions.
  */
-
-export interface AuditContext {
-  ipAddress: string;
-  userAgent: string;
-}
 
 @Injectable()
 export class ApproverService {
@@ -134,7 +139,7 @@ export class ApproverService {
     ];
 
     if (statusId) {
-      if (!allowedStatuses.includes(statusId as PaymentStatus)) {
+      if (!allowedStatuses.includes(statusId)) {
         throw new BadRequestException(
           'Invalid status query for approver queue.',
         );
@@ -178,7 +183,9 @@ export class ApproverService {
 
     // Branch filter
     if (branch) {
-      qb.andWhere('LOWER(applicant.branch) LIKE LOWER(:branch)', { branch: `%${branch}%` });
+      qb.andWhere('LOWER(applicant.branch) LIKE LOWER(:branch)', {
+        branch: `%${branch}%`,
+      });
     }
 
     // Date range filter (submitted_to_approver_date)
@@ -247,7 +254,8 @@ export class ApproverService {
       applicationDate: req.applicationDate as string,
       desiredPaymentDate: req.desiredPaymentDate as string,
       totalAmount: req.totalAmount,
-      currencyCode: CURRENCY_CODES[req.currencyId as Currency] || 'MMK',
+      currencyCode:
+        (CURRENCY_CODES as Record<number, string>)[req.currencyId] || 'MMK',
       statusId: req.statusId,
       purpose: req.purpose,
       managerVerificationDate: req.managerVerificationDate
@@ -314,7 +322,8 @@ export class ApproverService {
       })
       .getCount();
 
-    const totalAll = pendingCount + reviewingCount + approvedCount + rejectedCount;
+    const totalAll =
+      pendingCount + reviewingCount + approvedCount + rejectedCount;
 
     return {
       pendingCount,
@@ -349,7 +358,7 @@ export class ApproverService {
     });
 
     // Fetch breakdown items using raw query to avoid unitPrice column mapping issue
-    const breakdownItems = await this.dataSource.query(
+    const breakdownItems: BreakdownItemRow[] = await this.dataSource.query(
       `SELECT payment_breakdown_item_id, payment_request_id, line_number, item_date,
               description, amount, quantity, unit_price, created_date, modified_date
        FROM payment_breakdown_items
@@ -364,11 +373,11 @@ export class ApproverService {
 
     // Access control
     if (
-      request.statusId !== PaymentStatus.SUBMITTED_APPROVER &&
-      request.statusId !== PaymentStatus.APPROVER_REVIEWING &&
-      request.statusId !== PaymentStatus.APPROVED &&
-      request.statusId !== PaymentStatus.REJECTED_APPROVER &&
-      request.statusId !== PaymentStatus.PAID
+      request.statusId !== Number(PaymentStatus.SUBMITTED_APPROVER) &&
+      request.statusId !== Number(PaymentStatus.APPROVER_REVIEWING) &&
+      request.statusId !== Number(PaymentStatus.APPROVED) &&
+      request.statusId !== Number(PaymentStatus.REJECTED_APPROVER) &&
+      request.statusId !== Number(PaymentStatus.PAID)
     ) {
       throw new ForbiddenException(
         'You do not have access to view this request in its current state.',
@@ -376,7 +385,7 @@ export class ApproverService {
     }
 
     if (
-      request.statusId === PaymentStatus.APPROVER_REVIEWING &&
+      request.statusId === Number(PaymentStatus.APPROVER_REVIEWING) &&
       request.finalApproverUserId !== approverUserId
     ) {
       throw new ForbiddenException(
@@ -392,9 +401,7 @@ export class ApproverService {
     }
 
     // Auto-transition to Reviewing
-    if (
-      (request.statusId as PaymentStatus) === PaymentStatus.SUBMITTED_APPROVER
-    ) {
+    if (request.statusId === Number(PaymentStatus.SUBMITTED_APPROVER)) {
       await this.dataSource.transaction(async (manager: EntityManager) => {
         const freshRequest = await manager.findOne(PaymentRequest, {
           where: {
@@ -465,23 +472,25 @@ export class ApproverService {
     );
 
     const canApprove =
-      request.statusId === PaymentStatus.APPROVER_REVIEWING &&
+      request.statusId === Number(PaymentStatus.APPROVER_REVIEWING) &&
       request.finalApproverUserId === approverUserId;
     const canReject =
-      request.statusId === PaymentStatus.APPROVER_REVIEWING &&
+      request.statusId === Number(PaymentStatus.APPROVER_REVIEWING) &&
       request.finalApproverUserId === approverUserId;
 
     const latestManagerComment =
       [...request.approvalLogs]
         .reverse()
-        .find((log) => log.actionTypeId === ApprovalActionType.MGR_VERIFIED)
-        ?.comment || null;
+        .find(
+          (log) => log.actionTypeId === Number(ApprovalActionType.MGR_VERIFIED),
+        )?.comment || null;
 
     const latestApplicantSubmissionComment =
       [...request.approvalLogs]
         .reverse()
-        .find((log) => log.actionTypeId === ApprovalActionType.SUBMITTED)
-        ?.comment || null;
+        .find(
+          (log) => log.actionTypeId === Number(ApprovalActionType.SUBMITTED),
+        )?.comment || null;
 
     return {
       ...request,
@@ -497,20 +506,25 @@ export class ApproverService {
       paymentCompletedDate: request.paymentCompletedDate?.toISOString() ?? null,
       createdDate: request.createdDate.toISOString(),
       modifiedDate: request.modifiedDate.toISOString(),
-      currencyCode: CURRENCY_CODES[request.currencyId as Currency] || 'MMK',
+      currencyCode:
+        (CURRENCY_CODES as Record<number, string>)[request.currencyId] || 'MMK',
       paymentTypeName:
-        PAYMENT_TYPE_LABELS_JP[request.paymentTypeId as PaymentType] || '経費精算',
+        (PAYMENT_TYPE_LABELS_JP as Record<number, string>)[
+          request.paymentTypeId
+        ] || '経費精算',
       paymentMethodName:
-        PAYMENT_METHOD_LABELS_JP[request.paymentMethodId as PaymentMethod] || '銀行振込',
-      breakdownItems: breakdownItems.map((item: any) => ({
+        (PAYMENT_METHOD_LABELS_JP as Record<number, string>)[
+          request.paymentMethodId
+        ] || '銀行振込',
+      breakdownItems: breakdownItems.map((item: BreakdownItemRow) => ({
         paymentBreakdownItemId: item.payment_breakdown_item_id,
         paymentRequestId: item.payment_request_id,
         lineNumber: item.line_number,
         itemDate: item.item_date,
         description: item.description,
-        amount: item.amount,
-        quantity: item.quantity,
-        unitPrice: item.unit_price,
+        amount: String(item.amount),
+        quantity: item.quantity != null ? String(item.quantity) : null,
+        unitPrice: item.unit_price != null ? String(item.unit_price) : null,
         createdDate: item.created_date,
         modifiedDate: item.modified_date,
       })),
@@ -556,7 +570,7 @@ export class ApproverService {
       throw new NotFoundException('Payment request not found');
     }
 
-    if (request.statusId !== PaymentStatus.APPROVER_REVIEWING) {
+    if (request.statusId !== Number(PaymentStatus.APPROVER_REVIEWING)) {
       throw new ConflictException(
         'This request is not in Reviewing state and cannot be approved.',
       );
@@ -655,7 +669,7 @@ export class ApproverService {
       throw new NotFoundException('Payment request not found');
     }
 
-    if (request.statusId !== PaymentStatus.APPROVER_REVIEWING) {
+    if (request.statusId !== Number(PaymentStatus.APPROVER_REVIEWING)) {
       throw new ConflictException(
         'This request is not in Reviewing state and cannot be rejected.',
       );

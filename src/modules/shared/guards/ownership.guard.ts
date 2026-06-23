@@ -18,9 +18,13 @@ export class OwnershipGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const user: JwtPayload = request.user;
-    const userId = user.sub;
+    const request = context.switchToHttp().getRequest<{
+      user?: JwtPayload;
+      params: Record<string, string>;
+      paymentRequest?: PaymentRequest;
+    }>();
+    const user = request.user;
+    const userId = user?.sub;
     const requestId = parseInt(request.params.id, 10);
 
     if (!requestId) return true;
