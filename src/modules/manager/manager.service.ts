@@ -22,8 +22,8 @@ export class ManagerService {
     this.logger.log(`Fetching pending requests for manager: ${managerId}`);
     return this.paymentRequestRepository.find({
       where: [
-        { /*managerUserId*/ applicant_id: String(managerId), status_id: 2 }, // SUBMITTED_MANAGER
-        { /*managerUserId*/ applicant_id: String(managerId), status_id: 3 }, // MANAGER_REVIEWING
+        { current_assigned_to_user_id: managerId, status_id: 2 }, // SUBMITTED_MANAGER
+        { current_assigned_to_user_id: managerId, status_id: 3 }, // MANAGER_REVIEWING
       ],
       relations: ['applicant'],
     });
@@ -37,11 +37,7 @@ export class ManagerService {
    * @returns A success status message.
    * @throws {Error} If update fails.
    */
-  verifyRequest(
-    id: number,
-    managerId: number,
-    comment?: string,
-  ): { success: boolean; message: string } {
+  verifyRequest(id: number, managerId: number, comment?: string) {
     this.logger.log(
       `Verifying request ${id} by manager ${managerId} with comment: ${comment}`,
     );
@@ -57,11 +53,7 @@ export class ManagerService {
    * @returns A success status message.
    * @throws {Error} If update fails.
    */
-  rejectRequest(
-    id: number,
-    managerId: number,
-    comment: string,
-  ): { success: boolean; message: string } {
+  rejectRequest(id: number, managerId: number, comment: string) {
     this.logger.log(
       `Rejecting request ${id} by manager ${managerId} with comment: ${comment}`,
     );

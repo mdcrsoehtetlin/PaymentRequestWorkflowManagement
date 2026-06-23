@@ -17,6 +17,7 @@ import { WebsocketGateway } from './websocket.gateway';
 import { RequestNumberService } from './services/request-number.service';
 import { FileUploadService } from './services/file-upload.service';
 import { AuditLogService } from './services/audit-log.service';
+import { RedisService } from './services/redis.service';
 
 /**
  * @description SharedModule — the foundation layer for all feature modules.
@@ -56,6 +57,7 @@ import { AuditLogService } from './services/audit-log.service';
     RequestNumberService,
     FileUploadService,
     AuditLogService,
+    RedisService,
   ],
   exports: [
     TypeOrmModule,
@@ -64,6 +66,7 @@ import { AuditLogService } from './services/audit-log.service';
     RequestNumberService,
     FileUploadService,
     AuditLogService,
+    RedisService,
   ],
 })
 export class SharedModule {}

@@ -53,14 +53,14 @@ export class AuditLogService {
     dto: CreateApprovalLogDto,
   ): Promise<ApprovalLog> {
     const log = manager.create(ApprovalLog, {
-      paymentRequestId: dto.paymentRequestId,
-      actionTakenByUserId: dto.actionTakenByUserId,
-      actionTypeId: dto.actionTypeId,
-      previousStatusId: dto.previousStatusId ?? undefined,
-      newStatusId: dto.newStatusId ?? undefined,
+      payment_request_id: dto.paymentRequestId,
+      action_taken_by_user_id: dto.actionTakenByUserId,
+      action_type_id: dto.actionTypeId,
+      previous_status_id: dto.previousStatusId ?? undefined,
+      new_status_id: dto.newStatusId ?? undefined,
       comment: dto.comment ?? undefined,
-      ipAddress: dto.ipAddress,
-      userAgent: dto.userAgent,
+      ip_address: dto.ipAddress,
+      user_agent: dto.userAgent,
     });
 
     const saved = await manager.save(ApprovalLog, log);

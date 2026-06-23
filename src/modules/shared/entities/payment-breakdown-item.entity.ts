@@ -12,10 +12,10 @@ import { PaymentRequest } from './payment-request.entity';
 @Entity('payment_breakdown_items')
 export class PaymentBreakdownItem {
   @PrimaryGeneratedColumn({ name: 'payment_breakdown_item_id' })
-  id!: string;
+  id!: number;
 
   @Column({ type: 'int' })
-  payment_request_id!: string;
+  payment_request_id!: number;
 
   @Column({ name: 'line_number', type: 'int', default: 1 })
   line_number!: number;
@@ -27,10 +27,10 @@ export class PaymentBreakdownItem {
   description!: string;
 
   @Column({ type: 'numeric', precision: 12, scale: 2 })
-  amount!: string;
+  amount!: number;
 
   @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
-  quantity!: string;
+  quantity!: number;
 
   @Column({
     name: 'unit_price',
@@ -39,7 +39,7 @@ export class PaymentBreakdownItem {
     scale: 2,
     nullable: true,
   })
-  unit_price!: string;
+  unit_price!: number;
 
   @CreateDateColumn({ name: 'created_date' })
   created_at!: Date;

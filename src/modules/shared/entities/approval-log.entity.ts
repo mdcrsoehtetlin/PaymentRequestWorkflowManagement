@@ -32,7 +32,7 @@ export class ApprovalLog {
   id!: string;
 
   @Column({ type: 'int' })
-  payment_request_id!: string;
+  payment_request_id!: number;
 
   @Column({ type: 'int', nullable: true })
   action_taken_by_user_id!: string;

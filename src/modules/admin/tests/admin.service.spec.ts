@@ -10,7 +10,6 @@ import { User } from '../../shared/entities/user.entity';
 import { ApprovalLog } from '../../shared/entities/approval-log.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { AuditLogQueryDto } from '../dto/audit-log-query.dto';
 
 jest.mock('bcrypt', () => ({
@@ -29,6 +28,7 @@ jest.mock('redis', () => ({
 
 function createMockQueryBuilder() {
   return {
+    leftJoinAndMapOne: jest.fn().mockReturnThis(),
     leftJoinAndSelect: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
@@ -39,6 +39,7 @@ function createMockQueryBuilder() {
     update: jest.fn().mockReturnThis(),
     getCount: jest.fn().mockResolvedValue(0),
     getMany: jest.fn().mockResolvedValue([]),
+    getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
     getRawOne: jest.fn().mockResolvedValue(null),
     execute: jest.fn().mockResolvedValue({ affected: 1, generatedMaps: [] }),
   };
@@ -116,6 +117,7 @@ describe('AdminService', () => {
   describe('createUser', () => {
     const createDto: CreateUserDto = {
       email: 'newuser@example.com',
+      password: 'securePass123',
       fullName: 'New User',
       employeeNumber: 'EMP-002',
       department: 'Sales',
@@ -326,8 +328,6 @@ describe('AdminService', () => {
   });
 
   describe('resetPassword', () => {
-    const resetDto: ResetPasswordDto = {};
-
     it('should reset password and return temporary password', async () => {
       const mockQb = createMockQueryBuilder();
       mockQb.execute.mockResolvedValue({ affected: 1, generatedMaps: [] });
@@ -335,7 +335,7 @@ describe('AdminService', () => {
       mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
       mockUserRepo.findOne.mockResolvedValueOnce({ ...baseUser });
 
-      const result = await service.resetPassword(1, resetDto);
+      const result = await service.resetPassword(1);
 
       expect(result.temporaryPassword).toBeDefined();
       expect(result.temporaryPassword.length).toBeGreaterThan(0);
@@ -344,7 +344,7 @@ describe('AdminService', () => {
     it('should throw NotFoundException when user does not exist', async () => {
       mockUserRepo.findOne.mockResolvedValueOnce(null);
 
-      await expect(service.resetPassword(999, resetDto)).rejects.toThrow(
+      await expect(service.resetPassword(999)).rejects.toThrow(
         NotFoundException,
       );
     });

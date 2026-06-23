@@ -5,8 +5,10 @@ import {
   IsDateString,
   IsArray,
   IsString,
+  IsNotEmpty,
+  MaxLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class PaymentBreakdownItemDto {
   @IsString()
@@ -21,6 +23,33 @@ export class CreatePaymentRequestDraftDto {
   @IsOptional()
   currency_id?: number;
 
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(500)
+  @Transform(({ value }): string =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  purpose!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  @Transform(({ value }): string =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  bank_account_info?: string;
+
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }): string =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  request_content?: string;
+
+  @IsNumber()
+  @IsOptional()
+  payment_method_id?: number;
+
   @IsDateString()
   @IsOptional()
   application_date?: string;
@@ -32,18 +61,6 @@ export class CreatePaymentRequestDraftDto {
   @IsNumber()
   @IsOptional()
   payment_type_id?: number;
-
-  @IsNumber()
-  @IsOptional()
-  payment_method_id?: number;
-
-  @IsString()
-  @IsOptional()
-  purpose?: string;
-
-  @IsString()
-  @IsOptional()
-  request_content?: string;
 
   @IsArray()
   @ValidateNested({ each: true })

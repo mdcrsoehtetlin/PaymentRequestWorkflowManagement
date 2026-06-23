@@ -34,7 +34,7 @@ export function FileUploadDropzone({
   const validateAndProcessFiles = useCallback((files: FileList | File[]) => {
     const validFiles: File[] = [];
     Array.from(files).forEach((file) => {
-      if (!(ALLOWED_MIME_TYPES as readonly string[]).includes(file.type)) {
+      if (!ALLOWED_MIME_TYPES.includes(file.type as (typeof ALLOWED_MIME_TYPES)[number])) {
         error(`${file.name}: 許可されていないファイル形式です`);
         return;
       }

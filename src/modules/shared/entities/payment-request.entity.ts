@@ -16,13 +16,25 @@ import { User } from './user.entity';
 @Entity('payment_requests')
 export class PaymentRequest {
   @PrimaryGeneratedColumn({ name: 'payment_request_id' })
-  id!: string;
+  id!: number;
 
   @Column({ unique: true, type: 'varchar', length: 50 })
   request_number!: string;
 
   @Column({ name: 'applicant_user_id', type: 'int' })
-  applicant_id!: string;
+  applicant_user_id!: number;
+
+  @Column({ name: 'manager_user_id', type: 'int', nullable: true })
+  manager_user_id!: number | null;
+
+  @Column({ name: 'final_approver_user_id', type: 'int', nullable: true })
+  final_approver_user_id!: number | null;
+
+  @Column({ name: 'accounting_user_id', type: 'int', nullable: true })
+  accounting_user_id!: number | null;
+
+  @Column({ name: 'current_assigned_to_user_id', type: 'int', nullable: true })
+  current_assigned_to_user_id!: number | null;
 
   @Column({ name: 'manager_user_id', type: 'int', nullable: true })
   manager_user_id!: number | null;
@@ -57,6 +69,14 @@ export class PaymentRequest {
   @Column({ type: 'varchar', length: 500 })
   purpose!: string;
 
+  @Column({
+    name: 'bank_account_info',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  bank_account_info!: string | null;
+
   @Column({ type: 'text' })
   request_content!: string;
 
@@ -65,6 +85,37 @@ export class PaymentRequest {
 
   @Column({ type: 'boolean', default: false })
   has_receipt!: boolean;
+
+  @Column({
+    name: 'submitted_to_manager_date',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  submitted_to_manager_date!: Date | null;
+
+  @Column({
+    name: 'manager_verification_date',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  manager_verification_date!: Date | null;
+
+  @Column({
+    name: 'submitted_to_approver_date',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  submitted_to_approver_date!: Date | null;
+
+  @Column({ name: 'approval_date', type: 'timestamptz', nullable: true })
+  approval_date!: Date | null;
+
+  @Column({
+    name: 'payment_completed_date',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  payment_completed_date!: Date | null;
 
   @Column({ type: 'boolean', default: false })
   is_deleted!: boolean;
@@ -87,8 +138,9 @@ export class PaymentRequest {
   @CreateDateColumn({ name: 'created_date' })
   created_at!: Date;
 
-  @UpdateDateColumn({ name: 'modified_date' })
-  updated_at!: Date;
+  @ManyToOne(() => User, { eager: false })
+  @JoinColumn({ name: 'final_approver_user_id' })
+  final_approver!: User | null;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'applicant_user_id' })

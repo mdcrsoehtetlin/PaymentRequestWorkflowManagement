@@ -11,10 +11,10 @@ import { PaymentRequest } from './payment-request.entity';
 @Entity('receipt_files')
 export class ReceiptFile {
   @PrimaryGeneratedColumn({ name: 'receipt_file_id' })
-  id!: string;
+  id!: number;
 
   @Column({ type: 'int' })
-  payment_request_id!: string;
+  payment_request_id!: number;
 
   @Column({
     name: 'original_file_name',

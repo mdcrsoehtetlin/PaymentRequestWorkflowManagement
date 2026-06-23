@@ -35,7 +35,7 @@ export class BreakdownItemDto {
   @IsNotEmpty({ groups: ['submit'] })
   @IsOptional({ groups: ['draft'] })
   @MaxLength(200, { message: '品目説明は200文字以内で入力してください' })
-  @Transform(({ value }: { value: unknown }) =>
+  @Transform(({ value }): string =>
     typeof value === 'string' ? value.trim() : value,
   )
   description?: string;
