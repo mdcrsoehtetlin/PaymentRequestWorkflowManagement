@@ -10,7 +10,6 @@ interface UserRecord {
   branch: string;
   roleId: number;
   isActive: boolean;
-  version: number;
 }
 
 interface UserFormModalProps {
@@ -105,13 +104,11 @@ export function UserFormModal({
           fullName: formData.fullName,
           branch: formData.branch,
           roleId: formData.roleId,
-          version: user.version,
         });
         onSuccess();
       } else if (mode === 'reset' && user) {
         const response = await apiClient.post(
           `/admin/users/${user.userId}/reset-password`,
-          { version: user.version },
         );
         setTemporaryPassword(response.data.temporaryPassword);
       }

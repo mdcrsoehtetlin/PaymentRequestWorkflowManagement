@@ -13,7 +13,6 @@ import { User } from '../shared/entities/user.entity';
 import { ApprovalLog } from '../shared/entities/approval-log.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
 
 const BCRYPT_ROUNDS = 12;
@@ -66,7 +65,6 @@ export class AdminService {
     roleId: number;
     isActive: boolean;
     temporaryPassword: string;
-    version: number;
   }> {
     this.logger.log(`Creating new user with email: ${dto.email}`);
 
@@ -113,7 +111,6 @@ export class AdminService {
       roleId: saved.roleId,
       isActive: saved.isActive,
       temporaryPassword,
-      version: saved.version,
     };
   }
 
@@ -141,7 +138,6 @@ export class AdminService {
       branch: string;
       roleId: number;
       isActive: boolean;
-      version: number;
     }>;
     meta: {
       page: number;
@@ -183,7 +179,6 @@ export class AdminService {
         branch: u.branch,
         roleId: u.roleId,
         isActive: u.isActive,
-        version: u.version,
       })),
       meta: {
         page,
@@ -213,7 +208,6 @@ export class AdminService {
     branch: string;
     roleId: number;
     isActive: boolean;
-    version: number;
   }> {
     this.logger.log(`Updating user ${id}`);
 
@@ -222,28 +216,13 @@ export class AdminService {
       throw new NotFoundException('ユーザーが見つかりません');
     }
 
-    const result = await this.userRepository
-      .createQueryBuilder()
-      .update(User)
-      .set({
-        fullName: dto.fullName ?? user.fullName,
-        department: dto.department ?? user.department,
-        branch: dto.branch ?? user.branch,
-        roleId: dto.roleId ?? user.roleId,
-        isActive: dto.isActive ?? user.isActive,
-        version: () => 'version + 1',
-      })
-      .where('userId = :id AND version = :version', {
-        id,
-        version: dto.version,
-      })
-      .execute();
-
-    if (result.affected === 0) {
-      throw new ConflictException(
-        'このレコードは他のユーザーによって変更されました。更新してやり直してください。',
-      );
-    }
+    await this.userRepository.update(id, {
+      fullName: dto.fullName ?? user.fullName,
+      department: dto.department ?? user.department,
+      branch: dto.branch ?? user.branch,
+      roleId: dto.roleId ?? user.roleId,
+      isActive: dto.isActive ?? user.isActive,
+    });
 
     const updated = await this.userRepository.findOne({
       where: { userId: id },
@@ -259,7 +238,6 @@ export class AdminService {
       branch: updated!.branch,
       roleId: updated!.roleId,
       isActive: updated!.isActive,
-      version: updated!.version,
     };
   }
 
@@ -342,18 +320,12 @@ export class AdminService {
   /**
    * @description Generates a new temporary password for a user.
    * @param id The user ID to reset password for.
-   * @param dto Contains version for optimistic locking.
    * @returns The new temporary password (displayed once).
    * @throws {NotFoundException} If user not found.
-   * @throws {ConflictException} If version mismatch.
    */
-  async resetPassword(
-    id: number,
-    dto: ResetPasswordDto,
-  ): Promise<{
+  async resetPassword(id: number): Promise<{
     userId: number;
     temporaryPassword: string;
-    version: number;
   }> {
     this.logger.log(`Resetting password for user ${id}`);
 
@@ -365,37 +337,15 @@ export class AdminService {
     const temporaryPassword = this.generateTemporaryPassword();
     const passwordHash = await this.hashPassword(temporaryPassword);
 
-    const result = await this.userRepository
-      .createQueryBuilder()
-      .update(User)
-      .set({
-        passwordHash,
-        version: () => 'version + 1',
-      })
-      .where('userId = :id AND version = :version', {
-        id,
-        version: dto.version,
-      })
-      .execute();
-
-    if (result.affected === 0) {
-      throw new ConflictException(
-        'このレコードは他のユーザーによって変更されました。更新してやり直してください。',
-      );
-    }
+    await this.userRepository.update(id, { passwordHash });
 
     await this.evictUserSessions(id);
-
-    const updated = await this.userRepository.findOne({
-      where: { userId: id },
-    });
 
     this.logger.log(`Password reset for user ${id}`);
 
     return {
       userId: id,
       temporaryPassword,
-      version: updated!.version,
     };
   }
 

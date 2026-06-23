@@ -12,7 +12,6 @@ interface UserRecord {
   branch: string;
   roleId: number;
   isActive: boolean;
-  version: number;
 }
 
 interface UsersResponse {

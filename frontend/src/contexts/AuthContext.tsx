@@ -4,8 +4,9 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import { AuthContext, type AuthContextType } from './auth-context';
+import { AuthContext } from './auth-context';
 import { authService } from '../services/auth.service';
+import type { JwtPayload } from '../types';
 
 /**
  * @description Provides authentication state to the entire application.
@@ -13,7 +14,7 @@ import { authService } from '../services/auth.service';
  * Exposes: user (JwtPayload), isAuthenticated, isLoading, login(), logout()
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthContextType['user']>(null);
+  const [user, setUser] = useState<JwtPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, []);
 
-  const login = useCallback(async (email: string, password: string): Promise<AuthContextType['user']> => {
+  const login = useCallback(async (email: string, password: string): Promise<JwtPayload> => {
     await authService.login(email, password);
     const decoded = await authService.getCurrentUser();
     setUser(decoded);

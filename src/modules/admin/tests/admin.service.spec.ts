@@ -10,7 +10,6 @@ import { User } from '../../shared/entities/user.entity';
 import { ApprovalLog } from '../../shared/entities/approval-log.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { AuditLogQueryDto } from '../dto/audit-log-query.dto';
 
 jest.mock('bcrypt', () => ({
@@ -75,7 +74,6 @@ describe('AdminService', () => {
     branch: 'Yangon',
     roleId: 1,
     isActive: true,
-    version: 1,
     passwordHash: 'hashed',
     createdDate: new Date('2026-01-01'),
     modifiedDate: new Date('2026-01-01'),
@@ -171,24 +169,20 @@ describe('AdminService', () => {
   describe('updateUser', () => {
     const updateDto: UpdateUserDto = {
       fullName: 'Updated Name',
-      version: 1,
     };
 
     it('should update user and return updated details', async () => {
-      const mockQb = createMockQueryBuilder();
-      mockQb.execute.mockResolvedValue({ affected: 1, generatedMaps: [] });
       mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
-      mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
       mockUserRepo.findOne.mockResolvedValueOnce({
         ...baseUser,
         fullName: 'Updated Name',
-        version: 2,
       });
 
       const result = await service.updateUser(1, updateDto);
 
       expect(result.fullName).toBe('Updated Name');
-      expect(mockQb.execute).toHaveBeenCalled();
+      expect(mockUserRepo.update).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
@@ -196,17 +190,6 @@ describe('AdminService', () => {
 
       await expect(service.updateUser(999, updateDto)).rejects.toThrow(
         NotFoundException,
-      );
-    });
-
-    it('should throw ConflictException on version mismatch', async () => {
-      const mockQb = createMockQueryBuilder();
-      mockQb.execute.mockResolvedValue({ affected: 0, generatedMaps: [] });
-      mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
-      mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
-
-      await expect(service.updateUser(1, updateDto)).rejects.toThrow(
-        ConflictException,
       );
     });
   });
@@ -340,16 +323,11 @@ describe('AdminService', () => {
   });
 
   describe('resetPassword', () => {
-    const resetDto: ResetPasswordDto = { version: 1 };
-
     it('should reset password and return temporary password', async () => {
-      const mockQb = createMockQueryBuilder();
-      mockQb.execute.mockResolvedValue({ affected: 1, generatedMaps: [] });
       mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
-      mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
-      mockUserRepo.findOne.mockResolvedValueOnce({ ...baseUser, version: 2 });
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
 
-      const result = await service.resetPassword(1, resetDto);
+      const result = await service.resetPassword(1);
 
       expect(result.temporaryPassword).toBeDefined();
       expect(result.temporaryPassword.length).toBeGreaterThan(0);
@@ -358,19 +336,8 @@ describe('AdminService', () => {
     it('should throw NotFoundException when user does not exist', async () => {
       mockUserRepo.findOne.mockResolvedValueOnce(null);
 
-      await expect(service.resetPassword(999, resetDto)).rejects.toThrow(
+      await expect(service.resetPassword(999)).rejects.toThrow(
         NotFoundException,
-      );
-    });
-
-    it('should throw ConflictException on version mismatch', async () => {
-      const mockQb = createMockQueryBuilder();
-      mockQb.execute.mockResolvedValue({ affected: 0, generatedMaps: [] });
-      mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
-      mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
-
-      await expect(service.resetPassword(1, resetDto)).rejects.toThrow(
-        ConflictException,
       );
     });
   });
