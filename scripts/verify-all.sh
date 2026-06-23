@@ -36,7 +36,7 @@ SHARED_FRONTEND="frontend/src/components/shared/"
 
 # Results tracking
 STEP_RESULTS=()
-TOTAL_STEPS=4
+TOTAL_STEPS=5
 PASSED=0
 FAILED=0
 WARNED=0
@@ -293,7 +293,66 @@ step_quality_gates() {
   fi
 }
 
-# ─── STEP 4: Consolidated Report ─────────────────────────────────────────────
+# ─── STEP 4: Inline Component Duplication Scanner ────────────────────────────
+
+step_inline_component_scan() {
+  print_step "4" "Inline Component Duplication Scanner (UI Consistency)"
+
+  local duplicates_found=0
+  local duplicate_details=""
+
+  cd "$PROJECT_ROOT"
+
+  # Components that MUST be imported from shared — never re-implemented locally
+  # Format: "grep_pattern|component_name|shared_import_path"
+  local SHARED_COMPONENTS=(
+    "const StatusBadge|StatusBadge|components/shared/StatusBadge"
+    "function StatusBadge|StatusBadge|components/shared/StatusBadge"
+    "function.*DataTable|DataTable|components/shared/DataTable"
+    "const.*DataTable|DataTable|components/shared/DataTable"
+    "function.*KpiCard|KpiCard|components/shared/KpiCard"
+    "const.*KpiCard|KpiCard|components/shared/KpiCard"
+    "function.*PageHeader|PageHeader|components/shared/PageHeader"
+    "const.*PageHeader|PageHeader|components/shared/PageHeader"
+    "function.*EmptyState|EmptyState|components/shared/EmptyState"
+    "function.*SearchFilterBar|SearchFilterBar|components/shared/SearchFilterBar"
+    "function.*RefreshButton|RefreshButton|components/shared/RefreshButton"
+    "function.*ConfirmDialog|ConfirmDialog|components/shared/ConfirmDialog"
+  )
+
+  for entry in "${SHARED_COMPONENTS[@]}"; do
+    IFS='|' read -r pattern component_name import_path <<< "$entry"
+
+    local hits
+    hits=$(grep -rn --include="*.tsx" --include="*.ts" \
+      -E "(export )?(${pattern})" \
+      "frontend/src/pages/" 2>/dev/null || true)
+
+    if [ -n "$hits" ]; then
+      duplicates_found=$((duplicates_found + 1))
+      duplicate_details+="  ${RED}✖${NC} Duplicate '${component_name}' found (must use shared):${NC}\n"
+      while IFS= read -r line; do
+        duplicate_details+="    ${line}\n"
+      done <<< "$hits"
+      duplicate_details+="    ${YELLOW}Fix: import { ${component_name} } from '../../${import_path}';${NC}\n\n"
+    fi
+  done
+
+  if [ "$duplicates_found" -eq 0 ]; then
+    echo -e "  ${GREEN}✔${NC} No inline component duplicates detected."
+    echo -e "  All pages use shared components from frontend/src/components/shared/."
+    record_pass "Inline Component Duplication Scanner"
+  else
+    echo -e "  ${RED}✖ Found ${duplicates_found} inline component duplicate(s):${NC}"
+    echo ""
+    echo -e "$duplicate_details"
+    echo -e "  ${RED}Rule: Shared components must be imported, not re-implemented locally.${NC}"
+    echo -e "  ${RED}Fix:  Delete local copies and import from frontend/src/components/shared/.${NC}"
+    record_fail "Inline Component Scanner — ${duplicates_found} duplicate(s)"
+  fi
+}
+
+# ─── STEP 5: Consolidated Report ─────────────────────────────────────────────
 
 print_report() {
   echo ""
@@ -345,6 +404,7 @@ main() {
   step_cross_module_imports
   step_shared_layer_audit
   step_quality_gates
+  step_inline_component_scan
 
   print_report
 

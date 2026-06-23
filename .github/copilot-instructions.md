@@ -124,7 +124,49 @@ Refer to `02_開発ルール_DEVELOPMENT_RULES.md` for full details. Key rules:
 
 ---
 
-## 4. PRE-COMMIT CHECKLIST
+## 4. MANDATORY SHARED COMPONENT USAGE
+
+When building dashboard pages, you **MUST** import and use these shared components from `frontend/src/components/shared/`.
+**CREATING local copies is FORBIDDEN.** The CI pipeline (`verify-all.sh` STEP 4) will detect and block duplicates.
+
+| Need | MUST Use | Import |
+| :--- | :--- | :--- |
+| Dashboard summary cards | `KpiCard` | `import { KpiCard } from '../../components/shared/KpiCard';` |
+| KPI card grid layout | `DashboardKpiGrid` | `import { DashboardKpiGrid } from '../../components/shared/DashboardKpiGrid';` |
+| Status pills/badges | `StatusBadge` | `import { StatusBadge } from '../../components/shared/StatusBadge';` |
+| Data tables (sortable, paginated) | `DataTable` | `import { DataTable } from '../../components/shared/DataTable';` |
+| Page title + subtitle + actions | `PageHeader` | `import { PageHeader } from '../../components/shared/PageHeader';` |
+| Search & filter bar | `SearchFilterBar` | `import { SearchFilterBar } from '../../components/shared/SearchFilterBar';` |
+| Refresh button | `RefreshButton` | `import { RefreshButton } from '../../components/shared/RefreshButton';` |
+| Empty states (no data) | `EmptyState` | `import { EmptyState } from '../../components/shared/EmptyState';` |
+| Confirmation modals | `ConfirmDialog` | `import { ConfirmDialog } from '../../components/shared/ConfirmDialog';` |
+| Date picker fields | `DatePicker` | `import { DatePicker } from '../../components/shared/DatePicker';` |
+| Loading indicators | `LoadingSpinner` | `import { LoadingSpinner } from '../../components/shared/LoadingSpinner';` |
+| File upload zones | `FileUploadDropzone` | `import { FileUploadDropzone } from '../../components/shared/FileUploadDropzone';` |
+
+You can also use the barrel export: `import { KpiCard, StatusBadge, DataTable } from '../../components/shared';`
+
+**Examples of FORBIDDEN patterns:**
+
+```typescript
+// ❌ FORBIDDEN — Local duplicate of StatusBadge
+const StatusBadge: React.FC<{ statusId: number }> = ({ statusId }) => { ... };
+
+// ❌ FORBIDDEN — Local copy like ApproverStatusBadge, ApproverDataTable
+export function ApproverStatusBadge({ statusId }: Props) { ... }
+export function ApproverDataTable<T>({ columns, data }: Props) { ... }
+
+// ❌ FORBIDDEN — Inline status rendering instead of using StatusBadge
+<span className={`... ${STATUS_COLORS[req.statusId]}`}>{STATUS_LABELS_EN[req.statusId]}</span>
+
+// ✅ CORRECT — Use shared component
+import { StatusBadge } from '../../components/shared/StatusBadge';
+<StatusBadge statusId={req.statusId} />
+```
+
+---
+
+## 5. PRE-COMMIT CHECKLIST
 
 Before staging any code, verify:
 
@@ -134,9 +176,11 @@ Before staging any code, verify:
 4. `npm run test` → All unit tests pass
 5. No cross-module imports introduced
 6. No shared layer files modified without approval
+7. No local duplicates of shared components
 
 ---
 
-## 5. VERIFICATION
+## 6. VERIFICATION
 
 Run `scripts/verify-all.sh` to validate full project health before committing.
+
