@@ -6,7 +6,7 @@ import { PaymentRequest } from '../entities/payment-request.entity';
 @Injectable()
 export class RequestNumberService {
   constructor(
-    @(InjectRepository(PaymentRequest) as ParameterDecorator)
+    @InjectRepository(PaymentRequest)
     private readonly repo: Repository<PaymentRequest>,
   ) {}
 

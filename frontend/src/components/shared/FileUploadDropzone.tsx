@@ -31,10 +31,10 @@ export function FileUploadDropzone({
     }
   }, []);
 
-  const validateAndProcessFiles = (files: FileList | File[]) => {
+  const validateAndProcessFiles = useCallback((files: FileList | File[]) => {
     const validFiles: File[] = [];
     Array.from(files).forEach((file) => {
-      if (!ALLOWED_MIME_TYPES.includes(file.type as any)) {
+      if (!(ALLOWED_MIME_TYPES as readonly string[]).includes(file.type)) {
         error(`${file.name}: 許可されていないファイル形式です`);
         return;
       }
@@ -48,7 +48,7 @@ export function FileUploadDropzone({
     if (validFiles.length > 0) {
       onFilesSelected(validFiles);
     }
-  };
+  }, [error, onFilesSelected]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -60,7 +60,7 @@ export function FileUploadDropzone({
         validateAndProcessFiles(e.dataTransfer.files);
       }
     },
-    [disabled, error, onFilesSelected]
+    [disabled, validateAndProcessFiles]
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

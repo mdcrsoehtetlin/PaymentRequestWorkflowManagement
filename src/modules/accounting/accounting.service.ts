@@ -1,4 +1,10 @@
-import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Redis } from 'ioredis';
@@ -49,7 +55,7 @@ export class AccountingService {
   private readonly logger = new Logger(AccountingService.name);
 
   constructor(
-    @(InjectRepository(PaymentRequest) as ParameterDecorator)
+    @InjectRepository(PaymentRequest)
     private readonly paymentRequestRepository: Repository<PaymentRequest>,
     private readonly dataSource: DataSource,
     private readonly auditLogService: AuditLogService,
@@ -69,8 +75,9 @@ export class AccountingService {
     dateTo?: string,
   ) {
     this.logger.log(`Fetching approved requests page ${page} size ${pageSize}`);
-    
-    const queryBuilder = this.paymentRequestRepository.createQueryBuilder('pr')
+
+    const queryBuilder = this.paymentRequestRepository
+      .createQueryBuilder('pr')
       .leftJoinAndSelect('pr.applicant', 'applicant')
       .where('pr.statusId = :statusId', { statusId: 8 }) // APPROVED
       .andWhere('pr.isDeleted = :isDeleted', { isDeleted: false });
@@ -78,7 +85,7 @@ export class AccountingService {
     if (search) {
       queryBuilder.andWhere(
         '(pr.requestNumber ILIKE :search OR applicant.fullName ILIKE :search)',
-        { search: `%${search}%` }
+        { search: `%${search}%` },
       );
     }
 
@@ -174,7 +181,7 @@ export class AccountingService {
    */
   async findOneForAccounting(id: number): Promise<AccountingPaymentDetailDto> {
     this.logger.log(`Fetching details for payment request ${id}`);
-    
+
     const request = await this.paymentRequestRepository.findOne({
       where: { paymentRequestId: id, statusId: 8, isDeleted: false },
       relations: [
@@ -220,7 +227,8 @@ export class AccountingService {
         totalAmount: request.totalAmount,
         currencyCode: CURRENCY_CODE_BY_ID[request.currencyId] ?? 'UNKNOWN',
         paymentTypeName: PAYMENT_TYPE_BY_ID[request.paymentTypeId] ?? 'Unknown',
-        paymentMethodName: PAYMENT_METHOD_BY_ID[request.paymentMethodId] ?? 'Unknown',
+        paymentMethodName:
+          PAYMENT_METHOD_BY_ID[request.paymentMethodId] ?? 'Unknown',
         purpose: request.purpose,
         requestContent: request.requestContent,
         bankAccountInfo: request.bankAccountInfo ?? null,
@@ -270,12 +278,18 @@ export class AccountingService {
     id: number,
     ctx: CompletePaymentContext,
   ): Promise<{ success: boolean; message: string }> {
-    this.logger.log(`Completing payment ${id} by accounting user ${ctx.accountingUserId}`);
+    this.logger.log(
+      `Completing payment ${id} by accounting user ${ctx.accountingUserId}`,
+    );
 
     await this.dataSource.transaction(async (manager) => {
       // 1. Lock and fetch the request inside the transaction
       const request = await manager.findOne(PaymentRequest, {
-        where: { paymentRequestId: id, statusId: PaymentStatus.APPROVED, isDeleted: false },
+        where: {
+          paymentRequestId: id,
+          statusId: PaymentStatus.APPROVED,
+          isDeleted: false,
+        },
         lock: { mode: 'pessimistic_write' },
       });
 
@@ -286,8 +300,10 @@ export class AccountingService {
       }
 
       // 2. Guard: payment_completed is a terminal state — cannot re-process
-      if (request.statusId === PaymentStatus.PAID) {
-        throw new ConflictException(`Payment request ${id} has already been marked as PAID`);
+      if (request.statusId === Number(PaymentStatus.PAID)) {
+        throw new ConflictException(
+          `Payment request ${id} has already been marked as PAID`,
+        );
       }
 
       const previousStatusId = request.statusId;
@@ -315,9 +331,13 @@ export class AccountingService {
     // 5. Redis cache eviction (outside transaction — best effort)
     try {
       await this.redis.del(`payment_request:payload:${id}`);
-      this.logger.log(`Redis cache evicted for key payment_request:payload:${id}`);
+      this.logger.log(
+        `Redis cache evicted for key payment_request:payload:${id}`,
+      );
     } catch (err) {
-      this.logger.warn(`Redis eviction failed for request ${id}: ${String(err)}`);
+      this.logger.warn(
+        `Redis eviction failed for request ${id}: ${String(err)}`,
+      );
     }
 
     // 6. WebSocket: broadcast statusUpdate and row-removed to ACCOUNTING room
@@ -335,7 +355,9 @@ export class AccountingService {
         timestamp: new Date().toISOString(),
       });
     } catch (err) {
-      this.logger.warn(`WebSocket broadcast failed for request ${id}: ${String(err)}`);
+      this.logger.warn(
+        `WebSocket broadcast failed for request ${id}: ${String(err)}`,
+      );
     }
 
     return { success: true, message: 'Payment completed successfully' };

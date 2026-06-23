@@ -24,9 +24,9 @@ export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
   constructor(
-    @(InjectRepository(User) as ParameterDecorator)
+    @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @(InjectRepository(ApprovalLog) as ParameterDecorator)
+    @InjectRepository(ApprovalLog)
     private readonly approvalLogRepository: Repository<ApprovalLog>,
   ) {}
 

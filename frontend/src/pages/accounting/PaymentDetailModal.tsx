@@ -75,7 +75,7 @@ export const PaymentDetailModal: FC<Props> = ({
         if (isMounted) {
           setDetails(data);
         }
-      } catch (error) {
+      } catch {
         if (isMounted) {
           setToast({ message: 'Failed to load request details.', type: 'error' });
         }

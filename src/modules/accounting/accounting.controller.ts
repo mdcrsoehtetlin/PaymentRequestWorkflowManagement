@@ -37,7 +37,14 @@ export class AccountingController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    return this.accountingService.findApprovedRequests(page, pageSize, search, branch, dateFrom, dateTo);
+    return this.accountingService.findApprovedRequests(
+      page,
+      pageSize,
+      search,
+      branch,
+      dateFrom,
+      dateTo,
+    );
   }
 
   /**
@@ -63,7 +70,8 @@ export class AccountingController {
   @Post(':id/complete-payment')
   @HttpCode(HttpStatus.OK)
   async completePayment(
-    @Request() req: { user: JwtPayload; ip: string; headers: Record<string, string> },
+    @Request()
+    req: { user: JwtPayload; ip: string; headers: Record<string, string> },
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CompletePaymentDto,
   ) {

@@ -27,8 +27,8 @@ export const useAccountingQueue = () => {
       const response = await getApprovedRequests(page, pageSize, appliedSearch, appliedBranch, appliedDateFrom, appliedDateTo);
       setData(response.data);
       setTotal(response.meta.total);
-    } catch (err: any) {
-      setError(err.message || 'Error fetching queue');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error fetching queue');
     } finally {
       setLoading(false);
     }
@@ -36,8 +36,21 @@ export const useAccountingQueue = () => {
 
   // Auto-fetch on any change to page, pageSize, or applied filters
   useEffect(() => {
-    fetchQueue();
-  }, [fetchQueue]);
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await getApprovedRequests(page, pageSize, appliedSearch, appliedBranch, appliedDateFrom, appliedDateTo);
+        setData(response.data);
+        setTotal(response.meta.total);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Error fetching queue');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [page, pageSize, appliedSearch, appliedBranch, appliedDateFrom, appliedDateTo]);
 
   const submitSearch = useCallback(() => {
     setAppliedSearch(searchInput);

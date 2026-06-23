@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle, Clock, FileWarning, RefreshCw, Search } from 'lucide-react';
@@ -55,13 +55,15 @@ export function AccountingDashboard() {
     }
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    fetchSummary();
+    void fetchSummary();
   }, []);
 
   useEffect(() => {
-    fetchSummary();
+    void fetchSummary();
   }, [data]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <DashboardLayout>

@@ -19,7 +19,7 @@ export class ApplicantService {
   private readonly logger = new Logger(ApplicantService.name);
 
   constructor(
-    @(InjectRepository(PaymentRequest) as ParameterDecorator)
+    @InjectRepository(PaymentRequest)
     private readonly paymentRequestRepository: Repository<PaymentRequest>,
     private readonly dataSource: DataSource,
     private readonly auditLogService: AuditLogService,

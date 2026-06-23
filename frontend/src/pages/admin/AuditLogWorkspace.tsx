@@ -78,9 +78,15 @@ export function AuditLogWorkspace() {
   const [dateError, setDateError] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filtersRef = useRef(filters);
-  filtersRef.current = filters;
   const paginationRef = useRef(pagination);
-  paginationRef.current = pagination;
+
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
   const [selectedLog, setSelectedLog] = useState<AuditLogRecord | null>(null);
   const [sorting, setSorting] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
     sortBy: '',
@@ -141,12 +147,82 @@ export function AuditLogWorkspace() {
   }, [doFetchLogs]);
 
   useEffect(() => {
-    doFetchLogs();
-  }, []);
+    const load = async () => {
+      const f = filtersRef.current;
+      const p = paginationRef.current;
+      setIsLoading(true);
+      setDateError('');
+      try {
+        if (f.startDate && f.endDate && f.startDate > f.endDate) {
+          setDateError('開始日は終了日より後に設定できません');
+          setIsLoading(false);
+          return;
+        }
+        const params = new URLSearchParams();
+        if (f.startDate) params.set('startDate', f.startDate);
+        if (f.endDate) params.set('endDate', f.endDate);
+        if (f.actionTypeId) params.set('actionTypeId', f.actionTypeId);
+        if (f.requestId) params.set('requestId', f.requestId);
+        if (f.actorName) params.set('actorName', f.actorName);
+        params.set('page', String(p.page));
+        params.set('pageSize', String(p.pageSize));
+
+        const response = await apiClient.get<AuditLogResponse>(
+          `/admin/audit-logs?${params.toString()}`,
+        );
+        setLogs(response.data.data);
+        setPagination((prev) => ({
+          ...prev,
+          totalItems: response.data.meta.totalItems,
+          totalPages: response.data.meta.totalPages,
+        }));
+      } catch (error) {
+        console.error('Failed to fetch audit logs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, [doFetchLogs]);
 
   useEffect(() => {
-    doFetchLogs();
-  }, [pagination.page, pagination.pageSize]);
+    const load = async () => {
+      const f = filtersRef.current;
+      const p = paginationRef.current;
+      setIsLoading(true);
+      setDateError('');
+      try {
+        if (f.startDate && f.endDate && f.startDate > f.endDate) {
+          setDateError('開始日は終了日より後に設定できません');
+          setIsLoading(false);
+          return;
+        }
+        const params = new URLSearchParams();
+        if (f.startDate) params.set('startDate', f.startDate);
+        if (f.endDate) params.set('endDate', f.endDate);
+        if (f.actionTypeId) params.set('actionTypeId', f.actionTypeId);
+        if (f.requestId) params.set('requestId', f.requestId);
+        if (f.actorName) params.set('actorName', f.actorName);
+        params.set('page', String(p.page));
+        params.set('pageSize', String(p.pageSize));
+
+        const response = await apiClient.get<AuditLogResponse>(
+          `/admin/audit-logs?${params.toString()}`,
+        );
+        setLogs(response.data.data);
+        setPagination((prev) => ({
+          ...prev,
+          totalItems: response.data.meta.totalItems,
+          totalPages: response.data.meta.totalPages,
+        }));
+      } catch (error) {
+        console.error('Failed to fetch audit logs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, [pagination.page, pagination.pageSize, doFetchLogs]);
 
   const sortedLogs = useMemo(() => {
     if (!sorting.sortBy) return logs;

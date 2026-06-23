@@ -8,7 +8,7 @@ export class ApproverService {
   private readonly logger = new Logger(ApproverService.name);
 
   constructor(
-    @(InjectRepository(PaymentRequest) as ParameterDecorator)
+    @InjectRepository(PaymentRequest)
     private readonly paymentRequestRepository: Repository<PaymentRequest>,
   ) {}
 
@@ -36,7 +36,7 @@ export class ApproverService {
    * @returns A success status message.
    * @throws {Error} If update fails.
    */
-  async approveRequest(id: number, approverId: number, comment?: string) {
+  approveRequest(id: number, approverId: number, comment?: string) {
     this.logger.log(
       `Approving request ${id} by approver ${approverId} with comment: ${comment}`,
     );
@@ -52,7 +52,7 @@ export class ApproverService {
    * @returns A success status message.
    * @throws {Error} If update fails.
    */
-  async rejectRequest(id: number, approverId: number, comment: string) {
+  rejectRequest(id: number, approverId: number, comment: string) {
     this.logger.log(
       `Rejecting request ${id} by approver ${approverId} with comment: ${comment}`,
     );

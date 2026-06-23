@@ -46,7 +46,8 @@ import { AuditLogService } from './services/audit-log.service';
         return new Redis({
           host: configService.get<string>('redis.host', 'localhost'),
           port: configService.get<number>('redis.port', 6379),
-          password: configService.get<string>('redis.password', '') || undefined,
+          password:
+            configService.get<string>('redis.password', '') || undefined,
         });
       },
       inject: [ConfigService],

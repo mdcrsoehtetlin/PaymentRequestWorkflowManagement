@@ -10,7 +10,7 @@ import { JwtPayload, RoleCode } from '../shared/types';
 @Injectable()
 export class AuthService {
   constructor(
-    @(InjectRepository(User) as ParameterDecorator)
+    @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,

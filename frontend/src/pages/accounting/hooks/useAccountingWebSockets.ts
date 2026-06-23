@@ -34,7 +34,6 @@ export function useAccountingWebSockets(
     }
 
     wsService.connect(userId, role);
-    setIsConnected(true);
 
     const handleConnect = () => {
       setIsConnected(true);
@@ -71,7 +70,7 @@ export function useAccountingWebSockets(
       wsService.off('request:status-changed', handleStatusChanged);
       wsService.disconnect();
     };
-  }, [userId, role]);
+  }, [userId, role, info]);
 
   // Fallback 60s polling when disconnected
   useEffect(() => {

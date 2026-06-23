@@ -1,4 +1,4 @@
-import { STATUS_LABELS_JP, STATUS_COLORS } from '../../types';
+import { STATUS_COLORS, STATUS_LABELS_EN } from '../../types';
 
 interface StatusBadgeProps {
   statusId: number;
