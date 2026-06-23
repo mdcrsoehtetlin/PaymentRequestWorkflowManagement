@@ -81,7 +81,7 @@ export class ApplicantService {
 
     const [items, total] = await this.paymentRequestRepo.findAndCount({
       where: { applicant_user_id: applicantId, is_deleted: false },
-      order: { modified_date: 'DESC' },
+      order: { updated_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });

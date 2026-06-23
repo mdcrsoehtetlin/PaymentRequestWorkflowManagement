@@ -8,8 +8,8 @@ export class PaymentRequestResponseDto {
   desired_payment_date!: string;
   payment_method_id!: number;
   has_receipt!: boolean;
-  created_date!: Date;
-  modified_date!: Date;
+  created_at!: Date;
+  updated_at!: Date;
 }
 
 export class PaginatedPaymentRequestResponseDto {

@@ -183,7 +183,7 @@ export class AccountingService {
     this.logger.log(`Fetching details for payment request ${id}`);
 
     const request = await this.paymentRequestRepository.findOne({
-      where: { id: String(id), status_id: 8, is_deleted: false },
+      where: { id: Number(id), status_id: 8, is_deleted: false },
       relations: [
         'applicant',
         'manager',
@@ -216,7 +216,7 @@ export class AccountingService {
       statusId: request.status_id,
       hasReceipt: request.has_receipt,
       applicant: {
-        userId: Number(request.applicant_id),
+        userId: Number(request.applicant_user_id),
         fullName: request.applicant.fullName,
         employeeNumber: request.applicant.employeeNumber,
         branch: request.applicant.branch,
@@ -243,9 +243,9 @@ export class AccountingService {
           lineNumber: item.line_number,
           itemDate: item.item_date,
           description: item.description,
-          amount: item.amount,
-          quantity: item.quantity ?? null,
-          unitPrice: item.unit_price ?? null,
+          amount: String(item.amount),
+          quantity: item.quantity != null ? String(item.quantity) : null,
+          unitPrice: item.unit_price != null ? String(item.unit_price) : null,
         })),
       receiptFiles: activeReceiptFiles.map((file) => ({
         id: Number(file.id),
@@ -287,7 +287,7 @@ export class AccountingService {
       // 1. Lock and fetch the request inside the transaction
       const request = await manager.findOne(PaymentRequest, {
         where: {
-          id: String(id),
+          id: Number(id),
           status_id: Number(PaymentStatus.APPROVED),
           is_deleted: false,
         },

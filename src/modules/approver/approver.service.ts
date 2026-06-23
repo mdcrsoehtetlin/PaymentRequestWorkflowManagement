@@ -188,7 +188,7 @@ export class ApproverService {
     } else if (sortBy === ApproverRequestSortFields.DESIRED_PAYMENT_DATE) {
       qb.orderBy('request.desired_payment_date', orderDirection);
     } else if (sortBy === ApproverRequestSortFields.CREATED_DATE) {
-      qb.orderBy('request.created_date', orderDirection);
+      qb.orderBy('request.created_at', orderDirection);
     } else {
       qb.orderBy('request.manager_verification_date', orderDirection);
     }
@@ -228,7 +228,7 @@ export class ApproverService {
       submittedToApproverDate: req.submitted_to_approver_date
         ? req.submitted_to_approver_date.toISOString()
         : null,
-      createdDate: req.created_date.toISOString(),
+      createdDate: req.created_at.toISOString(),
     }));
 
     return {
@@ -370,7 +370,7 @@ export class ApproverService {
         freshRequest.status_id = PaymentStatus.APPROVER_REVIEWING;
         freshRequest.final_approver_user_id = approverUserId;
         freshRequest.current_assigned_to_user_id = approverUserId;
-        freshRequest.modified_date = new Date();
+        freshRequest.updated_at = new Date();
         await manager.save(PaymentRequest, freshRequest);
 
         await this.auditLogService.createLog(manager, {
@@ -480,8 +480,8 @@ export class ApproverService {
       approvalDate: request.approval_date?.toISOString() ?? null,
       paymentCompletedDate:
         request.payment_completed_date?.toISOString() ?? null,
-      createdDate: request.created_date.toISOString(),
-      modifiedDate: request.modified_date.toISOString(),
+      createdDate: request.created_at.toISOString(),
+      modifiedDate: request.updated_at.toISOString(),
       isDeleted: request.is_deleted,
       applicant: {
         userId: request.applicant?.userId ?? Number(request.applicant_user_id),
@@ -612,7 +612,7 @@ export class ApproverService {
       freshRequest.approval_date = new Date();
       freshRequest.accounting_user_id = dto.accountingUserId ?? null;
       freshRequest.current_assigned_to_user_id = dto.accountingUserId ?? null;
-      freshRequest.modified_date = new Date();
+      freshRequest.updated_at = new Date();
       await manager.save(PaymentRequest, freshRequest);
 
       await this.auditLogService.createLog(manager, {
@@ -700,7 +700,7 @@ export class ApproverService {
 
       freshRequest.status_id = PaymentStatus.REJECTED_APPROVER;
       freshRequest.current_assigned_to_user_id = freshRequest.applicant_user_id;
-      freshRequest.modified_date = new Date();
+      freshRequest.updated_at = new Date();
       await manager.save(PaymentRequest, freshRequest);
 
       await this.auditLogService.createLog(manager, {
