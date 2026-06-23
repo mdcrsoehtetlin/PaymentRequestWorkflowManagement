@@ -115,14 +115,14 @@ export class AccountingService {
     return {
       data: data.map((req) => ({
         paymentRequestId: Number(req.id),
-        requestNumber: req.request_number,
+        requestNumber: req.requestNumber,
         applicantName: req.applicant.fullName,
         branch: req.applicant.branch,
-        totalAmount: req.total_amount,
-        currencyCode: req.currency_id === 1 ? 'MMK' : 'USD',
+        totalAmount: req.totalAmount,
+        currencyCode: req.currencyId === 1 ? 'MMK' : 'USD',
         statusId: req.status_id,
-        applicationDate: req.application_date,
-        desiredPaymentDate: req.desired_payment_date,
+        applicationDate: req.applicationDate,
+        desiredPaymentDate: req.desiredPaymentDate,
       })),
       meta: {
         total,
@@ -190,11 +190,11 @@ export class AccountingService {
         'final_approver',
         'breakdowns',
         'receipts',
-        'logs',
-        'logs.action_taken_by_user',
+        'approvalLogs',
+        'approvalLogs.action_taken_by_user',
       ],
       order: {
-        logs: {
+        approvalLogs: {
           timestamp: 'ASC',
         },
       },
@@ -207,12 +207,12 @@ export class AccountingService {
     }
 
     const activeReceiptFiles = (request.receipts ?? []).filter(
-      (file) => !file.is_deleted,
+      (file) => !file.isDeleted,
     );
 
     return {
       paymentRequestId: Number(request.id),
-      requestNumber: request.request_number,
+      requestNumber: request.requestNumber,
       statusId: request.status_id,
       hasReceipt: request.has_receipt,
       applicant: {
@@ -224,24 +224,23 @@ export class AccountingService {
         email: request.applicant.email,
       },
       paymentDetails: {
-        totalAmount: request.total_amount,
-        currencyCode: CURRENCY_CODE_BY_ID[request.currency_id] ?? 'UNKNOWN',
-        paymentTypeName:
-          PAYMENT_TYPE_BY_ID[request.payment_type_id] ?? 'Unknown',
+        totalAmount: request.totalAmount,
+        currencyCode: CURRENCY_CODE_BY_ID[request.currencyId] ?? 'UNKNOWN',
+        paymentTypeName: PAYMENT_TYPE_BY_ID[request.paymentTypeId] ?? 'Unknown',
         paymentMethodName:
-          PAYMENT_METHOD_BY_ID[request.payment_method_id] ?? 'Unknown',
+          PAYMENT_METHOD_BY_ID[request.paymentMethodId] ?? 'Unknown',
         purpose: request.purpose,
         requestContent: request.request_content,
         bankAccountInfo: request.bank_account_info ?? null,
-        applicationDate: request.application_date,
-        desiredPaymentDate: request.desired_payment_date,
+        applicationDate: request.applicationDate,
+        desiredPaymentDate: request.desiredPaymentDate,
       },
       breakdownItems: (request.breakdowns ?? [])
-        .sort((left, right) => left.line_number - right.line_number)
+        .sort((left, right) => left.lineNumber - right.lineNumber)
         .map((item) => ({
           id: Number(item.id),
-          lineNumber: item.line_number,
-          itemDate: item.item_date,
+          lineNumber: item.lineNumber,
+          itemDate: item.itemDate,
           description: item.description,
           amount: String(item.amount),
           quantity: item.quantity != null ? String(item.quantity) : null,
@@ -249,21 +248,21 @@ export class AccountingService {
         })),
       receiptFiles: activeReceiptFiles.map((file) => ({
         id: Number(file.id),
-        fileName: file.file_name,
-        fileUrl: `/uploads/${request.id}/${file.stored_file_name}`,
+        fileName: file.originalFileName,
+        fileUrl: `/uploads/${request.id}/${file.storedFileName}`,
         fileSize: String(file.file_size),
         mimeType: file.mime_type,
-        uploadedDate: file.created_at,
+        uploadedDate: file.uploadedDate,
       })),
-      approvalTimeline: (request.logs ?? []).map((log) => ({
-        id: log.id,
-        actionTypeId: log.action_type_id,
-        previousStatusId: log.previous_status_id ?? null,
-        newStatusId: log.new_status_id ?? null,
+      approvalTimeline: (request.approvalLogs ?? []).map((log) => ({
+        id: log.approvalLogId,
+        actionTypeId: log.actionTypeId,
+        previousStatusId: log.previousStatusId ?? null,
+        newStatusId: log.newStatusId ?? null,
         comment: log.comment ?? null,
         timestamp: log.timestamp,
         user: {
-          userId: Number(log.action_taken_by_user_id),
+          userId: Number(log.action_taken_by_user),
           fullName: log.action_taken_by_user.fullName,
           employeeNumber: log.action_taken_by_user.employeeNumber,
         },

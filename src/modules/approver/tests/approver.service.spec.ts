@@ -418,7 +418,7 @@ describe('ApproverService', () => {
       const mockRequest = buildMockRequest({
         status_id: PaymentStatus.APPROVER_REVIEWING,
         final_approver_user_id: mockApproverUserId,
-        logs: [],
+        approvalLogs: [],
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 
@@ -437,7 +437,7 @@ describe('ApproverService', () => {
       const mockRequest = buildMockRequest({
         status_id: PaymentStatus.APPROVED,
         final_approver_user_id: mockApproverUserId,
-        logs: [],
+        approvalLogs: [],
       });
       paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
 

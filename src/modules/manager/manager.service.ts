@@ -79,7 +79,7 @@ export class ManagerService {
 
     const request = await this.paymentRequestRepository.findOne({
       where: {
-        paymentRequestId: id,
+        id: id,
         currentAssignedToUserId: managerId,
         isDeleted: false,
       },
@@ -120,7 +120,7 @@ export class ManagerService {
       );
 
       const updatedRequest = await this.paymentRequestRepository.findOne({
-        where: { paymentRequestId: id },
+        where: { id: id },
         relations: [
           'applicant',
           'breakdownItems',
@@ -131,7 +131,7 @@ export class ManagerService {
 
       if (updatedRequest) {
         this.websocketGateway.sendPersonalNotification(
-          updatedRequest.applicantUserId,
+          updatedRequest.applicant_user_id,
           'statusUpdate',
           {
             event: 'statusUpdate',
@@ -178,7 +178,7 @@ export class ManagerService {
       async (entityManager: EntityManager) => {
         const request = await entityManager.findOne(PaymentRequest, {
           where: {
-            paymentRequestId: id,
+            id: id,
             currentAssignedToUserId: managerId,
             isDeleted: false,
           },
@@ -213,7 +213,7 @@ export class ManagerService {
         request.statusId = PaymentStatus.MANAGER_VERIFIED;
         request.managerVerificationDate = new Date();
         request.modifiedDate = new Date();
-        request.currentAssignedToUserId = request.applicantUserId;
+        request.currentAssignedToUserId = request.applicant_user_id;
         await entityManager.save(request);
 
         await this.auditLogService.createLog(entityManager, {
@@ -228,7 +228,7 @@ export class ManagerService {
         });
 
         this.websocketGateway.sendPersonalNotification(
-          request.applicantUserId,
+          request.applicant_user_id,
           'statusUpdate',
           {
             event: 'statusUpdate',
@@ -273,7 +273,7 @@ export class ManagerService {
       async (entityManager: EntityManager) => {
         const request = await entityManager.findOne(PaymentRequest, {
           where: {
-            paymentRequestId: id,
+            id: id,
             currentAssignedToUserId: managerId,
             isDeleted: false,
           },
@@ -307,7 +307,7 @@ export class ManagerService {
 
         request.statusId = PaymentStatus.REJECTED_MANAGER;
         request.modifiedDate = new Date();
-        request.currentAssignedToUserId = request.applicantUserId;
+        request.currentAssignedToUserId = request.applicant_user_id;
         await entityManager.save(request);
 
         await this.auditLogService.createLog(entityManager, {
@@ -322,7 +322,7 @@ export class ManagerService {
         });
 
         this.websocketGateway.sendPersonalNotification(
-          request.applicantUserId,
+          request.applicant_user_id,
           'statusUpdate',
           {
             event: 'statusUpdate',

@@ -188,7 +188,7 @@ export class ApproverService {
     } else if (sortBy === ApproverRequestSortFields.DESIRED_PAYMENT_DATE) {
       qb.orderBy('request.desired_payment_date', orderDirection);
     } else if (sortBy === ApproverRequestSortFields.CREATED_DATE) {
-      qb.orderBy('request.created_at', orderDirection);
+      qb.orderBy('request.uploadedDate', orderDirection);
     } else {
       qb.orderBy('request.manager_verification_date', orderDirection);
     }
@@ -200,7 +200,7 @@ export class ApproverService {
 
     const items: ApproverRequestListItem[] = data.map((req) => ({
       paymentRequestId: req.id,
-      requestNumber: req.request_number,
+      requestNumber: req.requestNumber,
       applicant: {
         userId: req.applicant?.userId ?? Number(req.applicant_user_id),
         fullName: req.applicant?.fullName ?? '',
@@ -215,11 +215,11 @@ export class ApproverService {
             branch: req.manager.branch,
           }
         : null,
-      applicationDate: req.application_date,
-      desiredPaymentDate: req.desired_payment_date,
-      totalAmount: req.total_amount,
+      applicationDate: req.applicationDate,
+      desiredPaymentDate: req.desiredPaymentDate,
+      totalAmount: req.totalAmount,
       currencyCode:
-        (CURRENCY_CODES as Record<number, string>)[req.currency_id] || 'MMK',
+        (CURRENCY_CODES as Record<number, string>)[req.currencyId] || 'MMK',
       statusId: req.status_id,
       purpose: req.purpose,
       managerVerificationDate: req.manager_verification_date
@@ -228,7 +228,7 @@ export class ApproverService {
       submittedToApproverDate: req.submitted_to_approver_date
         ? req.submitted_to_approver_date.toISOString()
         : null,
-      createdDate: req.created_at.toISOString(),
+      createdDate: req.createdDate.toISOString(),
     }));
 
     return {
@@ -305,8 +305,8 @@ export class ApproverService {
         'manager',
         'final_approver',
         'receipts',
-        'logs',
-        'logs.action_taken_by_user',
+        'approvalLogs',
+        'approvalLogs.action_taken_by_user',
       ],
     });
 
@@ -389,7 +389,7 @@ export class ApproverService {
 
       const statusUpdatePayload = {
         paymentRequestId: request.id,
-        requestNumber: request.request_number,
+        requestNumber: request.requestNumber,
         previousStatusId: PaymentStatus.SUBMITTED_APPROVER,
         newStatusId: PaymentStatus.APPROVER_REVIEWING,
         actionByUserId: approverUserId,
@@ -409,14 +409,14 @@ export class ApproverService {
       const reloadedLogs = await this.dataSource
         .getRepository(ApprovalLog)
         .find({
-          where: { payment_request_id: id },
+          where: { paymentRequestId: id },
           relations: ['action_taken_by_user'],
           order: { timestamp: 'DESC' },
         });
-      request.logs = reloadedLogs;
+      request.approvalLogs = reloadedLogs;
     }
 
-    const sortedLogs = [...request.logs].sort(
+    const sortedLogs = [...request.approvalLogs].sort(
       (a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
@@ -429,18 +429,17 @@ export class ApproverService {
       request.final_approver_user_id === approverUserId;
 
     const latestManagerComment =
-      [...request.logs]
+      [...request.approvalLogs]
         .reverse()
         .find(
-          (log) =>
-            log.action_type_id === Number(ApprovalActionType.MGR_VERIFIED),
+          (log) => log.actionTypeId === Number(ApprovalActionType.MGR_VERIFIED),
         )?.comment || null;
 
     const latestApplicantSubmissionComment =
-      [...request.logs]
+      [...request.approvalLogs]
         .reverse()
         .find(
-          (log) => log.action_type_id === Number(ApprovalActionType.SUBMITTED),
+          (log) => log.actionTypeId === Number(ApprovalActionType.SUBMITTED),
         )?.comment || null;
 
     const finalApproverUser = request.final_approver
@@ -454,18 +453,18 @@ export class ApproverService {
 
     return {
       paymentRequestId: request.id,
-      requestNumber: request.request_number,
+      requestNumber: request.requestNumber,
       applicantUserId: request.applicant_user_id,
       managerUserId: request.manager_user_id,
       finalApproverUserId: request.final_approver_user_id,
       accountingUserId: request.accounting_user_id,
       currentAssignedToUserId: request.current_assigned_to_user_id,
-      applicationDate: request.application_date,
-      desiredPaymentDate: request.desired_payment_date,
-      totalAmount: request.total_amount,
-      currencyId: request.currency_id,
-      paymentTypeId: request.payment_type_id,
-      paymentMethodId: request.payment_method_id,
+      applicationDate: request.applicationDate,
+      desiredPaymentDate: request.desiredPaymentDate,
+      totalAmount: request.totalAmount,
+      currencyId: request.currencyId,
+      paymentTypeId: request.paymentTypeId,
+      paymentMethodId: request.paymentMethodId,
       purpose: request.purpose,
       bankAccountInfo: request.bank_account_info,
       requestContent: request.request_content,
@@ -480,7 +479,7 @@ export class ApproverService {
       approvalDate: request.approval_date?.toISOString() ?? null,
       paymentCompletedDate:
         request.payment_completed_date?.toISOString() ?? null,
-      createdDate: request.created_at.toISOString(),
+      createdDate: request.createdDate.toISOString(),
       modifiedDate: request.updated_at.toISOString(),
       isDeleted: request.is_deleted,
       applicant: {
@@ -499,15 +498,14 @@ export class ApproverService {
         : null,
       finalApprover: finalApproverUser,
       currencyCode:
-        (CURRENCY_CODES as Record<number, string>)[request.currency_id] ||
-        'MMK',
+        (CURRENCY_CODES as Record<number, string>)[request.currencyId] || 'MMK',
       paymentTypeName:
         (PAYMENT_TYPE_LABELS_JP as Record<number, string>)[
-          request.payment_type_id
+          request.paymentTypeId
         ] || '経費精算',
       paymentMethodName:
         (PAYMENT_METHOD_LABELS_JP as Record<number, string>)[
-          request.payment_method_id
+          request.paymentMethodId
         ] || '銀行振込',
       breakdownItems: breakdownItems.map((item: BreakdownItemRow) => ({
         paymentBreakdownItemId: item.payment_breakdown_item_id,
@@ -523,27 +521,30 @@ export class ApproverService {
       })),
       receiptFiles: request.receipts.map((file) => ({
         receiptFileId: file.id,
-        paymentRequestId: file.payment_request_id,
-        originalFileName: file.file_name ?? '',
-        storedFileName: file.stored_file_name ?? '',
+        paymentRequestId: file.paymentRequestId,
+        originalFileName: file.originalFileName ?? '',
+        storedFileName: file.storedFileName ?? '',
         fileStoragePath: file.storage_key,
         fileSize: String(file.file_size),
         mimeType: file.mime_type,
-        uploadedByUserId: file.uploaded_by_user_id ?? 0,
-        uploadedDate: file.created_at.toISOString(),
-        isDeleted: file.is_deleted,
+        uploadedByUserId: file.uploadedByUserId ?? 0,
+        uploadedDate: file.uploadedDate.toISOString(),
+        isDeleted: file.isDeleted,
       })),
       approvalLogs: sortedLogs.map((log) => ({
-        approvalLogId: log.id,
-        paymentRequestId: log.payment_request_id,
-        actionTakenByUserId: log.action_taken_by_user_id,
-        actionTypeId: log.action_type_id,
-        previousStatusId: log.previous_status_id,
-        newStatusId: log.new_status_id,
+        approvalLogId: log.approvalLogId,
+        paymentRequestId: log.paymentRequestId,
+        actionTakenByUserId: Number(log.actionTakenByUserId),
+        actionTypeId: log.actionTypeId,
+        previousStatusId: log.previousStatusId,
+        newStatusId: log.newStatusId,
         comment: log.comment,
-        ipAddress: log.ip_address,
-        userAgent: log.user_agent,
-        timestamp: log.timestamp.toISOString(),
+        ipAddress: log.ipAddress,
+        userAgent: log.userAgent,
+        timestamp:
+          typeof log.timestamp === 'string'
+            ? log.timestamp
+            : log.timestamp.toISOString(),
         actionTakenByUser: log.action_taken_by_user
           ? {
               userId: log.action_taken_by_user.userId,
@@ -631,7 +632,7 @@ export class ApproverService {
 
     const statusUpdatePayload = {
       paymentRequestId: request.id,
-      requestNumber: request.request_number,
+      requestNumber: request.requestNumber,
       previousStatusId: PaymentStatus.APPROVER_REVIEWING,
       newStatusId: PaymentStatus.APPROVED,
       actionByUserId: approverUserId,
@@ -719,7 +720,7 @@ export class ApproverService {
 
     const statusUpdatePayload = {
       paymentRequestId: request.id,
-      requestNumber: request.request_number,
+      requestNumber: request.requestNumber,
       previousStatusId: PaymentStatus.APPROVER_REVIEWING,
       newStatusId: PaymentStatus.REJECTED_APPROVER,
       actionByUserId: approverUserId,

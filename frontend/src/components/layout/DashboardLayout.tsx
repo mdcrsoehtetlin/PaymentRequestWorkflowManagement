@@ -20,6 +20,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        currentRole={user.role as string}
       />
 
       {/* Main Content Area */}

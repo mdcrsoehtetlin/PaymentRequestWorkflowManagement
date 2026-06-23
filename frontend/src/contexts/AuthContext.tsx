@@ -2,9 +2,10 @@ import {
   useState,
   useEffect,
   useCallback,
+  useContext,
   type ReactNode,
 } from 'react';
-import { AuthContext } from './auth-context';
+import { AuthContext, type AuthContextType } from './auth-context';
 import { authService } from '../services/auth.service';
 import type { JwtPayload } from '../types';
 

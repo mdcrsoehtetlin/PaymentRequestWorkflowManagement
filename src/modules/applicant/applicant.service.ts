@@ -87,7 +87,7 @@ export class ApplicantService {
     });
 
     const mappedItems = items.map((item) => ({
-      id: item.paymentRequestId,
+      id: item.id,
       request_number: item.requestNumber,
       status_id: item.statusId,
       total_amount: item.totalAmount,
@@ -124,18 +124,18 @@ export class ApplicantService {
         applicant_user_id: applicantId,
         is_deleted: false,
       },
-      relations: ['breakdowns', 'receipts', 'logs'],
+      relations: ['breakdowns', 'receipts', 'approvalLogs'],
     });
 
     if (!request) {
       throw new NotFoundException('Payment request not found');
     }
 
-    // Sort breakdowns and logs
+    // Sort breakdowns and approvalLogs
     if (request.breakdowns)
       request.breakdowns.sort((a, b) => b.amount - a.amount);
-    if (request.logs)
-      request.logs.sort(
+    if (request.approvalLogs)
+      request.approvalLogs.sort(
         (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
       );
 
@@ -170,7 +170,7 @@ export class ApplicantService {
         paymentTypeId: dto.payment_type_id || 1,
         paymentMethodId: dto.payment_method_id || 1,
         purpose: dto.purpose || 'Draft Purpose',
-        requestContent: dto.requestContent || 'Draft Content',
+        request_content: dto.request_content || 'Draft Content',
       });
 
       const savedRequest = await manager.save(request);
@@ -178,7 +178,7 @@ export class ApplicantService {
       if (dto.breakdowns && dto.breakdowns.length > 0) {
         const items = dto.breakdowns.map((b, index) =>
           manager.create(PaymentBreakdownItem, {
-            paymentRequestId: savedRequest.paymentRequestId,
+            id: savedRequest.id,
             lineNumber: index + 1,
             itemDate:
               dto.application_date || new Date().toISOString().split('T')[0],
@@ -190,7 +190,7 @@ export class ApplicantService {
       }
 
       const log = manager.create(ApprovalLog, {
-        paymentRequestId: savedRequest.paymentRequestId,
+        id: savedRequest.id,
         actionTakenByUserId: Number(applicantId),
         actionTypeId: 1,
         newStatusId: 1,
@@ -256,7 +256,7 @@ export class ApplicantService {
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
-        paymentRequestId: savedRequest.paymentRequestId,
+        id: savedRequest.id,
         actionTakenByUserId: Number(applicantId),
         actionTypeId: 2,
         previousStatusId: previousStatus,
@@ -271,7 +271,7 @@ export class ApplicantService {
 
       this.applicantGateway.notifyStatusUpdate(String(applicantId), {
         paymentRequestId: Number(savedRequest.id),
-        requestNumber: savedRequest.request_number,
+        requestNumber: savedRequest.requestNumber,
         previousStatusId: request.status_id,
         newStatusId: 2,
         actionByUserId: Number(applicantId),
@@ -313,16 +313,16 @@ export class ApplicantService {
       paymentRequestId: Number(requestId),
       originalFileName: storedFileName,
       storedFileName,
-      fileSize: file.size,
-      mimeType: file.mimetype,
-      fileStoragePath,
+      file_size: file.size,
+      mime_type: file.mimetype,
+      storage_key: fileStoragePath,
       isDeleted: false,
     });
 
     const savedReceipt = await this.receiptFileRepo.save(receipt);
 
     await this.paymentRequestRepo.update(
-      { paymentRequestId: Number(requestId) },
+      { id: Number(requestId) },
       { hasReceipt: true },
     );
 
@@ -359,7 +359,7 @@ export class ApplicantService {
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
-        paymentRequestId: savedRequest.paymentRequestId,
+        id: savedRequest.id,
         actionTakenByUserId: Number(applicantId),
         actionTypeId: 3,
         previousStatusId: 4,
@@ -374,7 +374,7 @@ export class ApplicantService {
 
       this.applicantGateway.notifyStatusUpdate(String(applicantId), {
         paymentRequestId: Number(savedRequest.id),
-        requestNumber: savedRequest.request_number,
+        requestNumber: savedRequest.requestNumber,
         previousStatusId: 4,
         newStatusId: 6,
         actionByUserId: Number(applicantId),
@@ -433,7 +433,7 @@ export class ApplicantService {
           }),
         );
         await manager.save(items);
-        request.total_amount = dto.breakdowns
+        request.totalAmount = dto.breakdowns
           .reduce((sum, item) => sum + item.amount, 0)
           .toString();
       }
@@ -441,7 +441,7 @@ export class ApplicantService {
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
-        paymentRequestId: savedRequest.paymentRequestId,
+        id: savedRequest.id,
         actionTakenByUserId: Number(applicantId),
         actionTypeId: 2,
         previousStatusId: request.statusId,
@@ -486,7 +486,7 @@ export class ApplicantService {
       );
 
       const log = manager.create(ApprovalLog, {
-        paymentRequestId: request.paymentRequestId,
+        id: request.id,
         actionTakenByUserId: Number(applicantId),
         actionTypeId: 2,
         previousStatusId: 1,

@@ -59,6 +59,15 @@ export class PaymentRequest {
   @Column({ type: 'varchar', length: 500 })
   purpose!: string;
 
+  @Column({ name: 'desired_payment_date', type: 'date', nullable: true })
+  desiredPaymentDate!: string;
+
+  @Column({ name: 'payment_method_id', type: 'int', nullable: true })
+  paymentMethodId!: number;
+
+  @Column({ name: 'payment_type_id', type: 'int', nullable: true })
+  paymentTypeId!: number;
+
   @Column({
     name: 'bank_account_info',
     type: 'varchar',
@@ -122,10 +131,10 @@ export class PaymentRequest {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'manager_user_id' })
   manager!: User | null;
-  @OneToMany(() => PaymentBreakdownItem, (item) => item.payment_request)
+  @OneToMany(() => PaymentBreakdownItem, (item) => item.paymentRequest)
   breakdowns!: PaymentBreakdownItem[];
 
-  @OneToMany(() => ReceiptFile, (file) => file.payment_request)
+  @OneToMany(() => ReceiptFile, (file) => file.paymentRequest)
   receipts!: ReceiptFile[];
 
   @Column({ name: 'bank_account_info', length: 200, nullable: true })
@@ -183,10 +192,6 @@ export class PaymentRequest {
 
   @Column({ name: 'current_assigned_to_user_id', type: 'int', nullable: true })
   currentAssignedToUserId!: number | null;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'applicant_user_id' })
-  applicant!: User;
 
   @OneToMany('PaymentBreakdownItem', 'paymentRequest', {
     cascade: true,

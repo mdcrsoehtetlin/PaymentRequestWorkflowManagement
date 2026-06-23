@@ -13,8 +13,8 @@ export class ReceiptFile {
   @PrimaryGeneratedColumn({ name: 'receipt_file_id' })
   id!: number;
 
-  @Column({ type: 'int' })
-  payment_request_id!: number;
+  @Column({ name: 'payment_request_id', type: 'int' })
+  paymentRequestId!: number;
 
   @Column({
     name: 'original_file_name',

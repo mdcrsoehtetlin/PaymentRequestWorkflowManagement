@@ -1,0 +1,53 @@
+﻿src/modules/accounting/accounting.service.ts(118,28): error TS2551: Property 'request_number' does not exist on type 'PaymentRequest'. Did you mean 'requestNumber'?
+src/modules/accounting/accounting.service.ts(125,33): error TS2339: Property 'desired_payment_date' does not exist on type 'PaymentRequest'.
+src/modules/accounting/accounting.service.ts(230,38): error TS2339: Property 'payment_type_id' does not exist on type 'PaymentRequest'.
+src/modules/accounting/accounting.service.ts(232,40): error TS2339: Property 'payment_method_id' does not exist on type 'PaymentRequest'.
+src/modules/accounting/accounting.service.ts(237,37): error TS2339: Property 'desired_payment_date' does not exist on type 'PaymentRequest'.
+src/modules/accounting/accounting.service.ts(252,24): error TS2339: Property 'file_name' does not exist on type 'ReceiptFile'.
+src/modules/accounting/accounting.service.ts(256,28): error TS2339: Property 'created_at' does not exist on type 'ReceiptFile'.
+src/modules/accounting/accounting.service.ts(258,34): error TS2339: Property 'logs' does not exist on type 'PaymentRequest'.
+src/modules/accounting/accounting.service.ts(258,51): error TS7006: Parameter 'log' implicitly has an 'any' type.
+src/modules/admin/admin.service.ts(480,7): error TS2322: Type '{ approvalLogId: string; payment_request_id: number; action_taken_by_user_id: number; actorName: string; action_type_id: number; previousStatusId: number; new_status_id: number; comment: string; ip_address: string; user_agent: string; timestamp: Date; }[]' is not assignable to type '{ approvalLogId: string; paymentRequestId: number; actionTakenByUserId: number; actorName: string; actionTypeId: number; previousStatusId: number | null; newStatusId: number | null; comment: string | null; ipAddress: string; userAgent: string; timestamp: Date; }[]'.
+  Type '{ approvalLogId: string; payment_request_id: number; action_taken_by_user_id: number; actorName: string; action_type_id: number; previousStatusId: number; new_status_id: number; comment: string; ip_address: string; user_agent: string; timestamp: Date; }' is missing the following properties from type '{ approvalLogId: string; paymentRequestId: number; actionTakenByUserId: number; actorName: string; actionTypeId: number; previousStatusId: number | null; newStatusId: number | null; comment: string | null; ipAddress: string; userAgent: string; timestamp: Date; }': paymentRequestId, actionTakenByUserId, actionTypeId, newStatusId, and 2 more.
+src/modules/applicant/applicant.controller.ts(94,21): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.controller.ts(113,21): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.controller.ts(140,21): error TS2339: Property 'receiptFileId' does not exist on type 'ReceiptFile'.
+src/modules/applicant/applicant.controller.ts(160,21): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.controller.ts(181,21): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(90,16): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(96,34): error TS2339: Property 'desiredPaymentDate' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(97,31): error TS2339: Property 'paymentMethodId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(137,17): error TS2339: Property 'logs' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(138,15): error TS2339: Property 'logs' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(139,10): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/modules/applicant/applicant.service.ts(139,13): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/modules/applicant/applicant.service.ts(173,30): error TS2551: Property 'requestContent' does not exist on type 'CreatePaymentRequestDraftDto'. Did you mean 'request_content'?
+src/modules/applicant/applicant.service.ts(181,44): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(193,40): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(234,20): error TS2339: Property 'desiredPaymentDate' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(236,20): error TS2339: Property 'paymentMethodId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(259,40): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(313,7): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(entityLikeArray: DeepPartial<ReceiptFile>[]): ReceiptFile[]', gave the following error.
+    Object literal may only specify known properties, and 'paymentRequestId' does not exist in type 'DeepPartial<ReceiptFile>[]'.
+  Overload 2 of 3, '(entityLike: DeepPartial<ReceiptFile>): ReceiptFile', gave the following error.
+    Object literal may only specify known properties, but 'paymentRequestId' does not exist in type 'DeepPartial<ReceiptFile>'. Did you mean to write 'paymentRequest'?
+src/modules/applicant/applicant.service.ts(331,5): error TS2740: Type 'ReceiptFile[]' is missing the following properties from type 'ReceiptFile': id, payment_request_id, originalFileName, storedFileName, and 7 more.
+src/modules/applicant/applicant.service.ts(362,40): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(415,17): error TS2339: Property 'desiredPaymentDate' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(417,17): error TS2339: Property 'paymentMethodId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(444,40): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/applicant/applicant.service.ts(489,35): error TS2339: Property 'paymentRequestId' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(219,31): error TS2339: Property 'desired_payment_date' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(412,20): error TS2353: Object literal may only specify known properties, and 'payment_request_id' does not exist in type 'FindOptionsWhere<ApprovalLog> | FindOptionsWhere<ApprovalLog>[]'.
+src/modules/approver/approver.service.ts(416,15): error TS2339: Property 'logs' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(419,36): error TS2339: Property 'logs' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(432,19): error TS2339: Property 'logs' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(440,19): error TS2339: Property 'logs' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(464,35): error TS2339: Property 'desired_payment_date' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(467,30): error TS2339: Property 'payment_type_id' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(468,32): error TS2339: Property 'payment_method_id' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(506,19): error TS2339: Property 'payment_type_id' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(510,19): error TS2339: Property 'payment_method_id' does not exist on type 'PaymentRequest'.
+src/modules/approver/approver.service.ts(527,32): error TS2339: Property 'file_name' does not exist on type 'ReceiptFile'.
+src/modules/approver/approver.service.ts(533,28): error TS2339: Property 'created_at' does not exist on type 'ReceiptFile'.

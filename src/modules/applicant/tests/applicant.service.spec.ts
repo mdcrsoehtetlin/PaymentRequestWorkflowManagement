@@ -11,9 +11,6 @@ import { User } from '../../shared/entities/user.entity';
 import { RequestNumberService } from '../../shared/services/request-number.service';
 import { FileUploadService } from '../../shared/services/file-upload.service';
 import { ApplicantGateway } from '../applicant.gateway';
-import { RequestNumberService } from '../../shared/services/request-number.service';
-import { FileUploadService } from '../../shared/services/file-upload.service';
-
 describe('ApplicantService', () => {
   let service: ApplicantService;
 
