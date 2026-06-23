@@ -106,6 +106,22 @@ export const STATUS_LABELS_JP: Record<PaymentStatus, string> = {
 };
 
 /**
+ * English labels for each payment status.
+ */
+export const STATUS_LABELS_EN: Record<PaymentStatus, string> = {
+  [PaymentStatus.DRAFT]: 'Draft',
+  [PaymentStatus.SUBMITTED_MANAGER]: 'Submitted to Manager',
+  [PaymentStatus.MANAGER_REVIEWING]: 'Manager Reviewing',
+  [PaymentStatus.MANAGER_VERIFIED]: 'Manager Verified',
+  [PaymentStatus.REJECTED_MANAGER]: 'Rejected by Manager',
+  [PaymentStatus.SUBMITTED_APPROVER]: 'Submitted to Approver',
+  [PaymentStatus.APPROVER_REVIEWING]: 'Approver Reviewing',
+  [PaymentStatus.APPROVED]: 'Approved',
+  [PaymentStatus.REJECTED_APPROVER]: 'Rejected by Approver',
+  [PaymentStatus.PAID]: 'Paid',
+};
+
+/**
  * Tailwind CSS classes for status badges.
  * Includes `border` class as required by Design System §9.2.2.
  * Each value is a complete self-contained class string for the badge.
@@ -145,6 +161,20 @@ export const ACTION_LABELS_JP: Record<ApprovalActionType, string> = {
   [ApprovalActionType.APPROVED]: '承認',
   [ApprovalActionType.APPR_REJECTED]: '承認者差戻し',
   [ApprovalActionType.PAYMENT_COMPLETED]: '支払完了',
+};
+
+/** English labels for approval action types. */
+export const ACTION_LABELS_EN: Record<ApprovalActionType, string> = {
+  [ApprovalActionType.CREATED]: 'Created',
+  [ApprovalActionType.EDITED]: 'Edited',
+  [ApprovalActionType.SUBMITTED]: 'Submitted',
+  [ApprovalActionType.MGR_REVIEW_START]: 'Manager Review Started',
+  [ApprovalActionType.MGR_VERIFIED]: 'Manager Verified',
+  [ApprovalActionType.MGR_REJECTED]: 'Rejected by Manager',
+  [ApprovalActionType.APPR_REVIEW_START]: 'Approver Review Started',
+  [ApprovalActionType.APPROVED]: 'Approved',
+  [ApprovalActionType.APPR_REJECTED]: 'Rejected by Approver',
+  [ApprovalActionType.PAYMENT_COMPLETED]: 'Payment Completed',
 };
 
 /** Tailwind color classes for action type badges in ApprovalTimeline. */

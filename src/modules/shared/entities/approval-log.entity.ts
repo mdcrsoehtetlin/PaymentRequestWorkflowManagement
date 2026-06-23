@@ -6,6 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { PaymentRequest } from './payment-request.entity';
+import { User } from './user.entity';
 
 /**
  * @description Immutable audit log entity tracking all workflow state transitions.
@@ -33,25 +34,25 @@ export class ApprovalLog {
   @Column({ type: 'int' })
   payment_request_id!: string;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   action_taken_by_user_id!: string;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   action_type_id!: number;
 
   @Column({ type: 'int', nullable: true })
   previous_status_id!: number;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   new_status_id!: number;
 
   @Column({ type: 'text', nullable: true })
   comment!: string;
 
-  @Column({ type: 'varchar', length: 45 })
+  @Column({ type: 'varchar', length: 45, nullable: true })
   ip_address!: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   user_agent!: string;
 
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
@@ -60,4 +61,8 @@ export class ApprovalLog {
   @ManyToOne(() => PaymentRequest, (request) => request.logs)
   @JoinColumn({ name: 'payment_request_id' })
   payment_request!: PaymentRequest;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'action_taken_by_user_id' })
+  action_taken_by_user!: User;
 }

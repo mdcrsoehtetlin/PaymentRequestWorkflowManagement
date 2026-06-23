@@ -12,7 +12,7 @@ export class User {
   @PrimaryGeneratedColumn({ name: 'user_id' })
   userId!: number;
 
-  @Column({ unique: true, length: 255 })
+  @Column({ length: 255 })
   email!: string;
 
   @Column({ name: 'password_hash', length: 512 })
@@ -30,10 +30,10 @@ export class User {
   @Column({ length: 100 })
   branch!: string;
 
-  @Column({ name: 'role_id' })
+  @Column({ name: 'role_id', nullable: true })
   roleId!: number;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', default: true, nullable: true })
   isActive!: boolean;
 
   @CreateDateColumn({ name: 'created_date', type: 'timestamp with time zone' })
