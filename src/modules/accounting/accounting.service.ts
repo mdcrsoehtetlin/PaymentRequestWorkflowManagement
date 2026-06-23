@@ -79,12 +79,12 @@ export class AccountingService {
     const queryBuilder = this.paymentRequestRepository
       .createQueryBuilder('pr')
       .leftJoinAndSelect('pr.applicant', 'applicant')
-      .where('pr.statusId = :statusId', { statusId: 8 }) // APPROVED
-      .andWhere('pr.isDeleted = :isDeleted', { isDeleted: false });
+      .where('pr.status_id = :statusId', { statusId: 8 }) // APPROVED
+      .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false });
 
     if (search) {
       queryBuilder.andWhere(
-        '(pr.requestNumber ILIKE :search OR applicant.fullName ILIKE :search)',
+        '(pr.request_number ILIKE :search OR applicant.fullName ILIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -94,18 +94,18 @@ export class AccountingService {
     }
 
     if (dateFrom) {
-      queryBuilder.andWhere('pr.applicationDate >= :dateFrom', { dateFrom });
+      queryBuilder.andWhere('pr.application_date >= :dateFrom', { dateFrom });
     }
 
     if (dateTo) {
-      queryBuilder.andWhere('pr.applicationDate <= :dateTo', { dateTo });
+      queryBuilder.andWhere('pr.application_date <= :dateTo', { dateTo });
     }
 
     // Sort: desired_payment_date ASC, application_date ASC, request_number ASC
     queryBuilder
-      .orderBy('pr.desiredPaymentDate', 'ASC')
-      .addOrderBy('pr.applicationDate', 'ASC')
-      .addOrderBy('pr.requestNumber', 'ASC');
+      .orderBy('pr.desired_payment_date', 'ASC')
+      .addOrderBy('pr.application_date', 'ASC')
+      .addOrderBy('pr.request_number', 'ASC');
 
     const [data, total] = await queryBuilder
       .skip((page - 1) * pageSize)
@@ -114,15 +114,15 @@ export class AccountingService {
 
     return {
       data: data.map((req) => ({
-        paymentRequestId: req.paymentRequestId,
-        requestNumber: req.requestNumber,
+        paymentRequestId: Number(req.id),
+        requestNumber: req.request_number,
         applicantName: req.applicant.fullName,
         branch: req.applicant.branch,
-        totalAmount: req.totalAmount,
-        currencyCode: req.currencyId === 1 ? 'MMK' : 'USD', // Simplified for boilerplate
-        statusId: req.statusId,
-        applicationDate: req.applicationDate,
-        desiredPaymentDate: req.desiredPaymentDate,
+        totalAmount: req.total_amount,
+        currencyCode: req.currency_id === 1 ? 'MMK' : 'USD',
+        statusId: req.status_id,
+        applicationDate: req.application_date,
+        desiredPaymentDate: req.desired_payment_date,
       })),
       meta: {
         total,
@@ -140,32 +140,32 @@ export class AccountingService {
 
     const totalApproved = await this.paymentRequestRepository
       .createQueryBuilder('pr')
-      .where('pr.statusId = :statusId', { statusId: 8 })
-      .andWhere('pr.isDeleted = :isDeleted', { isDeleted: false })
+      .where('pr.status_id = :statusId', { statusId: 8 })
+      .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false })
       .getCount();
 
     const pendingToday = await this.paymentRequestRepository
       .createQueryBuilder('pr')
-      .where('pr.statusId = :statusId', { statusId: 8 })
-      .andWhere('pr.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere('pr.applicationDate = CURRENT_DATE')
+      .where('pr.status_id = :statusId', { statusId: 8 })
+      .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false })
+      .andWhere('pr.application_date = CURRENT_DATE')
       .getCount();
 
     const mandalayAlerts = await this.paymentRequestRepository
       .createQueryBuilder('pr')
       .leftJoin('pr.applicant', 'applicant')
-      .where('pr.statusId = :statusId', { statusId: 8 })
-      .andWhere('pr.isDeleted = :isDeleted', { isDeleted: false })
+      .where('pr.status_id = :statusId', { statusId: 8 })
+      .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false })
       .andWhere('applicant.branch = :branch', { branch: 'Mandalay' })
       .getCount();
 
     const missingReceipts = await this.paymentRequestRepository
       .createQueryBuilder('pr')
-      .leftJoin('pr.receiptFiles', 'rf', 'rf.isDeleted = false')
-      .where('pr.statusId = :statusId', { statusId: 8 })
-      .andWhere('pr.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere('pr.hasReceipt = true')
-      .andWhere('rf.receiptFileId IS NULL')
+      .leftJoin('pr.receipts', 'rf', 'rf.is_deleted = false')
+      .where('pr.status_id = :statusId', { statusId: 8 })
+      .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false })
+      .andWhere('pr.has_receipt = true')
+      .andWhere('rf.id IS NULL')
       .getCount();
 
     return {
@@ -183,18 +183,18 @@ export class AccountingService {
     this.logger.log(`Fetching details for payment request ${id}`);
 
     const request = await this.paymentRequestRepository.findOne({
-      where: { paymentRequestId: id, statusId: 8, isDeleted: false },
+      where: { id: String(id), status_id: 8, is_deleted: false },
       relations: [
         'applicant',
         'manager',
-        'finalApprover',
-        'breakdownItems',
-        'receiptFiles',
-        'approvalLogs',
-        'approvalLogs.actionTakenByUser',
+        'final_approver',
+        'breakdowns',
+        'receipts',
+        'logs',
+        'logs.action_taken_by_user',
       ],
       order: {
-        approvalLogs: {
+        logs: {
           timestamp: 'ASC',
         },
       },
@@ -206,17 +206,17 @@ export class AccountingService {
       );
     }
 
-    const activeReceiptFiles = (request.receiptFiles ?? []).filter(
-      (file) => !file.isDeleted,
+    const activeReceiptFiles = (request.receipts ?? []).filter(
+      (file) => !file.is_deleted,
     );
 
     return {
-      paymentRequestId: request.paymentRequestId,
-      requestNumber: request.requestNumber,
-      statusId: request.statusId,
-      hasReceipt: request.hasReceipt,
+      paymentRequestId: Number(request.id),
+      requestNumber: request.request_number,
+      statusId: request.status_id,
+      hasReceipt: request.has_receipt,
       applicant: {
-        userId: request.applicant.userId,
+        userId: Number(request.applicant_id),
         fullName: request.applicant.fullName,
         employeeNumber: request.applicant.employeeNumber,
         branch: request.applicant.branch,
@@ -224,47 +224,48 @@ export class AccountingService {
         email: request.applicant.email,
       },
       paymentDetails: {
-        totalAmount: request.totalAmount,
-        currencyCode: CURRENCY_CODE_BY_ID[request.currencyId] ?? 'UNKNOWN',
-        paymentTypeName: PAYMENT_TYPE_BY_ID[request.paymentTypeId] ?? 'Unknown',
+        totalAmount: request.total_amount,
+        currencyCode: CURRENCY_CODE_BY_ID[request.currency_id] ?? 'UNKNOWN',
+        paymentTypeName:
+          PAYMENT_TYPE_BY_ID[request.payment_type_id] ?? 'Unknown',
         paymentMethodName:
-          PAYMENT_METHOD_BY_ID[request.paymentMethodId] ?? 'Unknown',
+          PAYMENT_METHOD_BY_ID[request.payment_method_id] ?? 'Unknown',
         purpose: request.purpose,
-        requestContent: request.requestContent,
-        bankAccountInfo: request.bankAccountInfo ?? null,
-        applicationDate: request.applicationDate,
-        desiredPaymentDate: request.desiredPaymentDate,
+        requestContent: request.request_content,
+        bankAccountInfo: request.bank_account_info ?? null,
+        applicationDate: request.application_date,
+        desiredPaymentDate: request.desired_payment_date,
       },
-      breakdownItems: (request.breakdownItems ?? [])
-        .sort((left, right) => left.lineNumber - right.lineNumber)
+      breakdownItems: (request.breakdowns ?? [])
+        .sort((left, right) => left.line_number - right.line_number)
         .map((item) => ({
-          id: item.paymentBreakdownItemId,
-          lineNumber: item.lineNumber,
-          itemDate: item.itemDate,
+          id: Number(item.id),
+          lineNumber: item.line_number,
+          itemDate: item.item_date,
           description: item.description,
           amount: item.amount,
           quantity: item.quantity ?? null,
-          unitPrice: item.unitPrice ?? null,
+          unitPrice: item.unit_price ?? null,
         })),
       receiptFiles: activeReceiptFiles.map((file) => ({
-        id: file.receiptFileId,
-        fileName: file.originalFileName,
-        fileUrl: `/uploads/${request.paymentRequestId}/${file.storedFileName}`,
-        fileSize: file.fileSize,
-        mimeType: file.mimeType,
-        uploadedDate: file.uploadedDate,
+        id: Number(file.id),
+        fileName: file.file_name,
+        fileUrl: `/uploads/${request.id}/${file.stored_file_name}`,
+        fileSize: String(file.file_size),
+        mimeType: file.mime_type,
+        uploadedDate: file.created_at,
       })),
-      approvalTimeline: (request.approvalLogs ?? []).map((log) => ({
-        id: log.approvalLogId,
-        actionTypeId: log.actionTypeId,
-        previousStatusId: log.previousStatusId ?? null,
-        newStatusId: log.newStatusId ?? null,
+      approvalTimeline: (request.logs ?? []).map((log) => ({
+        id: log.id,
+        actionTypeId: log.action_type_id,
+        previousStatusId: log.previous_status_id ?? null,
+        newStatusId: log.new_status_id ?? null,
         comment: log.comment ?? null,
         timestamp: log.timestamp,
         user: {
-          userId: log.actionTakenByUser.userId,
-          fullName: log.actionTakenByUser.fullName,
-          employeeNumber: log.actionTakenByUser.employeeNumber,
+          userId: Number(log.action_taken_by_user_id),
+          fullName: log.action_taken_by_user.fullName,
+          employeeNumber: log.action_taken_by_user.employeeNumber,
         },
       })),
     };
@@ -286,9 +287,9 @@ export class AccountingService {
       // 1. Lock and fetch the request inside the transaction
       const request = await manager.findOne(PaymentRequest, {
         where: {
-          paymentRequestId: id,
-          statusId: PaymentStatus.APPROVED,
-          isDeleted: false,
+          id: String(id),
+          status_id: Number(PaymentStatus.APPROVED),
+          is_deleted: false,
         },
         lock: { mode: 'pessimistic_write' },
       });
@@ -300,19 +301,19 @@ export class AccountingService {
       }
 
       // 2. Guard: payment_completed is a terminal state — cannot re-process
-      if (request.statusId === Number(PaymentStatus.PAID)) {
+      if (request.status_id === Number(PaymentStatus.PAID)) {
         throw new ConflictException(
           `Payment request ${id} has already been marked as PAID`,
         );
       }
 
-      const previousStatusId = request.statusId;
+      const previousStatusId = request.status_id;
 
       // 3. Update the payment request fields atomically
       await manager.update(PaymentRequest, id, {
-        statusId: PaymentStatus.PAID,
-        accountingUserId: ctx.accountingUserId,
-        paymentCompletedDate: new Date(),
+        status_id: PaymentStatus.PAID,
+        accounting_user_id: ctx.accountingUserId,
+        payment_completed_date: new Date().toISOString().split('T')[0],
       });
 
       // 4. Write immutable audit log (inside same transaction)
