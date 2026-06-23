@@ -4,11 +4,8 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
 import { PaymentRequest } from './payment-request.entity';
-import { ApprovalLog } from './approval-log.entity';
-import { ReceiptFile } from './receipt-file.entity';
 
 @Entity('users')
 export class User {

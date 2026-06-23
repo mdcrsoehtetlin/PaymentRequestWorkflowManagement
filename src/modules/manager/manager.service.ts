@@ -18,12 +18,12 @@ export class ManagerService {
    * @returns A list of pending payment requests.
    * @throws {Error} If database query fails.
    */
-  async getPendingRequests(managerId: number) {
+  async getPendingRequests(managerId: number): Promise<PaymentRequest[]> {
     this.logger.log(`Fetching pending requests for manager: ${managerId}`);
     return this.paymentRequestRepository.find({
       where: [
-        { /*managerUserId*/ applicant_id: managerId as any, status_id: 2 }, // SUBMITTED_MANAGER
-        { /*managerUserId*/ applicant_id: managerId as any, status_id: 3 }, // MANAGER_REVIEWING
+        { /*managerUserId*/ applicant_id: String(managerId), status_id: 2 }, // SUBMITTED_MANAGER
+        { /*managerUserId*/ applicant_id: String(managerId), status_id: 3 }, // MANAGER_REVIEWING
       ],
       relations: ['applicant'],
     });
@@ -37,7 +37,11 @@ export class ManagerService {
    * @returns A success status message.
    * @throws {Error} If update fails.
    */
-  async verifyRequest(id: number, managerId: number, comment?: string) {
+  verifyRequest(
+    id: number,
+    managerId: number,
+    comment?: string,
+  ): { success: boolean; message: string } {
     this.logger.log(
       `Verifying request ${id} by manager ${managerId} with comment: ${comment}`,
     );
@@ -53,7 +57,11 @@ export class ManagerService {
    * @returns A success status message.
    * @throws {Error} If update fails.
    */
-  async rejectRequest(id: number, managerId: number, comment: string) {
+  rejectRequest(
+    id: number,
+    managerId: number,
+    comment: string,
+  ): { success: boolean; message: string } {
     this.logger.log(
       `Rejecting request ${id} by manager ${managerId} with comment: ${comment}`,
     );

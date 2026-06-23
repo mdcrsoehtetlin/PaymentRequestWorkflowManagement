@@ -39,7 +39,7 @@ export class AccountingController {
    * @throws {Error} If payment update fails.
    */
   @Post(':id/complete-payment')
-  async completePayment(
+  completePayment(
     @Request() req: { user: JwtPayload },
     @Param('id', ParseIntPipe) id: number,
     @Body('comment') comment?: string,

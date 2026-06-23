@@ -22,24 +22,7 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ paymentRequestId, onUploa
     }
   }, []);
 
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      await handleFileUpload(e.dataTransfer.files[0]);
-    }
-  }, [paymentRequestId]);
-
-  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
-      await handleFileUpload(e.target.files[0]);
-    }
-  };
-
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = useCallback(async (file: File) => {
     // Validate client-side
     if (file.size > 10 * 1024 * 1024) {
       setError('File size exceeds 10MB limit.');
@@ -57,10 +40,28 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ paymentRequestId, onUploa
       setError(null);
       await uploadReceipt(paymentRequestId, file);
       onUploadSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to upload receipt');
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } } };
+      setError(apiError.response?.data?.message || 'Failed to upload receipt');
     } finally {
       setIsUploading(false);
+    }
+  }, [paymentRequestId, onUploadSuccess]);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await handleFileUpload(e.dataTransfer.files[0]);
+    }
+  }, [handleFileUpload]);
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      await handleFileUpload(e.target.files[0]);
     }
   };
 

@@ -11,7 +11,9 @@ export class OwnershipGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context
+      .switchToHttp()
+      .getRequest<Record<string, unknown>>();
     // Assuming user identity is attached to the request by an AuthGuard
     const user = request.user;
 

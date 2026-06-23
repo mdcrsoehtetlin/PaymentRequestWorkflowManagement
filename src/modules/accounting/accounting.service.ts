@@ -17,7 +17,7 @@ export class AccountingService {
    * @returns A list of approved payment requests ready for payment.
    * @throws {Error} If retrieval fails.
    */
-  async getPendingPayments() {
+  async getPendingPayments(): Promise<PaymentRequest[]> {
     this.logger.log('Fetching pending payments for accounting');
     return this.paymentRequestRepository.find({
       where: { status_id: 8 }, // APPROVED
@@ -33,7 +33,11 @@ export class AccountingService {
    * @returns A success status message.
    * @throws {Error} If payment update fails.
    */
-  async completePayment(id: number, accountingId: number, comment?: string) {
+  completePayment(
+    id: number,
+    accountingId: number,
+    comment?: string,
+  ): { success: boolean; message: string } {
     this.logger.log(
       `Completing payment ${id} by accounting user ${accountingId} with comment: ${comment}`,
     );

@@ -35,41 +35,62 @@ export interface DashboardResponseDto {
   requests: PaginatedPaymentRequestResponseDto;
 }
 
-export const fetchPaymentRequests = async (page: number = 1, limit: number = 10): Promise<DashboardResponseDto> => {
+export const fetchPaymentRequests = async (
+  page: number = 1,
+  limit: number = 10,
+): Promise<DashboardResponseDto> => {
   const response = await apiClient.get<DashboardResponseDto>(API_BASE_URL, {
-    params: { page, limit }
+    params: { page, limit },
   });
   return response.data;
 };
 
-export const fetchPaymentRequestDetail = async (id: string): Promise<any> => {
+export const fetchPaymentRequestDetail = async (
+  id: string,
+): Promise<unknown> => {
   const response = await apiClient.get(`${API_BASE_URL}/${id}`);
   return response.data;
 };
 
-export const submitToManager = async (id: string): Promise<any> => {
-  const response = await apiClient.post(`${API_BASE_URL}/${id}/submit-manager`, { id });
+export const submitToManager = async (id: string): Promise<unknown> => {
+  const response = await apiClient.post(
+    `${API_BASE_URL}/${id}/submit-manager`,
+    { id },
+  );
   return response.data;
 };
 
-export const uploadReceipt = async (id: string, file: File): Promise<any> => {
+export const uploadReceipt = async (
+  id: string,
+  file: File,
+): Promise<unknown> => {
   const formData = new FormData();
   formData.append('file', file);
-  
-  const response = await apiClient.post(`${API_BASE_URL}/${id}/receipts`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
+
+  const response = await apiClient.post(
+    `${API_BASE_URL}/${id}/receipts`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     },
-  });
+  );
   return response.data;
 };
 
-export const submitToApprover = async (id: string): Promise<any> => {
-  const response = await apiClient.post(`${API_BASE_URL}/${id}/submit-approver`, { id });
+export const submitToApprover = async (id: string): Promise<unknown> => {
+  const response = await apiClient.post(
+    `${API_BASE_URL}/${id}/submit-approver`,
+    { id },
+  );
   return response.data;
 };
 
-export const updatePaymentRequest = async (id: string, data: any): Promise<any> => {
+export const updatePaymentRequest = async (
+  id: string,
+  data: Record<string, unknown>,
+): Promise<unknown> => {
   const response = await apiClient.put(`${API_BASE_URL}/${id}`, data);
   return response.data;
 };

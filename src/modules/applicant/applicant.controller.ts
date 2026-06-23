@@ -25,6 +25,26 @@ import { JwtAuthGuard } from '../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../shared/guards/roles.guard';
 import { Roles } from '../shared/decorators/roles.decorator';
 import { RoleCode } from '../shared/types';
+import { Request } from 'express';
+
+export interface AuthenticatedRequest extends Request {
+  user: {
+    sub: string;
+    email: string;
+    role: string;
+    branch: string;
+    employeeNumber: string;
+  };
+}
+
+export interface IUploadedFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
 
 /**
  * Controller for Applicant Dashboard endpoints
@@ -37,7 +57,7 @@ export class ApplicantController {
 
   @Get()
   async getPaymentRequests(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ): Promise<DashboardResponseDto> {
@@ -50,14 +70,17 @@ export class ApplicantController {
   }
 
   @Get(':id')
-  async getPaymentRequestDetail(@Req() req: any, @Param('id') id: string) {
+  async getPaymentRequestDetail(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
     const applicantId = req.user.sub;
     return this.applicantService.getPaymentRequestDetail(applicantId, id);
   }
 
   @Post('draft')
   async createDraft(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: CreatePaymentRequestDraftDto,
   ) {
     const applicantId = req.user.sub;
@@ -72,7 +95,10 @@ export class ApplicantController {
   }
 
   @Post(':id/submit-manager')
-  async submitToManager(@Req() req: any, @Body() dto: SubmitManagerDto) {
+  async submitToManager(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: SubmitManagerDto,
+  ) {
     const applicantId = req.user.sub;
     const request = await this.applicantService.submitToManager(
       applicantId,
@@ -90,9 +116,9 @@ export class ApplicantController {
   @Post(':id/receipts')
   @UseInterceptors(FileInterceptor('file'))
   async uploadReceipt(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
-    @UploadedFile() file: any,
+    @UploadedFile() file: IUploadedFile,
   ) {
     if (!file) {
       throw new BadRequestException('File is required');
@@ -116,7 +142,10 @@ export class ApplicantController {
   }
 
   @Post(':id/submit-approver')
-  async submitToApprover(@Req() req: any, @Param('id') id: string) {
+  async submitToApprover(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
     const applicantId = req.user.sub;
     const request = await this.applicantService.submitToApprover(
       applicantId,
@@ -133,7 +162,7 @@ export class ApplicantController {
 
   @Put(':id')
   async updatePaymentRequest(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: UpdatePaymentRequestDto,
   ) {
@@ -155,7 +184,7 @@ export class ApplicantController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteDraft(@Req() req: any, @Param('id') id: string) {
+  async deleteDraft(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     const applicantId = req.user.sub;
     await this.applicantService.deleteDraft(applicantId, id);
   }

@@ -58,7 +58,10 @@ export class ApplicantService {
       .andWhere('pr.is_deleted = false')
       .groupBy('pr.status_id');
 
-    const kpiRaw = await kpiQuery.getRawMany();
+    const kpiRaw = await kpiQuery.getRawMany<{
+      status_id: number;
+      count: string;
+    }>();
 
     const kpis = {
       total_draft: 0,
@@ -245,7 +248,7 @@ export class ApplicantService {
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
       this.applicantGateway.notifyStatusUpdate(applicantId, {
-        paymentRequestId: savedRequest.id as any,
+        paymentRequestId: Number(savedRequest.id),
         requestNumber: savedRequest.request_number,
         previousStatusId: request.status_id,
         newStatusId: 2,
@@ -340,7 +343,7 @@ export class ApplicantService {
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
       this.applicantGateway.notifyStatusUpdate(applicantId, {
-        paymentRequestId: savedRequest.id as any,
+        paymentRequestId: Number(savedRequest.id),
         requestNumber: savedRequest.request_number,
         previousStatusId: 4,
         newStatusId: 6,

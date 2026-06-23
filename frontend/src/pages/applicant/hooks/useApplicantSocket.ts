@@ -16,7 +16,9 @@ export interface StatusUpdatePayload {
 
 export const useApplicantSocket = (applicantId: string = '1') => {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<StatusUpdatePayload | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<StatusUpdatePayload | null>(
+    null,
+  );
 
   useEffect(() => {
     // Initialize socket connection
@@ -38,6 +40,7 @@ export const useApplicantSocket = (applicantId: string = '1') => {
       console.log('Socket disconnected');
     });
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSocket(socketInstance);
 
     return () => {

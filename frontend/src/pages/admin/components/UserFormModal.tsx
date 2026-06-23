@@ -56,6 +56,7 @@ export function UserFormModal({
 
   useEffect(() => {
     if (mode === 'edit' && user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         employeeNumber: user.employeeNumber.replace(/^EMP-/, ''),
         fullName: user.fullName,

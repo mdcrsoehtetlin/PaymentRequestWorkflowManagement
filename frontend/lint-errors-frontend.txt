@@ -1,0 +1,276 @@
+﻿
+> frontend@1.0.0 lint
+> eslint .
+
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\components\shared\FileUploadDropzone.tsx
+  37:53  error    Unexpected any. Specify a different type                                                                                      @typescript-eslint/no-explicit-any
+  63:5   warning  React Hook useCallback has a missing dependency: 'validateAndProcessFiles'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\contexts\AuthContext.tsx
+  91:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\admin\AuditLogWorkspace.tsx
+   81:3  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\admin\AuditLogWorkspace.tsx:81:3
+  79 |   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  80 |   const filtersRef = useRef(filters);
+> 81 |   filtersRef.current = filters;
+     |   ^^^^^^^^^^^^^^^^^^ Cannot update ref during render
+  82 |   const paginationRef = useRef(pagination);
+  83 |   paginationRef.current = pagination;
+  84 |   const [selectedLog, setSelectedLog] = useState<AuditLogRecord | null>(null);                                                                                                                                                                                               react-hooks/refs
+   83:3  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\admin\AuditLogWorkspace.tsx:83:3
+  81 |   filtersRef.current = filters;
+  82 |   const paginationRef = useRef(pagination);
+> 83 |   paginationRef.current = pagination;
+     |   ^^^^^^^^^^^^^^^^^^^^^ Cannot update ref during render
+  84 |   const [selectedLog, setSelectedLog] = useState<AuditLogRecord | null>(null);
+  85 |   const [sorting, setSorting] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
+  86 |     sortBy: '',                                                                                                                                                                                                  react-hooks/refs
+  144:5  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\admin\AuditLogWorkspace.tsx:144:5
+  142 |
+  143 |   useEffect(() => {
+> 144 |     doFetchLogs();
+      |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  145 |   }, []);
+  146 |
+  147 |   useEffect(() => {                                                       react-hooks/set-state-in-effect
+  145:6  warning  React Hook useEffect has a missing dependency: 'doFetchLogs'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+  148:5  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\admin\AuditLogWorkspace.tsx:148:5
+  146 |
+  147 |   useEffect(() => {
+> 148 |     doFetchLogs();
+      |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  149 |   }, [pagination.page, pagination.pageSize]);
+  150 |
+  151 |   const sortedLogs = useMemo(() => {  react-hooks/set-state-in-effect
+  149:6  warning  React Hook useEffect has a missing dependency: 'doFetchLogs'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\admin\UserManagementWorkspace.tsx
+  75:3  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\admin\UserManagementWorkspace.tsx:75:3
+  73 |
+  74 |   const filtersRef = useRef(filters);
+> 75 |   filtersRef.current = filters;
+     |   ^^^^^^^^^^^^^^^^^^ Cannot update ref during render
+  76 |   const paginationRef = useRef(pagination);
+  77 |   paginationRef.current = pagination;
+  78 |                                                react-hooks/refs
+  77:3  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\admin\UserManagementWorkspace.tsx:77:3
+  75 |   filtersRef.current = filters;
+  76 |   const paginationRef = useRef(pagination);
+> 77 |   paginationRef.current = pagination;
+     |   ^^^^^^^^^^^^^^^^^^^^^ Cannot update ref during render
+  78 |
+  79 |   const fetchUsers = useCallback(async () => {
+  80 |     const f = filtersRef.current;  react-hooks/refs
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\admin\components\UserFormModal.tsx
+  59:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\admin\components\UserFormModal.tsx:59:7
+  57 |   useEffect(() => {
+  58 |     if (mode === 'edit' && user) {
+> 59 |       setFormData({
+     |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  60 |         employeeNumber: user.employeeNumber.replace(/^EMP-/, ''),
+  61 |         fullName: user.fullName,
+  62 |         email: user.email,  react-hooks/set-state-in-effect
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\ApplicantDashboard.tsx
+  1:10  error  'useTranslation' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\components\ReceiptUpload.tsx
+  31:13  error    Error: Cannot access variable before it is declared
+
+`handleFileUpload` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\components\ReceiptUpload.tsx:31:13
+  29 |
+  30 |     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+> 31 |       await handleFileUpload(e.dataTransfer.files[0]);
+     |             ^^^^^^^^^^^^^^^^ `handleFileUpload` accessed before it is declared
+  32 |     }
+  33 |   }, [paymentRequestId]);
+  34 |
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\components\ReceiptUpload.tsx:42:3
+  40 |   };
+  41 |
+> 42 |   const handleFileUpload = async (file: File) => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 43 |     // Validate client-side
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 44 |     if (file.size > 10 * 1024 * 1024) {
+     窶ｦ
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 64 |     }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 65 |   };
+     | ^^^^^ `handleFileUpload` is declared here
+  66 |
+  67 |   return (
+  68 |     <div className="w-full">  react-hooks/immutability
+  33:6   warning  React Hook useCallback has a missing dependency: 'handleFileUpload'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+  60:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\dashboard.tsx
+  53:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\dashboard.tsx:53:7
+  51 |   useEffect(() => {
+  52 |     if (lastUpdate) {
+> 53 |       setToastMessage(`Request ${lastUpdate.requestNumber} status updated!`);
+     |       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  54 |       loadData();
+  55 |       
+  56 |       const timer = setTimeout(() => {  react-hooks/set-state-in-effect
+  54:7  error    Error: Cannot access variable before it is declared
+
+`loadData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\dashboard.tsx:54:7
+  52 |     if (lastUpdate) {
+  53 |       setToastMessage(`Request ${lastUpdate.requestNumber} status updated!`);
+> 54 |       loadData();
+     |       ^^^^^^^^ `loadData` accessed before it is declared
+  55 |       
+  56 |       const timer = setTimeout(() => {
+  57 |         setToastMessage(null);
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\dashboard.tsx:65:3
+  63 |   }, [lastUpdate]);
+  64 |
+> 65 |   const loadData = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 66 |     try {
+     | ^^^^^^^^^
+> 67 |       setLoading(true);
+     窶ｦ
+     | ^^^^^^^^^
+> 74 |     }
+     | ^^^^^^^^^
+> 75 |   };
+     | ^^^^^ `loadData` is declared here
+  76 |
+  77 |   useEffect(() => {
+  78 |     loadData();                                                                    react-hooks/immutability
+  63:6  warning  React Hook useEffect has missing dependencies: 'clearLastUpdate' and 'loadData'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/exhaustive-deps
+  79:6  warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/exhaustive-deps
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\detail.tsx
+   37:36  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+   42:44  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+   46:7   error    Error: Cannot access variable before it is declared
+
+`loadData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\detail.tsx:46:7
+  44 |   useEffect(() => {
+  45 |     if (id) {
+> 46 |       loadData();
+     |       ^^^^^^^^ `loadData` accessed before it is declared
+  47 |     }
+  48 |   }, [id]);
+  49 |
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\detail.tsx:50:3
+  48 |   }, [id]);
+  49 |
+> 50 |   const loadData = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 51 |     try {
+     | ^^^^^^^^^
+> 52 |       setLoading(true);
+     窶ｦ
+     | ^^^^^^^^^
+> 60 |     }
+     | ^^^^^^^^^
+> 61 |   };
+     | ^^^^^ `loadData` is declared here
+  62 |
+  63 |   const handleSubmit = async () => {
+  64 |     try {  react-hooks/immutability
+   48:6   warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                react-hooks/exhaustive-deps
+   56:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+   69:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+   82:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+   96:63  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  109:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  139:46  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  248:82  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  304:69  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  317:39  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  391:42  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\hooks\useApplicantSocket.ts
+  41:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\hooks\useApplicantSocket.ts:41:5
+  39 |     });
+  40 |
+> 41 |     setSocket(socketInstance);
+     |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  42 |
+  43 |     return () => {
+  44 |       socketInstance.disconnect();  react-hooks/set-state-in-effect
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\frontend\src\pages\applicant\services\api.ts
+  45:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  50:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  55:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  67:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  72:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  72:76  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+笨・41 problems (34 errors, 7 warnings)
+

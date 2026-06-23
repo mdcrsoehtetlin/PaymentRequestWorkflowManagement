@@ -1,11 +1,9 @@
 import {
-  IsNotEmpty,
   IsString,
   MaxLength,
   IsInt,
   IsOptional,
   IsBoolean,
-  IsNumber,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 

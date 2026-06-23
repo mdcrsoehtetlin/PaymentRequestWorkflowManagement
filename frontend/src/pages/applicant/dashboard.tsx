@@ -48,8 +48,21 @@ const ApplicantDashboard: React.FC = () => {
   const { lastUpdate, clearLastUpdate } = useApplicantSocket('1');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const result = await fetchPaymentRequests(page, limit);
+      setData(result);
+    } catch (error) {
+      console.error('Failed to load dashboard data', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [page]);
+
   useEffect(() => {
     if (lastUpdate) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setToastMessage(`Request ${lastUpdate.requestNumber} status updated!`);
       loadData();
       
@@ -60,23 +73,12 @@ const ApplicantDashboard: React.FC = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [lastUpdate]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const result = await fetchPaymentRequests(page, limit);
-      setData(result);
-    } catch (error) {
-      console.error('Failed to load dashboard data', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [lastUpdate, loadData, clearLastUpdate]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
-  }, [page]);
+  }, [loadData]);
 
   const handleDelete = async () => {
     if (!deleteId) return;

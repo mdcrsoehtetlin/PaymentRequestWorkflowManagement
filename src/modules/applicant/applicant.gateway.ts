@@ -28,12 +28,12 @@ export class ApplicantGateway
 
   constructor(private readonly jwtService: JwtService) {}
 
-  async handleConnection(client: Socket) {
+  handleConnection(client: Socket) {
     try {
       // Typically we'd verify JWT from query or headers, but for simplicity assuming we decode it
       // For now, client will emit 'joinRoom' with their applicant ID
       this.logger.log(`Client connected: ${client.id}`);
-    } catch (error) {
+    } catch {
       client.disconnect();
     }
   }
@@ -48,7 +48,7 @@ export class ApplicantGateway
     @MessageBody() applicantId: string,
   ) {
     const roomName = `applicant_${applicantId}`;
-    client.join(roomName);
+    void client.join(roomName);
     this.logger.log(`Client ${client.id} joined room ${roomName}`);
   }
 
