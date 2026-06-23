@@ -22,8 +22,8 @@ export class ManagerService {
     this.logger.log(`Fetching pending requests for manager: ${managerId}`);
     return this.paymentRequestRepository.find({
       where: [
-        { /*managerUserId*/ applicant_id: String(managerId), status_id: 2 }, // SUBMITTED_MANAGER
-        { /*managerUserId*/ applicant_id: String(managerId), status_id: 3 }, // MANAGER_REVIEWING
+        { current_assigned_to_user_id: managerId, status_id: 2 }, // SUBMITTED_MANAGER
+        { current_assigned_to_user_id: managerId, status_id: 3 }, // MANAGER_REVIEWING
       ],
       relations: ['applicant'],
     });

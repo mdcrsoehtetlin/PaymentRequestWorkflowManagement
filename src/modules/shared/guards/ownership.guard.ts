@@ -30,13 +30,13 @@ export class OwnershipGuard implements CanActivate {
     if (!requestId) return true;
 
     const paymentRequest = await this.repo.findOne({
-      where: { id: String(requestId), is_deleted: false },
+      where: { id: requestId, is_deleted: false },
     });
 
     if (!paymentRequest) {
       throw new NotFoundException('指定された申請が見つかりません');
     }
-    if (paymentRequest.applicant_id !== String(userId)) {
+    if (paymentRequest.applicant_user_id !== userId) {
       throw new ForbiddenException('この操作を実行する権限がありません');
     }
 

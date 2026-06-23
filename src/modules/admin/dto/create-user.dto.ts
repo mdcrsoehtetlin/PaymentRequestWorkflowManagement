@@ -6,6 +6,7 @@ import {
   IsInt,
   IsOptional,
   IsBoolean,
+  MinLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 

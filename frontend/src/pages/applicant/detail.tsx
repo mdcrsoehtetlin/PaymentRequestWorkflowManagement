@@ -64,7 +64,7 @@ const PaymentRequestDetail: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await fetchPaymentRequestDetail(id!);
+      const result = await fetchPaymentRequestDetail(id!) as DetailData;
       setData(result);
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { message?: string } } };
@@ -112,6 +112,7 @@ const PaymentRequestDetail: React.FC = () => {
   };
 
   const handleEditToggle = () => {
+    if (!data) return;
     if (!isEditing) {
       setEditData({
         currency_id: data.currency_id,
@@ -125,6 +126,7 @@ const PaymentRequestDetail: React.FC = () => {
   };
 
   const handleSaveEdit = async () => {
+    if (!editData) return;
     try {
       setSubmitting(true);
       setError(null);
@@ -282,7 +284,7 @@ const PaymentRequestDetail: React.FC = () => {
                           type="text"
                           value={item.description}
                           onChange={(e) => {
-                            const newB = [...editData.breakdowns];
+                            const newB = [...editData!.breakdowns!];
                             newB[i].description = e.target.value;
                             setEditData({...editData, breakdowns: newB});
                           }}
@@ -298,7 +300,7 @@ const PaymentRequestDetail: React.FC = () => {
                           type="number"
                           value={item.amount}
                           onChange={(e) => {
-                            const newB = [...editData.breakdowns];
+                            const newB = [...editData!.breakdowns!];
                             newB[i].amount = parseFloat(e.target.value) || 0;
                             setEditData({...editData, breakdowns: newB});
                           }}
@@ -306,7 +308,7 @@ const PaymentRequestDetail: React.FC = () => {
                         />
                       ) : (
                         <span className="font-semibold text-slate-900">
-                          {formatCurrency(item.amount, data.currency_id)}
+                          {formatCurrency(String(item.amount), data.currency_id)}
                         </span>
                       )}
                     </div>
@@ -316,7 +318,7 @@ const PaymentRequestDetail: React.FC = () => {
               {isEditing && (
                 <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
                   <button 
-                    onClick={() => setEditData({...editData, breakdowns: [...editData.breakdowns, { description: '', amount: 0 }]})}
+                    onClick={() => setEditData({...editData, breakdowns: [...editData!.breakdowns!, { description: '', amount: 0 }]})}
                     className="text-sm text-blue-600 font-medium hover:underline"
                   >
                     + Add Item
@@ -371,7 +373,7 @@ const PaymentRequestDetail: React.FC = () => {
               <div>
                 <p className="text-xs text-slate-500 font-medium mb-1">Application Date</p>
                 {isEditing && editData ? (
-                  <input type="date" value={editData.application_date} onChange={e => setEditData({...editData, application_date: e.target.value})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white" />
+                  <input type="date" value={editData.application_date ?? ''} onChange={e => setEditData({...editData, application_date: e.target.value})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white" />
                 ) : (
                   <p className="text-sm text-slate-900 font-medium">{new Date(data.application_date).toLocaleDateString()}</p>
                 )}
@@ -380,7 +382,7 @@ const PaymentRequestDetail: React.FC = () => {
               <div>
                 <p className="text-xs text-slate-500 font-medium mb-1">Desired Payment Date</p>
                 {isEditing && editData ? (
-                  <input type="date" value={editData.desired_payment_date} onChange={e => setEditData({...editData, desired_payment_date: e.target.value})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white" />
+                  <input type="date" value={editData.desired_payment_date ?? ''} onChange={e => setEditData({...editData, desired_payment_date: e.target.value})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white" />
                 ) : (
                   <p className="text-sm text-slate-900 font-medium">{new Date(data.desired_payment_date).toLocaleDateString()}</p>
                 )}
@@ -389,7 +391,7 @@ const PaymentRequestDetail: React.FC = () => {
               <div>
                 <p className="text-xs text-slate-500 font-medium mb-1">Payment Method</p>
                 {isEditing && editData ? (
-                  <select value={editData.payment_method_id} onChange={e => setEditData({...editData, payment_method_id: Number(e.target.value)})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white">
+                  <select value={editData.payment_method_id ?? ''} onChange={e => setEditData({...editData, payment_method_id: Number(e.target.value)})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white">
                     <option value={1}>Bank Transfer</option>
                     <option value={2}>Credit Card</option>
                     <option value={3}>Cash</option>

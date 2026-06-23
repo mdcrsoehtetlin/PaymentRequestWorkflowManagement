@@ -89,7 +89,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
  * Must be called inside a component tree wrapped by <AuthProvider>.
  * @throws Error if used outside of AuthProvider
  */
-// eslint-disable-next-line react-refresh/only-export-components
 export function useAuthContext(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {

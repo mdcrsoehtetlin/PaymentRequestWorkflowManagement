@@ -1,5 +1,5 @@
 export class PaymentRequestResponseDto {
-  id!: string;
+  id!: number;
   request_number!: string;
   status_id!: number;
   total_amount!: string;
@@ -8,8 +8,8 @@ export class PaymentRequestResponseDto {
   desired_payment_date!: string;
   payment_method_id!: number;
   has_receipt!: boolean;
-  created_at!: Date;
-  updated_at!: Date;
+  created_date!: Date;
+  modified_date!: Date;
 }
 
 export class PaginatedPaymentRequestResponseDto {
