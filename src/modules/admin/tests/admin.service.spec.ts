@@ -29,6 +29,7 @@ jest.mock('redis', () => ({
 function createMockQueryBuilder() {
   return {
     leftJoinAndSelect: jest.fn().mockReturnThis(),
+    leftJoinAndMapOne: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
