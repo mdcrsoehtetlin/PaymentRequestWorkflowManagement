@@ -65,19 +65,19 @@ print_step() {
 record_pass() {
   local step_name="$1"
   STEP_RESULTS+=("${GREEN}✔ PASS${NC}  │ ${step_name}")
-  ((PASSED++))
+  PASSED=$((PASSED + 1))
 }
 
 record_fail() {
   local step_name="$1"
   STEP_RESULTS+=("${RED}✖ FAIL${NC}  │ ${step_name}")
-  ((FAILED++))
+  FAILED=$((FAILED + 1))
 }
 
 record_warn() {
   local step_name="$1"
   STEP_RESULTS+=("${YELLOW}⚠ WARN${NC}  │ ${step_name}")
-  ((WARNED++))
+  WARNED=$((WARNED + 1))
 }
 
 # ─── STEP 1: Cross-Module Import Scan ────────────────────────────────────────

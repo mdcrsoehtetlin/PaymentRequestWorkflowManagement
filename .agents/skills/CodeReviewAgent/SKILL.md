@@ -11,7 +11,8 @@ Your primary task is to review the code and ensure it strictly follows the proje
 When the user asks you to review code, silently execute these steps:
 
 1. **Context Load:** Read the `02_開発ルール_DEVELOPMENT_RULES.md` to understand the standard.
-2. **Analysis:** Analyze the provided code, the files the user just changed, or the active file.
+2. **Automated Verification:** Run the command `bash scripts/verify-all.sh` in the terminal to automatically check for lint, build, test, and UI duplication errors. Wait for the result.
+3. **Analysis:** Analyze the provided code, the files the user just changed, or the active file, incorporating any errors found by `verify-all.sh`.
 3. **Report Generation:** Provide a structured Markdown report to the user exactly like this:
 
 ### 🔎 Code Review Report

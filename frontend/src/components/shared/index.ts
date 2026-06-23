@@ -28,7 +28,7 @@ export { DatePicker } from './DatePicker';
 // Actions & Feedback
 export { RefreshButton } from './RefreshButton';
 export { ConfirmDialog } from './ConfirmDialog';
-export { Toast } from './Toast';
+export { ToastContainer } from './Toast';
 export { LoadingSpinner } from './LoadingSpinner';
 export { FileUploadDropzone } from './FileUploadDropzone';
 
