@@ -40,7 +40,7 @@ export class FileUploadService {
 
   async saveFile(
     file: UploadedFile,
-    paymentRequestId: number,
+    paymentRequestId: string,
   ): Promise<{
     storedFileName: string;
     fileStoragePath: string;

@@ -55,29 +55,27 @@ export function UserFormModal({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const initForm = () => {
-      if (mode === 'edit' && user) {
-        setFormData({
-          employeeNumber: user.employeeNumber.replace(/^EMP-/, ''),
-          fullName: user.fullName,
-          email: user.email,
-          branch: user.branch,
-          roleId: user.roleId,
-        });
-      } else {
-        setFormData({
-          employeeNumber: '',
-          fullName: '',
-          email: '',
-          branch: 'Yangon',
-          roleId: 1,
-        });
-      }
-      setTemporaryPassword(null);
-      setError(null);
-      setCopied(false);
-    };
-    initForm();
+    if (mode === 'edit' && user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFormData({
+        employeeNumber: user.employeeNumber.replace(/^EMP-/, ''),
+        fullName: user.fullName,
+        email: user.email,
+        branch: user.branch,
+        roleId: user.roleId,
+      });
+    } else {
+      setFormData({
+        employeeNumber: '',
+        fullName: '',
+        email: '',
+        branch: 'Yangon',
+        roleId: 1,
+      });
+    }
+    setTemporaryPassword(null);
+    setError(null);
+    setCopied(false);
   }, [mode, user, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {

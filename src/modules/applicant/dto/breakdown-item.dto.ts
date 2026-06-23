@@ -17,7 +17,7 @@ export class BreakdownItemDto {
 
   @IsNotEmpty()
   @IsString()
-  @Transform(({ value }): string =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   itemDate!: string;
@@ -25,7 +25,7 @@ export class BreakdownItemDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(200)
-  @Transform(({ value }): string =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   description!: string;

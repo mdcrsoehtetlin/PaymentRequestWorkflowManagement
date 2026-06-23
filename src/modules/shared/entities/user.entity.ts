@@ -4,18 +4,15 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
 import { PaymentRequest } from './payment-request.entity';
-import { ApprovalLog } from './approval-log.entity';
-import { ReceiptFile } from './receipt-file.entity';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn({ name: 'user_id' })
   userId!: number;
 
-  @Column({ unique: true, length: 255 })
+  @Column({ length: 255 })
   email!: string;
 
   @Column({ name: 'password_hash', length: 512 })
@@ -33,14 +30,11 @@ export class User {
   @Column({ length: 100 })
   branch!: string;
 
-  @Column({ name: 'role_id' })
+  @Column({ name: 'role_id', nullable: true })
   roleId!: number;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', default: true, nullable: true })
   isActive!: boolean;
-
-  @Column({ default: 1 })
-  version!: number;
 
   @CreateDateColumn({ name: 'created_date', type: 'timestamp with time zone' })
   createdDate!: Date;
@@ -54,25 +48,4 @@ export class User {
     nullable: true,
   })
   lastLoginDate!: Date;
-
-  @OneToMany(() => PaymentRequest, (request) => request.applicant)
-  paymentRequestsAsApplicant!: PaymentRequest[];
-
-  @OneToMany(() => PaymentRequest, (request) => request.manager)
-  paymentRequestsAsManager!: PaymentRequest[];
-
-  @OneToMany(() => PaymentRequest, (request) => request.finalApprover)
-  paymentRequestsAsApprover!: PaymentRequest[];
-
-  @OneToMany(() => PaymentRequest, (request) => request.accounting)
-  paymentRequestsAsAccounting!: PaymentRequest[];
-
-  @OneToMany(() => PaymentRequest, (request) => request.currentAssignedTo)
-  assignedPaymentRequests!: PaymentRequest[];
-
-  @OneToMany(() => ApprovalLog, (log) => log.actionTakenByUser)
-  approvalLogs!: ApprovalLog[];
-
-  @OneToMany(() => ReceiptFile, (file) => file.uploadedByUser)
-  uploadedReceipts!: ReceiptFile[];
 }

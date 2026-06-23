@@ -76,11 +76,8 @@ export function UserManagementWorkspace() {
 
   useEffect(() => {
     filtersRef.current = filters;
-  }, [filters]);
-
-  useEffect(() => {
     paginationRef.current = pagination;
-  }, [pagination]);
+  }, [filters, pagination]);
 
   const fetchUsers = useCallback(async () => {
     const f = filtersRef.current;

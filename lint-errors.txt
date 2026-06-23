@@ -1,0 +1,87 @@
+﻿
+> payment-request-workflow-management@1.0.0 lint
+> eslint "{src,apps,libs,test}/**/*.ts" --fix
+
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\accounting\accounting.service.ts
+  36:3  error  Async method 'completePayment' has no 'await' expression  @typescript-eslint/require-await
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\admin\admin.service.ts
+  348:5  error  '_dto' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\admin\dto\reset-password.dto.ts
+  1:10  error  'IsNotEmpty' is defined but never used  @typescript-eslint/no-unused-vars
+  1:22  error  'IsNumber' is defined but never used    @typescript-eslint/no-unused-vars
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\admin\dto\update-user.dto.ts
+  2:3  error  'IsNotEmpty' is defined but never used  @typescript-eslint/no-unused-vars
+  8:3  error  'IsNumber' is defined but never used    @typescript-eslint/no-unused-vars
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\applicant\applicant.controller.ts
+   44:11  error    Unsafe assignment of an `any` value                                           @typescript-eslint/no-unsafe-assignment
+   44:29  error    Unsafe member access .user on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+   46:7   warning  Unsafe argument of type `any` assigned to a parameter of type `string`        @typescript-eslint/no-unsafe-argument
+   54:11  error    Unsafe assignment of an `any` value                                           @typescript-eslint/no-unsafe-assignment
+   54:29  error    Unsafe member access .user on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+   55:58  warning  Unsafe argument of type `any` assigned to a parameter of type `string`        @typescript-eslint/no-unsafe-argument
+   63:11  error    Unsafe assignment of an `any` value                                           @typescript-eslint/no-unsafe-assignment
+   63:29  error    Unsafe member access .user on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+   64:61  warning  Unsafe argument of type `any` assigned to a parameter of type `string`        @typescript-eslint/no-unsafe-argument
+   76:11  error    Unsafe assignment of an `any` value                                           @typescript-eslint/no-unsafe-assignment
+   76:29  error    Unsafe member access .user on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+   78:7   warning  Unsafe argument of type `any` assigned to a parameter of type `string`        @typescript-eslint/no-unsafe-argument
+  101:11  error    Unsafe assignment of an `any` value                                           @typescript-eslint/no-unsafe-assignment
+  101:29  error    Unsafe member access .user on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  103:7   warning  Unsafe argument of type `any` assigned to a parameter of type `string`        @typescript-eslint/no-unsafe-argument
+  105:7   warning  Unsafe argument of type `any` assigned to a parameter of type `UploadedFile`  @typescript-eslint/no-unsafe-argument
+  120:11  error    Unsafe assignment of an `any` value                                           @typescript-eslint/no-unsafe-assignment
+  120:29  error    Unsafe member access .user on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  122:7   warning  Unsafe argument of type `any` assigned to a parameter of type `string`        @typescript-eslint/no-unsafe-argument
+  140:11  error    Unsafe assignment of an `any` value                                           @typescript-eslint/no-unsafe-assignment
+  140:29  error    Unsafe member access .user on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  142:7   warning  Unsafe argument of type `any` assigned to a parameter of type `string`        @typescript-eslint/no-unsafe-argument
+  159:11  error    Unsafe assignment of an `any` value                                           @typescript-eslint/no-unsafe-assignment
+  159:29  error    Unsafe member access .user on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  160:45  warning  Unsafe argument of type `any` assigned to a parameter of type `string`        @typescript-eslint/no-unsafe-argument
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\applicant\applicant.gateway.ts
+  31:3   error    Async method 'handleConnection' has no 'await' expression                                                                                                           @typescript-eslint/require-await
+  36:14  error    'error' is defined but never used                                                                                                                                   @typescript-eslint/no-unused-vars
+  51:5   warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\applicant\applicant.service.ts
+   71:35  error  Unsafe member access .status_id on an `any` value  @typescript-eslint/no-unsafe-member-access
+   72:32  error  Unsafe member access .count on an `any` value      @typescript-eslint/no-unsafe-member-access
+  248:9   error  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  343:9   error  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\applicant\dto\breakdown-item.dto.ts
+  20:30  error  Unsafe return of a value of type `any`  @typescript-eslint/no-unsafe-return
+  26:30  error  Unsafe return of a value of type `any`  @typescript-eslint/no-unsafe-return
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\applicant\guards\ownership.guard.ts
+  14:11  error  Unsafe assignment of an `any` value                         @typescript-eslint/no-unsafe-assignment
+  16:11  error  Unsafe assignment of an `any` value                         @typescript-eslint/no-unsafe-assignment
+  16:26  error  Unsafe member access .user on an `any` value                @typescript-eslint/no-unsafe-member-access
+  26:13  error  Unsafe member access .ownership_verified on an `any` value  @typescript-eslint/no-unsafe-member-access
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\approver\approver.service.ts
+  39:3  error  Async method 'approveRequest' has no 'await' expression  @typescript-eslint/require-await
+  55:3  error  Async method 'rejectRequest' has no 'await' expression   @typescript-eslint/require-await
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\manager\manager.service.ts
+  25:29  error  Unsafe assignment of an `any` value                     @typescript-eslint/no-unsafe-assignment
+  26:29  error  Unsafe assignment of an `any` value                     @typescript-eslint/no-unsafe-assignment
+  40:3   error  Async method 'verifyRequest' has no 'await' expression  @typescript-eslint/require-await
+  56:3   error  Async method 'rejectRequest' has no 'await' expression  @typescript-eslint/require-await
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\shared\entities\user.entity.ts
+   7:3   error  'OneToMany' is defined but never used    @typescript-eslint/no-unused-vars
+  10:10  error  'ApprovalLog' is defined but never used  @typescript-eslint/no-unused-vars
+  11:10  error  'ReceiptFile' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Projects\Main-PRWM\PaymentRequestWorkflowManagement\src\modules\shared\guards\ownership.guard.ts
+  33:16  error  Unsafe assignment of an `any` value  @typescript-eslint/no-unsafe-assignment
+
+笨・54 problems (44 errors, 10 warnings)
+

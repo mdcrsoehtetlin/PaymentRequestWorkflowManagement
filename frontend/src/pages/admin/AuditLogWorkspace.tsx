@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Eye } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
@@ -82,11 +83,8 @@ export function AuditLogWorkspace() {
 
   useEffect(() => {
     filtersRef.current = filters;
-  }, [filters]);
-
-  useEffect(() => {
     paginationRef.current = pagination;
-  }, [pagination]);
+  }, [filters, pagination]);
   const [selectedLog, setSelectedLog] = useState<AuditLogRecord | null>(null);
   const [sorting, setSorting] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
     sortBy: '',
@@ -147,81 +145,11 @@ export function AuditLogWorkspace() {
   }, [doFetchLogs]);
 
   useEffect(() => {
-    const load = async () => {
-      const f = filtersRef.current;
-      const p = paginationRef.current;
-      setIsLoading(true);
-      setDateError('');
-      try {
-        if (f.startDate && f.endDate && f.startDate > f.endDate) {
-          setDateError('開始日は終了日より後に設定できません');
-          setIsLoading(false);
-          return;
-        }
-        const params = new URLSearchParams();
-        if (f.startDate) params.set('startDate', f.startDate);
-        if (f.endDate) params.set('endDate', f.endDate);
-        if (f.actionTypeId) params.set('actionTypeId', f.actionTypeId);
-        if (f.requestId) params.set('requestId', f.requestId);
-        if (f.actorName) params.set('actorName', f.actorName);
-        params.set('page', String(p.page));
-        params.set('pageSize', String(p.pageSize));
-
-        const response = await apiClient.get<AuditLogResponse>(
-          `/admin/audit-logs?${params.toString()}`,
-        );
-        setLogs(response.data.data);
-        setPagination((prev) => ({
-          ...prev,
-          totalItems: response.data.meta.totalItems,
-          totalPages: response.data.meta.totalPages,
-        }));
-      } catch (error) {
-        console.error('Failed to fetch audit logs:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    load();
+    doFetchLogs();
   }, [doFetchLogs]);
 
   useEffect(() => {
-    const load = async () => {
-      const f = filtersRef.current;
-      const p = paginationRef.current;
-      setIsLoading(true);
-      setDateError('');
-      try {
-        if (f.startDate && f.endDate && f.startDate > f.endDate) {
-          setDateError('開始日は終了日より後に設定できません');
-          setIsLoading(false);
-          return;
-        }
-        const params = new URLSearchParams();
-        if (f.startDate) params.set('startDate', f.startDate);
-        if (f.endDate) params.set('endDate', f.endDate);
-        if (f.actionTypeId) params.set('actionTypeId', f.actionTypeId);
-        if (f.requestId) params.set('requestId', f.requestId);
-        if (f.actorName) params.set('actorName', f.actorName);
-        params.set('page', String(p.page));
-        params.set('pageSize', String(p.pageSize));
-
-        const response = await apiClient.get<AuditLogResponse>(
-          `/admin/audit-logs?${params.toString()}`,
-        );
-        setLogs(response.data.data);
-        setPagination((prev) => ({
-          ...prev,
-          totalItems: response.data.meta.totalItems,
-          totalPages: response.data.meta.totalPages,
-        }));
-      } catch (error) {
-        console.error('Failed to fetch audit logs:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    load();
+    doFetchLogs();
   }, [pagination.page, pagination.pageSize, doFetchLogs]);
 
   const sortedLogs = useMemo(() => {

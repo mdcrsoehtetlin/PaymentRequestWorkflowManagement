@@ -8,8 +8,8 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start": "git config core.hooksPath .githooks && nest start",
+    "start:dev": "git config core.hooksPath .githooks && nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -21,7 +21,8 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d typeorm-cli.config.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d typeorm-cli.config.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d typeorm-cli.config.ts"
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d typeorm-cli.config.ts",
+    "postinstall": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@nestjs-modules/ioredis": "^1.1.2",
