@@ -2,12 +2,10 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
 import { PaymentRequest } from './payment-request.entity';
-import { User } from './user.entity';
 
 /**
  * @description Immutable audit log entity tracking all workflow state transitions.
@@ -30,46 +28,36 @@ import { User } from './user.entity';
 @Entity('approval_logs')
 export class ApprovalLog {
   @PrimaryGeneratedColumn({ name: 'approval_log_id', type: 'bigint' })
-  approvalLogId!: string; // BIGINT is returned as string in Node.js pg
+  id!: string;
 
-  @Column({ name: 'payment_request_id' })
-  paymentRequestId!: number;
+  @Column({ type: 'int' })
+  payment_request_id!: string;
 
-  @ManyToOne(() => PaymentRequest, (request) => request.approvalLogs, {
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
-  })
-  @JoinColumn({ name: 'payment_request_id' })
-  paymentRequest!: PaymentRequest;
+  @Column({ type: 'int' })
+  action_taken_by_user_id!: string;
 
-  @Column({ name: 'action_taken_by_user_id' })
-  actionTakenByUserId!: number;
+  @Column({ type: 'int' })
+  action_type_id!: number;
 
-  @ManyToOne(() => User, (user) => user.approvalLogs, {
-    onDelete: 'RESTRICT',
-    onUpdate: 'CASCADE',
-  })
-  @JoinColumn({ name: 'action_taken_by_user_id' })
-  actionTakenByUser!: User;
+  @Column({ type: 'int', nullable: true })
+  previous_status_id!: number;
 
-  @Column({ name: 'action_type_id' })
-  actionTypeId!: number;
-
-  @Column({ name: 'previous_status_id', nullable: true })
-  previousStatusId!: number;
-
-  @Column({ name: 'new_status_id', nullable: true })
-  newStatusId!: number;
+  @Column({ type: 'int' })
+  new_status_id!: number;
 
   @Column({ type: 'text', nullable: true })
   comment!: string;
 
-  @Column({ name: 'ip_address', length: 50 })
-  ipAddress!: string;
+  @Column({ type: 'varchar', length: 45 })
+  ip_address!: string;
 
-  @Column({ name: 'user_agent', length: 500 })
-  userAgent!: string;
+  @Column({ type: 'varchar', length: 255 })
+  user_agent!: string;
 
-  @CreateDateColumn({ name: 'timestamp', type: 'timestamp with time zone' })
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   timestamp!: Date;
+
+  @ManyToOne(() => PaymentRequest, (request) => request.logs)
+  @JoinColumn({ name: 'payment_request_id' })
+  payment_request!: PaymentRequest;
 }
