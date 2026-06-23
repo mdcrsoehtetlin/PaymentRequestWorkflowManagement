@@ -72,9 +72,12 @@ export function UserManagementWorkspace() {
   };
 
   const filtersRef = useRef(filters);
-  filtersRef.current = filters;
   const paginationRef = useRef(pagination);
-  paginationRef.current = pagination;
+
+  useEffect(() => {
+    filtersRef.current = filters;
+    paginationRef.current = pagination;
+  }, [filters, pagination]);
 
   const fetchUsers = useCallback(async () => {
     const f = filtersRef.current;

@@ -102,7 +102,6 @@ describe('AdminController', () => {
         roleId: 1,
         isActive: true,
         temporaryPassword: 'abc123',
-        version: 1,
       };
       mockService.createUser.mockResolvedValue(expectedResult);
 
@@ -115,7 +114,7 @@ describe('AdminController', () => {
 
   describe('PATCH /users/:id', () => {
     it('should call adminService.updateUser with id and DTO', async () => {
-      const dto: UpdateUserDto = { fullName: 'Updated', version: 1 };
+      const dto: UpdateUserDto = { fullName: 'Updated' };
       const expectedResult = {
         userId: 1,
         employeeNumber: 'EMP-001',
@@ -124,7 +123,6 @@ describe('AdminController', () => {
         branch: 'Yangon',
         roleId: 1,
         isActive: true,
-        version: 2,
       };
       mockService.updateUser.mockResolvedValue(expectedResult);
 
@@ -162,11 +160,10 @@ describe('AdminController', () => {
 
   describe('POST /users/:id/reset-password', () => {
     it('should call adminService.resetPassword with id and DTO', async () => {
-      const dto: ResetPasswordDto = { version: 1 };
+      const dto: ResetPasswordDto = {};
       mockService.resetPassword.mockResolvedValue({
         userId: 1,
         temporaryPassword: 'newpass',
-        version: 2,
       });
 
       const result = await controller.resetPassword(1, dto);

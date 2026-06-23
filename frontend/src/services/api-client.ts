@@ -42,7 +42,7 @@ apiClient.interceptors.response.use(
         triggerToast('error', data?.message || 'You do not have permission to perform this action');
         break;
       case 409:
-        triggerToast('warning', 'This request was updated by another user');
+        triggerToast('warning', 'This request has been updated by another user');
         // Auto-refresh the page data (optional implementation)
         break;
       case 422:

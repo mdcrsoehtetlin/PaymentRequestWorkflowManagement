@@ -17,12 +17,12 @@ export class ApproverService {
    * @returns A list of pending payment requests.
    * @throws {Error} If database query fails.
    */
-  async getPendingRequests() {
+  async getPendingRequests(): Promise<PaymentRequest[]> {
     this.logger.log('Fetching pending requests for final approver');
     return this.paymentRequestRepository.find({
       where: [
-        { statusId: 6 }, // SUBMITTED_APPROVER
-        { statusId: 7 }, // APPROVER_REVIEWING
+        { status_id: 6 }, // SUBMITTED_APPROVER
+        { status_id: 7 }, // APPROVER_REVIEWING
       ],
       relations: ['applicant'],
     });
@@ -36,7 +36,11 @@ export class ApproverService {
    * @returns A success status message.
    * @throws {Error} If update fails.
    */
-  async approveRequest(id: number, approverId: number, comment?: string) {
+  approveRequest(
+    id: number,
+    approverId: number,
+    comment?: string,
+  ): { success: boolean; message: string } {
     this.logger.log(
       `Approving request ${id} by approver ${approverId} with comment: ${comment}`,
     );
@@ -52,7 +56,11 @@ export class ApproverService {
    * @returns A success status message.
    * @throws {Error} If update fails.
    */
-  async rejectRequest(id: number, approverId: number, comment: string) {
+  rejectRequest(
+    id: number,
+    approverId: number,
+    comment: string,
+  ): { success: boolean; message: string } {
     this.logger.log(
       `Rejecting request ${id} by approver ${approverId} with comment: ${comment}`,
     );

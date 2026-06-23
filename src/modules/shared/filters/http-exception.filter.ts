@@ -18,7 +18,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'システムエラーが発生しました。管理者に連絡してください';
+    let message = 'A system error occurred. Please contact the administrator.';
     let details: unknown[] = [];
 
     if (exception instanceof HttpException) {
