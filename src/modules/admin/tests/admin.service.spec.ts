@@ -195,7 +195,6 @@ describe('AdminService', () => {
         NotFoundException,
       );
     });
-
   });
 
   describe('toggleUserActive', () => {
@@ -349,6 +348,5 @@ describe('AdminService', () => {
         NotFoundException,
       );
     });
-
   });
 });

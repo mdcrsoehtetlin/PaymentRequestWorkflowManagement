@@ -39,7 +39,6 @@ export class User {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
-
   @CreateDateColumn({ name: 'created_date', type: 'timestamp with time zone' })
   createdDate!: Date;
 
