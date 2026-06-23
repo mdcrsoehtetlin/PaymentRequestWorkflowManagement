@@ -1,4 +1,3 @@
-import React from 'react';
 import { LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';

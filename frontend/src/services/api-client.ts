@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type { ApiErrorResponse } from '../types';
 
-const apiClient: AxiosInstance = axios.create({
+export const apiClient: AxiosInstance = axios.create({
   baseURL: '/api/v1',
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
@@ -59,3 +59,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+

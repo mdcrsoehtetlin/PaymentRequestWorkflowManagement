@@ -1,5 +1,5 @@
-import React from 'react';
 import type { ApprovalLogWithUser } from '../../types';
+import { ApprovalActionType } from '../../types';
 import { formatDateTime } from '../../utils/format';
 import { ACTION_LABELS_EN, ACTION_BADGE_COLORS } from '../../utils/constants';
 
@@ -25,15 +25,15 @@ export function ApprovalTimeline({ logs }: ApprovalTimelineProps) {
             
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
               <div>
-                <span className="font-semibold text-slate-900 mr-2">{log.user.fullName}</span>
-                <span className="text-xs text-slate-500">({log.user.roleCode})</span>
+                <span className="font-semibold text-slate-900 mr-2">{log.actionTakenByUser.fullName}</span>
+                <span className="text-xs text-slate-500">({log.actionTakenByUser.branch})</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColor}`}>
                   {actionLabel}
                 </span>
                 <time className="text-xs text-slate-500 font-mono">
-                  {formatDateTime(log.actionDate)}
+                  {formatDateTime(log.timestamp)}
                 </time>
               </div>
             </div>
