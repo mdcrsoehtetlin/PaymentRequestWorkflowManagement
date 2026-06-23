@@ -45,7 +45,13 @@ export class PaymentBreakdownItem {
   })
   quantity!: string;
 
-  @Column({ name: 'unit_price', type: 'numeric', precision: 10, scale: 2, nullable: true })
+  @Column({
+    name: 'unit_price',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   unitPrice!: string;
 
   @CreateDateColumn({ name: 'created_date', type: 'timestamp with time zone' })

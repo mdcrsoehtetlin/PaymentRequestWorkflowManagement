@@ -33,7 +33,7 @@ export class AccountingService {
    * @returns A success status message.
    * @throws {Error} If payment update fails.
    */
-  async completePayment(id: number, accountingId: number, comment?: string) {
+  completePayment(id: number, accountingId: number, comment?: string) {
     this.logger.log(
       `Completing payment ${id} by accounting user ${accountingId} with comment: ${comment}`,
     );

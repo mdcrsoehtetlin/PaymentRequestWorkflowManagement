@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import apiClient from '../../services/api-client';
 import { wsService } from '../../services/websocket.service';
-import { useAuthContext } from '../../contexts/AuthContext';
+import { useAuthContext } from '../../hooks/useAuthContext';
 import {
   PaymentStatus,
   STATUS_LABELS_EN,
@@ -96,7 +96,7 @@ export function ManagerDashboard() {
     } finally {
       setIsListLoading(false);
     }
-  }, [statusFilter, dateFilter, searchQuery]);
+  }, [statusFilter, dateFilter, searchQuery, t]);
 
   // Fetch Request Details
   const fetchRequestDetails = useCallback(async (id: number) => {
@@ -121,7 +121,7 @@ export function ManagerDashboard() {
     } finally {
       setIsDetailLoading(false);
     }
-  }, [requests, fetchRequests]);
+  }, [requests, fetchRequests, t]);
 
   // Handle row click
   const handleRowClick = (id: number) => {

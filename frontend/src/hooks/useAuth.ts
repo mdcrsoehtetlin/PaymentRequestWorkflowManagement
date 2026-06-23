@@ -1,21 +1,11 @@
-import { useAuthContext } from '../contexts/AuthContext';
+import { useAuthContext } from './useAuthContext';
 import type { JwtPayload } from '../types';
 
 interface UseAuthReturn {
   user: JwtPayload | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  /**
-   * @description Logs the user in and updates the context state
-   * @param email - The user's email address
-   * @param password - The user's password
-   * @returns The decoded JWT payload for immediate use
-   */
   login: (email: string, password: string) => Promise<JwtPayload>;
-  /**
-   * @description Logs the user out and clears the session
-   * @returns A promise that resolves when logout is complete
-   */
   logout: () => Promise<void>;
 }
 

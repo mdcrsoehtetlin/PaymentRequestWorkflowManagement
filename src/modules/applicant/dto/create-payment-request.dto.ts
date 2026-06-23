@@ -33,18 +33,24 @@ export class CreatePaymentRequestDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(500)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: string }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   purpose!: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(200)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: string }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   bankAccountInfo?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: string }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   requestContent?: string;
 
   @IsOptional()
