@@ -31,3 +31,6 @@ coverage/
 build/
 docs/screens/01_applicant_dashboard/APPLICANT_04_機能設計書_FUNCTIONAL_SPEC_MM.md
 docs/translation/
+
+# Specify Plugin
+.specify/feature.json
