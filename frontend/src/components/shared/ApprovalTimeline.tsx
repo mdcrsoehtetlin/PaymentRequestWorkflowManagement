@@ -1,4 +1,5 @@
 import type { ApprovalLogWithUser } from '../../types';
+import { ApprovalActionType } from '../../types';
 import { formatDateTime } from '../../utils/format';
 import { ACTION_LABELS_JP, ACTION_BADGE_COLORS, type ApprovalActionType } from '../../types';
 

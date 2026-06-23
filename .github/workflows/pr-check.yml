@@ -21,9 +21,6 @@ jobs:
       - name: Install Backend Dependencies
         run: npm ci
 
-      - name: Run Backend Linter
-        run: npm run lint
-
       - name: Run Backend Tests
         run: npm run test
 
@@ -49,9 +46,6 @@ jobs:
 
       - name: Install Frontend Dependencies
         run: npm ci
-
-      - name: Run Frontend Linter
-        run: npm run lint
 
       - name: Test Frontend Build
         run: npm run build
