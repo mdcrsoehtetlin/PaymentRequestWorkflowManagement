@@ -20,7 +20,7 @@ export class AccountingService {
   async getPendingPayments(): Promise<PaymentRequest[]> {
     this.logger.log('Fetching pending payments for accounting');
     return this.paymentRequestRepository.find({
-      where: { status_id: 8 }, // APPROVED
+      where: { statusId: 8 }, // APPROVED
       relations: ['applicant'],
     });
   }

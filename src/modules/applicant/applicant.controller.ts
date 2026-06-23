@@ -88,8 +88,8 @@ export class ApplicantController {
     return {
       message: 'Draft created successfully',
       data: {
-        id: request.id,
-        request_number: request.request_number,
+        id: request.paymentRequestId,
+        request_number: request.requestNumber,
       },
     };
   }
@@ -107,8 +107,8 @@ export class ApplicantController {
     return {
       message: 'Request submitted to Manager successfully',
       data: {
-        id: request.id,
-        status_id: request.status_id,
+        id: request.paymentRequestId,
+        statusId: request.statusId,
       },
     };
   }
@@ -134,9 +134,9 @@ export class ApplicantController {
     return {
       message: 'Receipt uploaded successfully',
       data: {
-        id: receipt.id,
-        file_name: receipt.file_name,
-        file_size: receipt.file_size,
+        id: receipt.receiptFileId,
+        file_name: receipt.originalFileName,
+        file_size: receipt.fileSize,
       },
     };
   }
@@ -154,8 +154,8 @@ export class ApplicantController {
     return {
       message: 'Request submitted to Final Approver successfully',
       data: {
-        id: request.id,
-        status_id: request.status_id,
+        id: request.paymentRequestId,
+        statusId: request.statusId,
       },
     };
   }
@@ -175,9 +175,9 @@ export class ApplicantController {
     return {
       message: 'Payment request updated successfully',
       data: {
-        id: request.id,
-        status_id: request.status_id,
-        total_amount: request.total_amount,
+        id: request.paymentRequestId,
+        statusId: request.statusId,
+        totalAmount: request.totalAmount,
       },
     };
   }

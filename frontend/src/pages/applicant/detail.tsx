@@ -64,7 +64,7 @@ const PaymentRequestDetail: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await fetchPaymentRequestDetail(id!);
+      const result = await fetchPaymentRequestDetail(id!) as DetailData;
       setData(result);
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { message?: string } } };
@@ -112,7 +112,7 @@ const PaymentRequestDetail: React.FC = () => {
   };
 
   const handleEditToggle = () => {
-    if (!isEditing) {
+    if (!isEditing && data) {
       setEditData({
         currency_id: data.currency_id,
         application_date: data.application_date.split('T')[0],
@@ -125,10 +125,11 @@ const PaymentRequestDetail: React.FC = () => {
   };
 
   const handleSaveEdit = async () => {
+    if (!editData) return;
     try {
       setSubmitting(true);
       setError(null);
-      await updatePaymentRequest(id!, editData);
+      await updatePaymentRequest(id!, editData as Record<string, unknown>);
       setIsEditing(false);
       await loadData();
     } catch (err: unknown) {
@@ -277,12 +278,12 @@ const PaymentRequestDetail: React.FC = () => {
                       <div className="w-8 h-8 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
                         {i + 1}
                       </div>
-                      {isEditing ? (
+                      {isEditing && editData ? (
                         <input 
                           type="text"
                           value={item.description}
                           onChange={(e) => {
-                            const newB = [...editData.breakdowns];
+                            const newB = [...(editData.breakdowns ?? [])];
                             newB[i].description = e.target.value;
                             setEditData({...editData, breakdowns: newB});
                           }}
@@ -293,12 +294,12 @@ const PaymentRequestDetail: React.FC = () => {
                       )}
                     </div>
                     <div className="ml-4">
-                      {isEditing ? (
+                      {isEditing && editData ? (
                         <input 
                           type="number"
                           value={item.amount}
                           onChange={(e) => {
-                            const newB = [...editData.breakdowns];
+                            const newB = [...(editData.breakdowns ?? [])];
                             newB[i].amount = parseFloat(e.target.value) || 0;
                             setEditData({...editData, breakdowns: newB});
                           }}
@@ -306,7 +307,7 @@ const PaymentRequestDetail: React.FC = () => {
                         />
                       ) : (
                         <span className="font-semibold text-slate-900">
-                          {formatCurrency(item.amount, data.currency_id)}
+                          {formatCurrency(String(item.amount), data.currency_id)}
                         </span>
                       )}
                     </div>
@@ -316,7 +317,7 @@ const PaymentRequestDetail: React.FC = () => {
               {isEditing && (
                 <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
                   <button 
-                    onClick={() => setEditData({...editData, breakdowns: [...editData.breakdowns, { description: '', amount: 0 }]})}
+                    onClick={() => { if (editData) setEditData({...editData, breakdowns: [...(editData.breakdowns ?? []), { description: '', amount: 0 }]}); }}
                     className="text-sm text-blue-600 font-medium hover:underline"
                   >
                     + Add Item

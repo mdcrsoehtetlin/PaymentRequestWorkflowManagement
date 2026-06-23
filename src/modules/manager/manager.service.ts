@@ -27,12 +27,6 @@ export class ManagerService {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
-  /**
-   * @description Retrieves pending and processed requests assigned to a specific manager, with filters.
-   * @param managerId The manager's user ID.
-   * @param query The filter and search criteria.
-   * @returns A list of payment requests.
-   */
   async getPendingRequests(managerId: number, query: QueryRequestsDto) {
     this.logger.log(
       `Fetching requests for manager: ${managerId} with filters: ${JSON.stringify(query)}`,
@@ -42,13 +36,12 @@ export class ManagerService {
     const qb = this.paymentRequestRepository
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.applicant', 'applicant')
-      .where('request.managerUserId = :managerId', { managerId })
+      .where('request.currentAssignedToUserId = :managerId', { managerId })
       .andWhere('request.isDeleted = false');
 
     if (statusId) {
       qb.andWhere('request.statusId = :statusId', { statusId });
     } else {
-      // By default show all manager-relevant statuses
       qb.andWhere('request.statusId IN (:...statuses)', {
         statuses: [
           PaymentStatus.SUBMITTED_MANAGER,
@@ -69,16 +62,11 @@ export class ManagerService {
       });
     }
 
-    // Default sort: oldest submitted first (highest priority)
     qb.orderBy('request.submittedToManagerDate', 'ASC');
 
     return qb.getMany();
   }
 
-  /**
-   * @description Fetches detailed information of a payment request.
-   * Triggers an automatic transition to MANAGER_REVIEWING (3) if currently SUBMITTED_MANAGER (2).
-   */
   async getRequestDetails(
     id: number,
     managerId: number,
@@ -92,7 +80,7 @@ export class ManagerService {
     const request = await this.paymentRequestRepository.findOne({
       where: {
         paymentRequestId: id,
-        managerUserId: managerId,
+        currentAssignedToUserId: managerId,
         isDeleted: false,
       },
       relations: [
@@ -100,7 +88,6 @@ export class ManagerService {
         'breakdownItems',
         'receiptFiles',
         'approvalLogs',
-        'approvalLogs.actionTakenByUser',
       ],
     });
 
@@ -108,7 +95,6 @@ export class ManagerService {
       throw new NotFoundException('指定された申請が見つかりません');
     }
 
-    // Auto-transition status on access
     if (request.statusId === Number(PaymentStatus.SUBMITTED_MANAGER)) {
       this.logger.log(
         `Auto-transitioning request ID: ${id} to MANAGER_REVIEWING`,
@@ -120,7 +106,6 @@ export class ManagerService {
           request.modifiedDate = new Date();
           await entityManager.save(request);
 
-          // Record transition log
           await this.auditLogService.createLog(entityManager, {
             paymentRequestId: id,
             actionTakenByUserId: managerId,
@@ -134,7 +119,6 @@ export class ManagerService {
         },
       );
 
-      // Fetch fresh status and log details to return
       const updatedRequest = await this.paymentRequestRepository.findOne({
         where: { paymentRequestId: id },
         relations: [
@@ -142,11 +126,9 @@ export class ManagerService {
           'breakdownItems',
           'receiptFiles',
           'approvalLogs',
-          'approvalLogs.actionTakenByUser',
         ],
       });
 
-      // WebSocket notify
       if (updatedRequest) {
         this.websocketGateway.sendPersonalNotification(
           updatedRequest.applicantUserId,
@@ -172,7 +154,6 @@ export class ManagerService {
       }
     }
 
-    // Sort approval logs chronologically for display
     if (request.approvalLogs) {
       request.approvalLogs.sort(
         (a, b) =>
@@ -183,9 +164,6 @@ export class ManagerService {
     return request;
   }
 
-  /**
-   * @description Verifies (approves) a payment request. Transitions to MANAGER_VERIFIED (4) atomically.
-   */
   async verifyRequest(
     id: number,
     managerId: number,
@@ -198,11 +176,10 @@ export class ManagerService {
 
     return await this.dataSource.transaction(
       async (entityManager: EntityManager) => {
-        // 1. Fetch and Lock request
         const request = await entityManager.findOne(PaymentRequest, {
           where: {
             paymentRequestId: id,
-            managerUserId: managerId,
+            currentAssignedToUserId: managerId,
             isDeleted: false,
           },
           lock: { mode: 'pessimistic_write' },
@@ -212,7 +189,6 @@ export class ManagerService {
           throw new NotFoundException('指定された申請が見つかりません');
         }
 
-        // Check current status
         if (
           request.statusId !== Number(PaymentStatus.MANAGER_REVIEWING) &&
           request.statusId !== Number(PaymentStatus.SUBMITTED_MANAGER)
@@ -222,7 +198,6 @@ export class ManagerService {
           );
         }
 
-        // 2. Concurrency Check (Optimistic Locking validation)
         const dbTime = new Date(request.modifiedDate).getTime();
         const clientTime = new Date(dto.modifiedDate).getTime();
         if (dbTime !== clientTime) {
@@ -235,14 +210,12 @@ export class ManagerService {
 
         const previousStatus = request.statusId;
 
-        // 3. Update status
         request.statusId = PaymentStatus.MANAGER_VERIFIED;
         request.managerVerificationDate = new Date();
         request.modifiedDate = new Date();
-        request.currentAssignedToUserId = request.applicantUserId; // Assign back to applicant to submit to final approver
+        request.currentAssignedToUserId = request.applicantUserId;
         await entityManager.save(request);
 
-        // 4. Create log
         await this.auditLogService.createLog(entityManager, {
           paymentRequestId: id,
           actionTakenByUserId: managerId,
@@ -254,7 +227,6 @@ export class ManagerService {
           userAgent,
         });
 
-        // 5. Trigger WebSockets after successful commit
         this.websocketGateway.sendPersonalNotification(
           request.applicantUserId,
           'statusUpdate',
@@ -285,9 +257,6 @@ export class ManagerService {
     );
   }
 
-  /**
-   * @description Rejects a payment request. Transitions to REJECTED_MANAGER (5) atomically.
-   */
   async rejectRequest(
     id: number,
     managerId: number,
@@ -302,11 +271,10 @@ export class ManagerService {
 
     return await this.dataSource.transaction(
       async (entityManager: EntityManager) => {
-        // 1. Fetch and Lock request
         const request = await entityManager.findOne(PaymentRequest, {
           where: {
             paymentRequestId: id,
-            managerUserId: managerId,
+            currentAssignedToUserId: managerId,
             isDeleted: false,
           },
           lock: { mode: 'pessimistic_write' },
@@ -316,7 +284,6 @@ export class ManagerService {
           throw new NotFoundException('指定された申請が見つかりません');
         }
 
-        // Check current status
         if (
           request.statusId !== Number(PaymentStatus.MANAGER_REVIEWING) &&
           request.statusId !== Number(PaymentStatus.SUBMITTED_MANAGER)
@@ -326,7 +293,6 @@ export class ManagerService {
           );
         }
 
-        // 2. Concurrency Check (Optimistic Locking validation)
         const dbTime = new Date(request.modifiedDate).getTime();
         const clientTime = new Date(dto.modifiedDate).getTime();
         if (dbTime !== clientTime) {
@@ -339,13 +305,11 @@ export class ManagerService {
 
         const previousStatus = request.statusId;
 
-        // 3. Update status
         request.statusId = PaymentStatus.REJECTED_MANAGER;
         request.modifiedDate = new Date();
-        request.currentAssignedToUserId = request.applicantUserId; // Return to applicant for edits
+        request.currentAssignedToUserId = request.applicantUserId;
         await entityManager.save(request);
 
-        // 4. Create log
         await this.auditLogService.createLog(entityManager, {
           paymentRequestId: id,
           actionTakenByUserId: managerId,
@@ -357,7 +321,6 @@ export class ManagerService {
           userAgent,
         });
 
-        // 5. Trigger WebSockets after successful commit
         this.websocketGateway.sendPersonalNotification(
           request.applicantUserId,
           'statusUpdate',

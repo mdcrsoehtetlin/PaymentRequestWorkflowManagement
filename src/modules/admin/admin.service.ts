@@ -478,18 +478,18 @@ export class AdminService {
 
     return {
       data: data.map((log) => ({
-        approvalLogId: log.id,
-        paymentRequestId: Number(log.payment_request_id),
-        actionTakenByUserId: Number(log.action_taken_by_user_id),
+        approvalLogId: log.approvalLogId,
+        paymentRequestId: Number(log.paymentRequestId),
+        actionTakenByUserId: Number(log.actionTakenByUserId),
         actorName:
           (log as ApprovalLog & { actionTakenByUser?: User }).actionTakenByUser
             ?.fullName ?? 'Unknown',
-        actionTypeId: log.action_type_id,
-        previousStatusId: log.previous_status_id,
-        newStatusId: log.new_status_id,
+        actionTypeId: log.actionTypeId,
+        previousStatusId: log.previousStatusId,
+        newStatusId: log.newStatusId,
         comment: log.comment,
-        ipAddress: log.ip_address,
-        userAgent: log.user_agent,
+        ipAddress: log.ipAddress,
+        userAgent: log.userAgent,
         timestamp: log.timestamp,
       })),
       meta: {

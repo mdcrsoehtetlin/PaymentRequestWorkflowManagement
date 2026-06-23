@@ -21,8 +21,8 @@ export class ApproverService {
     this.logger.log('Fetching pending requests for final approver');
     return this.paymentRequestRepository.find({
       where: [
-        { status_id: 6 }, // SUBMITTED_APPROVER
-        { status_id: 7 }, // APPROVER_REVIEWING
+        { statusId: 6 }, // SUBMITTED_APPROVER
+        { statusId: 7 }, // APPROVER_REVIEWING
       ],
       relations: ['applicant'],
     });

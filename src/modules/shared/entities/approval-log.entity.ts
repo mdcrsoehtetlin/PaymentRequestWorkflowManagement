@@ -11,53 +11,40 @@ import { PaymentRequest } from './payment-request.entity';
  * @description Immutable audit log entity tracking all workflow state transitions.
  * Database trigger `protect_approval_logs_immutable` must be active to prevent
  * UPDATE/DELETE operations on this table, ensuring audit trail integrity.
- *
- * Migration SQL:
- * CREATE OR REPLACE FUNCTION protect_approval_logs_immutability()
- * RETURNS TRIGGER AS $$
- * BEGIN
- *   RAISE EXCEPTION 'Audit logs are immutable. UPDATE/DELETE operations are prohibited.';
- *   RETURN NULL;
- * END;
- * $$ LANGUAGE plpgsql;
- *
- * CREATE TRIGGER trg_approval_logs_immutable
- * BEFORE UPDATE OR DELETE ON approval_logs
- * FOR EACH ROW EXECUTE FUNCTION protect_approval_logs_immutability();
  */
 @Entity('approval_logs')
 export class ApprovalLog {
   @PrimaryGeneratedColumn({ name: 'approval_log_id', type: 'bigint' })
-  id!: string;
+  approvalLogId!: string;
 
-  @Column({ type: 'int' })
-  payment_request_id!: string;
+  @Column({ name: 'payment_request_id', type: 'int' })
+  paymentRequestId!: number;
 
-  @Column({ type: 'int' })
-  action_taken_by_user_id!: string;
+  @Column({ name: 'action_taken_by_user_id', type: 'int' })
+  actionTakenByUserId!: number;
 
-  @Column({ type: 'int' })
-  action_type_id!: number;
+  @Column({ name: 'action_type_id', type: 'int' })
+  actionTypeId!: number;
 
-  @Column({ type: 'int', nullable: true })
-  previous_status_id!: number;
+  @Column({ name: 'previous_status_id', type: 'int', nullable: true })
+  previousStatusId!: number;
 
-  @Column({ type: 'int' })
-  new_status_id!: number;
+  @Column({ name: 'new_status_id', type: 'int' })
+  newStatusId!: number;
 
   @Column({ type: 'text', nullable: true })
   comment!: string;
 
-  @Column({ type: 'varchar', length: 45 })
-  ip_address!: string;
+  @Column({ name: 'ip_address', type: 'varchar', length: 45 })
+  ipAddress!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  user_agent!: string;
+  @Column({ name: 'user_agent', type: 'varchar', length: 255 })
+  userAgent!: string;
 
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   timestamp!: Date;
 
-  @ManyToOne(() => PaymentRequest, (request) => request.logs)
+  @ManyToOne('PaymentRequest', 'approvalLogs')
   @JoinColumn({ name: 'payment_request_id' })
-  payment_request!: PaymentRequest;
+  paymentRequest!: PaymentRequest;
 }

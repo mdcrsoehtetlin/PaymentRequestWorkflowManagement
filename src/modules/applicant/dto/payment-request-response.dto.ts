@@ -1,5 +1,5 @@
 export class PaymentRequestResponseDto {
-  id!: string;
+  id!: number;
   request_number!: string;
   status_id!: number;
   total_amount!: string;
