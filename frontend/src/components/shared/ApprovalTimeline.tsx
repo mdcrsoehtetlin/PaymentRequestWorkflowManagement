@@ -1,6 +1,10 @@
-import type { ApprovalLogWithUser } from '../../types';
 import { formatDateTime } from '../../utils/format';
-import { ACTION_LABELS_JP, ACTION_BADGE_COLORS, type ApprovalActionType } from '../../types';
+import {
+  ACTION_LABELS_JP,
+  ACTION_BADGE_COLORS,
+  type ApprovalLogWithUser,
+  type ApprovalActionType
+} from '../../types';
 
 interface ApprovalTimelineProps {
   logs: ApprovalLogWithUser[];
@@ -21,7 +25,7 @@ export function ApprovalTimeline({ logs }: ApprovalTimelineProps) {
         return (
           <div key={log.approvalLogId} className="relative pl-6">
             <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-slate-300"></div>
-            
+
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
               <div>
                 <span className="font-semibold text-slate-900 mr-2">
