@@ -2,56 +2,55 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
 } from 'typeorm';
 import { PaymentRequest } from './payment-request.entity';
-import { User } from './user.entity';
 
 @Entity('receipt_files')
 export class ReceiptFile {
   @PrimaryGeneratedColumn({ name: 'receipt_file_id' })
-  receiptFileId!: number;
+  id!: string;
 
-  @Column({ name: 'payment_request_id' })
-  paymentRequestId!: number;
+  @Column({ type: 'int' })
+  payment_request_id!: string;
 
-  @ManyToOne(() => PaymentRequest, (request) => request.receiptFiles, {
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
+  @Column({
+    name: 'original_file_name',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
   })
+  file_name!: string;
+
+  @Column({
+    name: 'stored_file_name',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  stored_file_name!: string;
+
+  @Column({ type: 'bigint' })
+  file_size!: number;
+
+  @Column({ type: 'varchar', length: 100 })
+  mime_type!: string;
+
+  @Column({ name: 'file_storage_path', type: 'varchar', length: 1024 })
+  storage_key!: string;
+
+  @Column({ name: 'uploaded_by_user_id', type: 'int', nullable: true })
+  uploaded_by_user_id!: number;
+
+  @Column({ type: 'boolean', default: false })
+  is_deleted!: boolean;
+
+  @CreateDateColumn({ name: 'uploaded_date' })
+  created_at!: Date;
+
+  @ManyToOne(() => PaymentRequest, (request) => request.receipts)
   @JoinColumn({ name: 'payment_request_id' })
-  paymentRequest!: PaymentRequest;
-
-  @Column({ name: 'original_file_name', length: 255 })
-  originalFileName!: string;
-
-  @Column({ name: 'stored_file_name', length: 255 })
-  storedFileName!: string;
-
-  @Column({ name: 'file_storage_path', length: 500 })
-  fileStoragePath!: string;
-
-  @Column({ name: 'file_size', type: 'bigint' })
-  fileSize!: string; // BIGINT is mapped to string in JS
-
-  @Column({ name: 'mime_type', length: 100 })
-  mimeType!: string;
-
-  @Column({ name: 'uploaded_by_user_id' })
-  uploadedByUserId!: number;
-
-  @ManyToOne(() => User, (user) => user.uploadedReceipts, {
-    onDelete: 'RESTRICT',
-    onUpdate: 'CASCADE',
-  })
-  @JoinColumn({ name: 'uploaded_by_user_id' })
-  uploadedByUser!: User;
-
-  @CreateDateColumn({ name: 'uploaded_date', type: 'timestamp with time zone' })
-  uploadedDate!: Date;
-
-  @Column({ name: 'is_deleted', default: false })
-  isDeleted!: boolean;
+  payment_request!: PaymentRequest;
 }

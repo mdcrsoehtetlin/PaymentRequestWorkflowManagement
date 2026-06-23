@@ -1,34 +1,25 @@
 import {
-  IsNotEmpty,
-  IsString,
-  MaxLength,
   IsNumber,
-  Min,
-  Max,
+  IsOptional,
+  ValidateNested,
   IsDateString,
   IsArray,
-  ArrayMinSize,
-  ArrayMaxSize,
-  ValidateNested,
-  IsOptional,
-  IsInt,
-  IsBoolean,
+  IsString,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { BreakdownItemDto } from './breakdown-item.dto';
+import { Type } from 'class-transformer';
 
-export class CreatePaymentRequestDto {
-  @IsOptional()
-  @IsInt()
-  currencyId?: number;
+export class PaymentBreakdownItemDto {
+  @IsString()
+  description!: string;
 
-  @IsOptional()
-  @IsInt()
-  paymentTypeId?: number;
+  @IsNumber()
+  amount!: number;
+}
 
+export class CreatePaymentRequestDraftDto {
+  @IsNumber()
   @IsOptional()
-  @IsInt()
-  paymentMethodId?: number;
+  currency_id?: number;
 
   @IsNotEmpty()
   @IsString()
@@ -38,6 +29,7 @@ export class CreatePaymentRequestDto {
   )
   purpose!: string;
 
+  @IsDateString()
   @IsOptional()
   @IsString()
   @MaxLength(200)
@@ -46,6 +38,7 @@ export class CreatePaymentRequestDto {
   )
   bankAccountInfo?: string;
 
+  @IsNumber()
   @IsOptional()
   @IsString()
   @Transform(({ value }): string =>
@@ -53,24 +46,21 @@ export class CreatePaymentRequestDto {
   )
   requestContent?: string;
 
+  @IsNumber()
   @IsOptional()
-  @IsBoolean()
-  hasReceipt?: boolean;
+  payment_method_id?: number;
 
-  @IsNotEmpty()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0.01)
-  @Max(999999999999.99)
-  totalAmount!: number;
+  @IsString()
+  @IsOptional()
+  purpose?: string;
 
-  @IsNotEmpty()
-  @IsDateString()
-  desiredPaymentDate!: string;
+  @IsString()
+  @IsOptional()
+  request_content?: string;
 
   @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(15)
   @ValidateNested({ each: true })
-  @Type(() => BreakdownItemDto)
-  breakdownItems!: BreakdownItemDto[];
+  @Type(() => PaymentBreakdownItemDto)
+  @IsOptional()
+  breakdowns?: PaymentBreakdownItemDto[];
 }

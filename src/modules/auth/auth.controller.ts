@@ -3,7 +3,6 @@ import {
   Post,
   UseGuards,
   Request,
-  Body,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -24,7 +23,6 @@ export class AuthController {
   /**
    * @description Authenticates a user and returns a JWT access token.
    * @param req The HTTP request object containing the authenticated user.
-   * @param loginDto The user's login credentials.
    * @returns An authentication response containing the access token.
    * @throws {UnauthorizedException} If the credentials are invalid.
    */

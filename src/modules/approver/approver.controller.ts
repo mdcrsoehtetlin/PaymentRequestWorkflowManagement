@@ -106,7 +106,7 @@ export class ApproverController {
    * @returns Success response.
    */
   @Post(':id/approve')
-  async approveRequest(
+  approveRequest(
     @Request() req: { user: JwtPayload },
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ApprovePaymentRequestDto,
@@ -130,7 +130,7 @@ export class ApproverController {
    * @returns Success response.
    */
   @Post(':id/reject')
-  async rejectRequest(
+  rejectRequest(
     @Request() req: { user: JwtPayload },
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RejectPaymentRequestDto,
