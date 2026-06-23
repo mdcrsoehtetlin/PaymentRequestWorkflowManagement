@@ -1,23 +1,23 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  currentRole: string;
 }
 
-export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
 
-  // Basic menu items (would be dynamic based on role)
-  const menuItems = [
-    { label: t('sidebar.dashboard'), path: '/', active: true },
-    { label: t('sidebar.request_list'), path: '/requests', active: false },
-    { label: t('sidebar.new_request'), path: '/requests/new', active: false },
+  const allMenuItems = [
+    { label: t('sidebar.dashboard'), path: '/', roles: ['APPLICANT', 'MANAGER', 'APPROVER', 'ACCOUNTING'] },
+    { label: t('sidebar.request_list'), path: '/requests', roles: ['APPLICANT', 'APPROVER', 'ACCOUNTING'] },
+    { label: t('sidebar.new_request'), path: '/requests/new', roles: ['APPLICANT'] },
   ];
+
+  const menuItems = allMenuItems.filter(item => item.roles.includes(user?.role as string));
 
   return (
     <>
@@ -36,25 +36,26 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
         }`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo Area */}
-          <div className="h-16 flex items-center px-6 font-bold text-xl tracking-wider border-b border-blue-800">
-            PRWM System
+          {/* Header */}
+          <div className="px-5 py-5 border-b border-blue-800">
+            <div className="flex items-center gap-2.5">
+              <Shield className="h-6 w-6 text-blue-300 shrink-0" />
+              <span className="text-lg font-bold tracking-wide">Manager Dashboard</span>
+            </div>
+            <p className="text-xs text-blue-400 mt-1 ml-[38px]">PRWM System</p>
           </div>
 
           {/* Nav Links */}
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
             {menuItems.map((item) => (
               <a
                 key={item.label}
                 href={item.path}
                 onClick={(e) => {
                   e.preventDefault();
-                  // Routing would happen here
                   onClose();
                 }}
-                className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  item.active ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800 hover:text-white'
-                }`}
+                className="block px-4 py-2.5 rounded-lg text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
               >
                 {item.label}
               </a>
@@ -63,14 +64,9 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
 
           {/* User Info & Logout */}
           <div className="p-4 border-t border-blue-800">
-            <div className="flex items-center gap-3 mb-4 px-2">
-              <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-sm font-bold">
-                {user?.fullName?.charAt(0) || 'U'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.fullName}</p>
-                <p className="text-xs text-blue-300 truncate">{currentRole}</p>
-              </div>
+            <div className="mb-3 px-2">
+              <p className="text-sm font-semibold text-white truncate">{user?.fullName}</p>
+              <p className="text-xs text-blue-300 truncate">{user?.email}</p>
             </div>
             <button
               onClick={() => logout()}

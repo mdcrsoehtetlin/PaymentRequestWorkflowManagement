@@ -19,6 +19,7 @@
 | :--- | :--- | :--- | :--- |
 | 1.0 | 2026-06-12 | Senior Principal Architect | Initial release. Full functional specification for the Manager Dashboard subsystem covering verification queues, automatic reviewing transitions, detail inspection, receipt verification, approval/rejection operations, approval logs, and WebSocket notifications. |
 | 2.0 | 2026-06-15 | Senior Principal Architect | Converted file structure and design to fully conform to the standard `FUNCTIONAL_SPECIFICATION_TEMPLATE.md`, integrating detailed specifications from Requirement, Database, and Development Rules documents. |
+| 2.1 | 2026-06-23 | Senior Principal Architect | Refactored layout from split-pane to full-width table + dedicated detail page. Row click now navigates to `/manager/requests/:id` instead of opening a side panel. Added skeleton loading on detail page. Updated screen transition and responsive design specifications. |
 
 ---
 
@@ -289,7 +290,7 @@ Not applicable to this screen — the `MANAGER` actor has no deletion privileges
 
 ## 5. Screen Specifications
 
-### 5.1 Screen: Pending Verification Queue (`/manager/dashboard`)
+### 5.1 Screen: Pending Verification Queue (`/manager`)
 
 **Purpose:** Displays the list of requests currently awaiting the Manager's verification.
 
@@ -315,7 +316,7 @@ Not applicable to this screen — the `MANAGER` actor has no deletion privileges
 
 ---
 
-### 5.2 Screen: Request Detail View (Split View / Modal Layout)
+### 5.2 Screen: Request Detail View (Dedicated Detail Page — `/manager/requests/:id`)
 
 **Purpose:** Renders the details of a single request, breakdown, attachment preview, and verification actions.
 
@@ -628,8 +629,8 @@ Every state-modifying action performed by the actor is recorded in the `approval
 
 | Screen State | Trigger | Content Displayed |
 | :--- | :--- | :--- |
-| **List View (Default)** | Dashboard initial load. | Table of requests with status `SUBMITTED_MANAGER` and `MANAGER_REVIEWING`. |
-| **Detail Split View** | Click on a specific record row from the list. | Display detailed parameters, breakdown items, receipt attachments, and verification forms. |
+| **List View (Default)** | Dashboard initial load (`/manager`). | Full-width table of requests with status `SUBMITTED_MANAGER` and `MANAGER_REVIEWING`. |
+| **Detail Page** | Click on a specific record row from the list. | Navigates to `/manager/requests/:id`. Shows skeleton loading during data fetch, then displays detailed parameters, breakdown items, receipt attachments, and verification forms. Includes "← Back to List" button. |
 
 ### 12.3 Outbound Navigation
 
@@ -662,9 +663,9 @@ Every state-modifying action performed by the actor is recorded in the `approval
 
 | Device Category | Viewport Range | Layout Adaptation |
 | :--- | :--- | :--- |
-| Desktop | ≥ 1024px | Two-column split layout with list on left, detail view on right. |
-| Tablet | 768px – 1023px | Single-column layout. Row click collapses list and opens detail panel as modal overlay. |
-| Mobile | < 768px | Stacked card view. Hides less critical columns, optimized modal interfaces for comments and actions. |
+| Desktop | ≥ 1024px | Full-width table on list page. Dedicated detail page with skeleton loading on row click. |
+| Tablet | 768px – 1023px | Full-width table on list page. Dedicated detail page with stacked layout. |
+| Mobile | < 768px | Full-width table on list page. Full-screen detail page with "← Back to List" navigation. |
 
 ### 13.4 Display Order / Sorting Rules
 

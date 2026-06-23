@@ -1,21 +1,24 @@
 # DD_MANAGER_02 — Frontend Request Page (Dashboard)
 
-> **Doc ID:** PRWM-DD-MGR-02 | **Version:** 1.0 | **Status:** Released  
-> **Last Updated:** 2026-06-16
+> **Doc ID:** PRWM-DD-MGR-02 | **Version:** 1.1 | **Status:** Released  
+> **Last Updated:** 2026-06-23
 
 ---
 
 ## 1. Overview
 
-The `ManagerDashboard` is the landing page for the Manager role. It displays KPI summary cards, queue metrics, and a paginated, sortable, filterable list of payment requests assigned to the manager for verification. The layout uses a split-pane design on desktop: left side shows the pending verification queue list, right side displays request details and verification controls when a request is selected.
+The `ManagerDashboard` is the landing page for the Manager role. It displays KPI summary cards, queue metrics, and a paginated, sortable, filterable list of payment requests assigned to the manager for verification. The layout uses a full-width table design: the list page displays the table at full width, and row click navigates to a dedicated detail page (`/manager/requests/:id`) with skeleton loading.
 
 - **File Path:** `frontend/src/pages/manager/ManagerDashboard.tsx`
-- **Route:** `/manager/dashboard`
-- **Layout Type:** Split-Pane (Desktop) | Stacked (Mobile/Tablet)
+- **Detail Page Path:** `frontend/src/pages/manager/ManagerRequestDetail.tsx`
+- **Routes:** `/manager` (list), `/manager/requests/:id` (detail)
+- **Layout Type:** Full-Width Table + Dedicated Detail Page
 
 ---
 
 ## 2. Page Layout Structure
+
+### 2.1 List Page — `/manager` (Full-Width Table)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
@@ -27,32 +30,48 @@ The `ManagerDashboard` is the landing page for the Manager role. It displays KPI
 │          │  │   User Badge: Manager Name  |  Role Badges   |  Logout Button      │  │
 │  [NAV]   │  └────────────────────────────────────────────────────────────────────┘  │
 │          │                                                                          │
-│ Sidebar  │  ┌───────────────────────────────┐┌──────────────────────────────────────┐  │
-│ (w-64)   │  │ [B] QUEUE METRICS CARDS       ││ [C] QUEUE CONTROLS & SEARCH         │  │
-│          │  │ - Pending Count               ││ - Status Filter Dropdown            │  │
-│ - Logo   │  │ - Reviewing Count             ││ - Branch Filter Dropdown            │  │
-│ - Menu   │  │ - Verified Count              ││ - Search by Request/Applicant       │  │
-│ - User   │  │ - Rejected Count              ││ - Refresh Button                   │  │
-│          │  └───────────────────────────────┘└──────────────────────────────────────┘  │
+│ Sidebar  │  ┌──────────────────────────────────────────────────────────────────┐    │
+│ (w-64)   │  │ [B] QUEUE METRICS CARDS                                         │    │
+│          │  │ - Pending Count | - Reviewing Count | - Verified Count | - Rejected │  │
+│          │  └──────────────────────────────────────────────────────────────────┘    │
 │          │                                                                          │
-│          │  ┌──────────────────────────────────────────────────────────────────────┐  │
-│          │  │ [D] PENDING VERIFICATION LIST (LEFT PANE)                          │  │
-│          │  │ Data Grid with Columns:                                             │  │
-│          │  │ [申請番号 (Request ID)] [申請者氏名] [合計金額] [申請日] [至急フラグ] [ステータス] │  │
-│          │  │ (10 rows max per page, with pagination)                             │  │
-│          │  │ Row Click → Triggers Detail Panel Load (RIGHT PANE)                 │  │
-│          │  └──────────────────────────────────────────────────────────────────────┘  │
+│          │  ┌──────────────────────────────────────────────────────────────────┐    │
+│          │  │ [C] QUEUE CONTROLS & SEARCH                                     │    │
+│          │  │ - Search Input [検索ボタン] - Status Filter - Refresh Button    │    │
+│          │  └──────────────────────────────────────────────────────────────────┘    │
 │          │                                                                          │
-│          │  ┌──────────────────────────────────────────────────────────────────────┐  │
-│          │  │ [E] REQUEST DETAIL & VERIFICATION PANEL (RIGHT PANE)               │  │
-│          │  │ (Displayed on desktop split-pane; modal on mobile)                  │  │
-│          │  │ - Request Details (Read-Only)                                       │  │
-│          │  │ - Breakdown Items Table                                             │  │
-│          │  │ - Receipt Files & Preview                                           │  │
-│          │  │ - Approval History Timeline                                         │  │
-│          │  │ - Comment Box & Verify/Reject Buttons                               │  │
-│          │  └──────────────────────────────────────────────────────────────────────┘  │
+│          │  ┌──────────────────────────────────────────────────────────────────┐    │
+│          │  │ [D] PENDING VERIFICATION LIST (FULL WIDTH TABLE)                │    │
+│          │  │ Data Grid with Columns:                                         │    │
+│          │  │ [申請番号] [申請者氏名] [合計金額] [申請日] [至急フラグ] [ステータス] │  │
+│          │  │ (10 rows max per page, with pagination)                         │    │
+│          │  │ Row Click → Navigates to /manager/requests/:id (Detail Page)    │    │
+│          │  └──────────────────────────────────────────────────────────────────┘    │
 └──────────┴──────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 Detail Page — `/manager/requests/:id` (Dedicated Detail Page)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                              BROWSER VIEWPORT                                        │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────────────────────────────┐  │
+│  │ [A] COMMON HEADER AREA                                                       │  │
+│  └───────────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                     │
+│  [← Back to List]  Request Details                                                  │
+│                                                                                     │
+│  ┌───────────────────────────────────────────────────────────────────────────────┐  │
+│  │ [E] REQUEST DETAIL PAGE                                                      │  │
+│  │ - Skeleton Loading (during data fetch)                                       │  │
+│  │ - Request Details (Read-Only)                                                │  │
+│  │ - Breakdown Items Table                                                      │  │
+│  │ - Receipt Files & Preview                                                    │  │
+│  │ - Approval History Timeline                                                  │  │
+│  │ - Comment Box & Verify/Reject Buttons                                        │  │
+│  └───────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -100,8 +119,8 @@ State managed via `useManagerQueue` hook.
 | ステータス (Status) | `statusId` | `StatusBadge` | Yes | 15% |
 
 **Table Behavior:**
-- Row click triggers detail panel load on right side (split-pane layout on desktop)
-- On mobile/tablet, row click navigates to detail page or shows detail panel in modal
+- Row click navigates to dedicated detail page at `/manager/requests/:id`
+- Detail page shows skeleton loading during data fetch, then renders full detail view
 - Rows are highlighted if status = `MANAGER_REVIEWING` (yellow/light blue background) to indicate active review
 - Rows with status = `SUBMITTED_MANAGER` show priority indicator (e.g., red dot) if elapsed time > 24 hours
 - Default sort: `submittedDate` ASC (oldest first = highest priority)
@@ -111,25 +130,29 @@ State managed via `useManagerQueue` hook.
 - Maximum page size: 100 rows (prevent abuse)
 - Includes Previous/Next buttons and page indices
 
-### 3.4 VerificationPanel (Section E)
+### 3.4 ManagerRequestDetail (Dedicated Detail Page)
 
-**Right Pane - Request Detail & Verification Controls:**
+**Detail Page — `/manager/requests/:id`:**
 
-Displayed only when a row is selected. On desktop, displays as fixed right panel; on mobile, as full-screen modal.
+Displayed as a dedicated page when a row is clicked. Uses `ManagerRequestDetail.tsx` component.
 
 **Contents:**
-1. **Panel Header**
+1. **Page Header**
+   - "← Back to List" button (navigates to `/manager`)
    - Request Number (e.g., "PRF-2026-001")
    - Current Status Badge
-   - Close Button
 
-2. **Applicant Info Section (Read-Only)**
+2. **Skeleton Loading (during data fetch)**
+   - Full-page skeleton mimicking the detail layout (header, fields, breakdown table, attachments, timeline)
+   - Displayed while `apiClient.get()` fetches request data
+
+3. **Applicant Info Section (Read-Only)**
    - Employee Name
    - Employee Number
    - Branch/Department
    - Application Date
 
-3. **Payment Details Section (Read-Only)**
+4. **Payment Details Section (Read-Only)**
    - Total Amount
    - Tax Amount (if applicable)
    - Currency Type
@@ -137,25 +160,24 @@ Displayed only when a row is selected. On desktop, displays as fixed right panel
    - Purpose/Description
    - Bank Account Info (if applicable)
 
-4. **Payment Breakdown Section (Read-Only)**
+5. **Payment Breakdown Section (Read-Only)**
    - Data Table: No, Date, Description, Amount
    - Footer: Total calculation
 
-5. **Receipt Files Section**
+6. **Receipt Files Section**
    - File list with download links
    - Inline preview for images/PDFs
    - "No receipts uploaded" message if empty
 
-6. **Approval History Section (Expandable)**
+7. **Approval History Section (Expandable)**
    - Timeline of prior actions and comments
    - Chronological sorting
 
-7. **Verification Form**
+8. **Verification Form**
    - Optional comment box (max 500 chars for verify)
    - Mandatory comment box (min 10 chars for reject)
    - Verify Button (green)
    - Reject Button (red)
-   - Close Button
 
 ---
 
@@ -219,43 +241,41 @@ export function useManagerQueue() {
 **Trigger:** User clicks a row in the request queue table.
 
 **Processing Logic:**
-1. Store selected request ID in component state
-2. Load request details via `managerService.getRequestDetails(id)`
-3. Fetch receipt files and approval log
-4. **Automatic Status Transition:** If current status = `SUBMITTED_MANAGER` (2), dispatch API call to auto-transition to `MANAGER_REVIEWING` (3)
-5. Display detail panel on right side (desktop) or modal (mobile)
-6. Update hidden field with `modified_date` for optimistic locking
+1. Navigate to `/manager/requests/:id` using React Router
+2. Detail page (`ManagerRequestDetail`) displays skeleton loading during data fetch
+3. Fetch request details via `apiClient.get('/api/payment-requests/:id')`
+4. **Automatic Status Transition:** If current status = `SUBMITTED_MANAGER` (2), the backend auto-transitions to `MANAGER_REVIEWING` (3) as part of the GET endpoint
+5. Display detail page with full request information, breakdown, attachments, and verification form
 
 **Error Handling:**
 ```typescript
-const handleRowClick = async (requestId: string) => {
-  setSelectedRequestId(requestId);
-  try {
-    // Fetch details
-    const details = await managerService.getRequestDetails(requestId);
-    
-    // Auto-transition if status = SUBMITTED_MANAGER
-    if (details.statusId === 2) {
-      await managerService.updateRequestStatus(requestId, {
-        action: 'REVIEW_START',
-        modifiedDate: details.modifiedDate
-      });
-      details.statusId = 3; // Status now = MANAGER_REVIEWING
-    }
-    
-    setRequestDetails(details);
-    setModifiedDateHidden(details.modifiedDate);
-    showDetailPanel(true);
-    refresh(); // Refresh table to update status display
-  } catch (error) {
-    if (error.code === 'ERR-MGR-409') {
-      showToast('warning', '別のユーザーがこの申請を更新しました。リストを更新します。');
-      refresh();
-    } else {
-      showToast('error', error.message);
-    }
-  }
+const handleRowClick = (requestId: string) => {
+  navigate(`/manager/requests/${requestId}`);
 };
+```
+
+**Detail Page Data Fetch (`ManagerRequestDetail.tsx`):**
+```typescript
+useEffect(() => {
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiClient.get(`/api/payment-requests/${id}`);
+      setRequestData(response.data);
+    } catch (error) {
+      if (error.response?.status === 403) {
+        showToast('error', t('manager.detail.accessDenied'));
+      } else if (error.response?.status === 404) {
+        showToast('error', t('manager.detail.notFound'));
+      } else {
+        showToast('error', t('manager.detail.loadFailed'));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchData();
+}, [id, t]);
 ```
 
 ### 5.2 Verify Button Click
@@ -314,9 +334,6 @@ useEffect(() => {
     // Another user updated one of our assigned requests
     if (payload.managerUserId === managerId) {
       showToast('info', `申請 ${payload.requestNumber} のステータスが更新されました`);
-      if (selectedRequestId === payload.requestId) {
-        setShowDetailPanel(false); // Close detail panel
-      }
       refresh(); // Reload table and metrics
     }
   });
@@ -331,7 +348,7 @@ useEffect(() => {
     unsubscribe();
     unsubscribeNew();
   };
-}, [onStatusUpdate, onNewRequest, refresh, managerId, selectedRequestId]);
+}, [onStatusUpdate, onNewRequest, refresh, managerId]);
 ```
 
 ---
@@ -339,20 +356,20 @@ useEffect(() => {
 ## 7. Responsive Design (Mobile/Tablet)
 
 ### 7.1 Desktop Layout (≥ 1024px)
-- Split-pane: Left side = table (60%), Right side = detail panel (40%)
-- Side-by-side layout allows simultaneous viewing
+- Full-width table on list page
+- Dedicated detail page with skeleton loading on row click
 - Metrics cards display in single row above table
 
 ### 7.2 Tablet Layout (768px - 1023px)
-- Stacked layout: Metrics cards → Queue table → Detail panel (collapsed)
-- Detail panel displays as collapsible accordion or slide-up drawer
-- Single column for better fit
+- Full-width table on list page
+- Dedicated detail page with stacked layout on row click
+- Metrics cards in 2x2 grid
 
 ### 7.3 Mobile Layout (< 768px)
-- Full-screen table view (metrics cards hidden or collapsed)
-- Row click opens detail panel as full-screen modal or slide-up drawer
-- Navigation: Back button to close detail, return to table
-- Detail panel scrollable vertically
+- Full-width table view (metrics cards hidden or collapsed)
+- Full-screen detail page on row click
+- "← Back to List" navigation button
+- Detail page scrollable vertically
 
 ---
 
@@ -380,8 +397,8 @@ useEffect(() => {
 
 ### 9.1 Pagination
 - Default page size: **10 rows** (configurable)
-- Implement lazy loading for detail panel on demand
-- Cache request metadata but fetch full details on panel open
+- Implement lazy loading for detail page on demand
+- Cache request metadata but fetch full details on detail page load
 
 ### 9.2 Search Debounce
 - Debounce search input by **300ms** before API call
@@ -395,7 +412,7 @@ useEffect(() => {
 - Cache branch list (static, fetched once on mount)
 - Cache status options (static)
 - Don't cache request list (changes frequently)
-- Invalidate detail panel cache on status change
+- Invalidate detail page cache on status change
 
 ---
 
@@ -406,7 +423,7 @@ useEffect(() => {
 - **ARIA Labels:** All interactive elements have descriptive labels
 - **Color Contrast:** Status badges meet WCAG AA standards
 - **Screen Readers:** Status transitions announced to screen readers
-- **Focus Management:** Focus returns to queue table after panel closes
+- **Focus Management:** Focus returns to queue table after detail page navigation back
 
 ---
 
@@ -414,20 +431,12 @@ useEffect(() => {
 
 ```
 frontend/src/pages/manager/
-├── ManagerDashboard.tsx (Main page component)
+├── ManagerDashboard.tsx (Main list page component)
+├── ManagerRequestDetail.tsx (Dedicated detail page with skeleton loading)
 ├── components/
 │   ├── QueueMetricsRow.tsx (Metric cards)
 │   ├── FilterSearchBar.tsx (Search & filter controls)
-│   ├── RequestQueueTable.tsx (Main queue table)
-│   ├── VerificationPanel.tsx (Right-side/modal detail view)
-│   ├── DetailPanel/
-│   │   ├── ApplicantInfoSection.tsx
-│   │   ├── PaymentDetailsSection.tsx
-│   │   ├── BreakdownItemsDisplay.tsx
-│   │   ├── ReceiptFilesSection.tsx
-│   │   ├── ApprovalHistorySection.tsx
-│   │   └── ReceiptPreviewModal.tsx
-│   ├── VerificationForm.tsx (Comment, Verify, Reject buttons)
+│   ├── RequestQueueTable.tsx (Main queue table — full width)
 │   └── ManagerDashboard.module.css (Styles)
 ├── hooks/
 │   └── useManagerQueue.ts (State management hook)
@@ -455,23 +464,31 @@ frontend/src/pages/manager/
 ## 13. Development Notes
 
 ### 13.1 Component Composition
-- `ManagerDashboard` composes multiple sub-components for separation of concerns
+- `ManagerDashboard` composes QueueMetricsRow, FilterSearchBar, RequestQueueTable
+- `ManagerRequestDetail` is a standalone page component with skeleton loading
 - Use React hooks for state management (useState, useCallback, useEffect)
-- Custom hook `useManagerQueue` encapsulates queue fetch logic
+- Custom hook `useManagerQueue` encapsulates queue fetch logic for list page
 
 ### 13.2 Data Flow
 ```
-ManagerDashboard
+ManagerDashboard (List Page — /manager)
   ├── QueueMetricsRow (displays metrics from useManagerQueue)
   ├── FilterSearchBar (updates filters in useManagerQueue)
   ├── RequestQueueTable (displays data from useManagerQueue)
-  │   └── Row Click → handleRowClick()
-  │       └── Load RequestDetails
-  │           └── VerificationPanel (right pane)
-  └── VerificationPanel
-      └── VerificationForm
-          ├── Verify Button → managerService.verifyRequest()
-          └── Reject Button → managerService.rejectRequest()
+  │   └── Row Click → navigate(`/manager/requests/${id}`)
+  │
+ManagerRequestDetail (Detail Page — /manager/requests/:id)
+  ├── Skeleton Loading (during data fetch)
+  ├── apiClient.get(`/api/payment-requests/${id}`)
+  ├── Request Details Display
+  │   ├── Applicant Info Section
+  │   ├── Payment Details Section
+  │   ├── Breakdown Items Table
+  │   ├── Receipt Files Section
+  │   └── Approval History Timeline
+  └── VerificationForm
+      ├── Verify Button → POST /api/payment-requests/:id/verify
+      └── Reject Button → POST /api/payment-requests/:id/reject-manager
 ```
 
 ### 13.3 WebSocket Integration
@@ -487,6 +504,10 @@ ManagerDashboard
 This Manager Dashboard design provides the interface for initial payment request verification. It balances efficiency with clarity, allowing managers to quickly review and make decisions on assigned requests.
 
 **Approval Status:** Released  
+**Version History:**
+- v1.0 (2026-06-16): Initial release with split-pane layout
+- v1.1 (2026-06-23): Refactored to full-width table + dedicated detail page with skeleton loading
+
 **Related Documents:** DD_MANAGER_03, DD_MANAGER_04, DD_MANAGER_05, MANAGER_05_画面項目設計書_SCREEN_ITEMS.md, MANAGER_04_機能設計書_FUNCTIONAL_SPEC.md
 
 ---

@@ -1,153 +1,178 @@
-# MANAGER_03 — 画面レイアウト設計書 (Screen Layout Specification)
+# MANAGER_03 — Screen Layout Specification
 
 > **Doc ID:** PRWM-UI-MGR-03 | **Version:** 1.0 | **Status:** Released  
-> **Last Updated:** 2026-06-22  
-> **Related Screens:** MANAGER_04_機能設計書_FUNCTIONAL_SPEC, MANAGER_05_画面項目設計書_SCREEN_ITEMS
+> **Last Updated:** 2026-06-23  
+> **Related Screens:** MANAGER_04_Functional_Spec, MANAGER_05_Screen_Items
 
 ---
 
-## 1. 画面概要 (Overview)
+## 1. Overview
 
-マネージャーダッシュボードは、システムにログインした担当マネージャーが、自身に割り当てられた支払申請一覧を効率的に確認・検証し、承認（Verify）または差し戻し（Reject）を行うための主画面です。
+The Manager Dashboard is the primary screen for authenticated managers to efficiently review, verify, or reject payment requests assigned to them.
 
-- **URLパス:** `/manager/dashboard`
-- **デザインスタイル:** スプリットペイン・レイアウト（PC/デスクトップ環境では左側が申請一覧テーブル、右側が詳細およびアクションパネル。タブレット/モバイル環境ではスタック型レイアウトまたは全画面オーバーレイ・モーダルとして動作）
-- **UIフレームワーク:** React + Tailwind CSS
-- **アクセシビリティ:** WCAG 2.1 AA コントラスト基準適合
+- **URL Path:** `/manager` (list), `/manager/requests/:id` (detail)
+- **Design Style:** Full-width table list page with dedicated detail page navigation (list page uses a full-width table; row click navigates to the dedicated detail page; detail page has a "Back to List" button to return)
+- **UI Framework:** React + Tailwind CSS
+- **Accessibility:** WCAG 2.1 AA contrast compliance
 
 ---
 
-## 2. 画面コンポーネント配置図 (UI Hierarchy Tree)
+## 2. UI Hierarchy Tree
+
+### 2.1 List Page — `/manager` Full-Width Table
 
 ```
 +-----------------------------------------------------------------------------------+
-| [Header] 支払申請システム                                    Manager Name (Logout)  |
+| [Header] PRWM System                                     Manager Name (Logout)    |
 +-----------------------------------------------------------------------------------+
 | [Metrics summary card container]                                                  |
 |  +------------------+  +------------------+  +------------------+  +------------+  |
-|  | 確認待ち         |  | 確認中           |  | 確認済み         |  | 差戻し     |  |
+|  | Pending Review   |  | Reviewing        |  | Verified         |  | Rejected   |  |
 |  | [Pending count]  |  | [Reviewing count]|  | [Verified count] |  | [Rejected] |  |
 |  +------------------+  +------------------+  +------------------+  +------------+  |
 +-----------------------------------------------------------------------------------+
-| [Split-pane Grid: 12 cols]                                                        |
-|  [LEFT PANE: Request Table list (7 cols)]  | [RIGHT PANE: Verification Panel (5 cols)]|
-|  +---------------------------------------+ | +--------------------------------------+ |
-|  | [Filters & Search Row]                | | | [Detail Header] PRF-2026-0001        | |
-|  | [Search Input] [Status] [Date picker] | | | status: MANAGER_REVIEWING [badge]    | |
-|  +---------------------------------------+ | +--------------------------------------+ |
-|  | [Request Grid Table]                  | | | [Applicant Info Section]             | |
-|  | ID | Applicant | Amount | Date | Status| | | Name | Emp No. | Branch | Dept      | |
-|  |----+-----------+--------+------+-------| | +--------------------------------------+ |
-|  | PRF| 山田太郎  | 10k MMK| 6-22 | REVIEW| | | [Payment Info Details]               | |
-|  |    |           |        |      |       | | | Amount | Desired Date | Method | Bank | |
-|  |    |           |        |      |       | | +--------------------------------------+ |
-|  |    |           |        |      |       | | | [Breakdown Item Grid]                | |
-|  |    |           |        |      |       | | | No | Date | Description | Amount     | |
-|  |    |           |        |      |       | | +--------------------------------------+ |
-|  |    |           |        |      |       | | | [Receipt Attachment Link]            | |
-|  |    |           |        |      |       | | | File_01.pdf (Download/Preview)       | |
-|  |    |           |        |      |       | | +--------------------------------------+ |
-|  |    |           |        |      |       | | | [Approval Timeline Logs]             | |
-|  |    |           |        |      |       | | | Created -> Submitted -> Reviewing    | |
-|  |    |           |        |      |       | | +--------------------------------------+ |
-|  |    |           |        |      |       | | | [Decision Form Action]               | |
-|  |    |           |        |      |       | | | [Textarea Comment Box] (Max 500 ch)  | |
-|  |    |           |        |      |       | | |                                      | |
-|  |    |           |        |      |       | | | [Button: REJECT]    [Button: APPROVE]| |
-|  +---------------------------------------+ | +--------------------------------------+ |
+| [Full-Width Container]                                                            |
+|  +---------------------------------------------------------------------------+   |
+|  | [Filters & Search Row]                                                    |   |
+|  | [Search Input] [Search Button] [Status] [Date picker]                    |   |
+|  +---------------------------------------------------------------------------+   |
+|  | [Request Grid Table — Full Width]                                         |   |
+|  | ID | Applicant | Amount | Date | Status | Urgent | Action                |   |
+|  |----+-----------+--------+------+--------+--------+-----------------------|   |
+|  | PRF| John Doe  | 10k MMK| 6-22 | REVIEW |        | [View]                |   |
+|  |    |           |        |      |        |        |                       |   |
+|  +---------------------------------------------------------------------------+   |
+|  | [Pagination]                                                                |   |
+|  +---------------------------------------------------------------------------+   |
++-----------------------------------------------------------------------------------+
+```
+
+### 2.2 Detail Page — `/manager/requests/:id` Dedicated Page
+
+```
++-----------------------------------------------------------------------------------+
+| [Header] PRWM System                                     Manager Name (Logout)    |
++-----------------------------------------------------------------------------------+
+| [← Back to List]  Request Details                                                 |
++-----------------------------------------------------------------------------------+
+|  +---------------------------------------------------------------------------+   |
+|  | [Detail Header] PRF-2026-0001                                              |   |
+|  | status: MANAGER_REVIEWING [badge]                                          |   |
+|  +---------------------------------------------------------------------------+   |
+|  | [Applicant Info Section]                                                   |   |
+|  | Name | Emp No. | Branch | Dept                                             |   |
+|  +---------------------------------------------------------------------------+   |
+|  | [Payment Info Details]                                                     |   |
+|  | Amount | Desired Date | Method | Bank                                      |   |
+|  +---------------------------------------------------------------------------+   |
+|  | [Breakdown Item Grid]                                                      |   |
+|  | No | Date | Description | Amount                                           |   |
+|  +---------------------------------------------------------------------------+   |
+|  | [Receipt Attachment Link]                                                  |   |
+|  | File_01.pdf (Download/Preview)                                              |   |
+|  +---------------------------------------------------------------------------+   |
+|  | [Approval Timeline Logs]                                                   |   |
+|  | Created -> Submitted -> Reviewing                                          |   |
+|  +---------------------------------------------------------------------------+   |
+|  | [Comment Textarea] (Max 500 ch)                                            |   |
+|  | [Button: REJECT]    [Button: APPROVE]                                      |   |
+|  +---------------------------------------------------------------------------+   |
 +-----------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 3. 各セクションレイアウト詳細 (Section Layout Details)
+## 3. Section Layout Details
 
-### 3.1 ダッシュボードヘッダー (Dashboard Header)
-- 画面左上にダッシュボードタイトル「マネージャーダッシュボード」（`dashboard.manager.title`）を表示。
-- タイトル左に `Sparkles` アイコンを配置し、視覚的なアクセントを付与。
-- 右上に「最新情報に更新」ボタンを配置。クリックで `GET /api/v1/manager/requests` の最新データを再取得し、ローディングスピナー（`RefreshCw` アニメーション）を回転させる。
+### 3.1 Dashboard Header
+- Display the dashboard title "Manager Dashboard" (`dashboard.manager.title`) at the top-left.
+- Place a `Sparkles` icon to the left of the title for visual accent.
+- Place a "Refresh" button at the top-right. Clicking it re-fetches the latest data from `GET /api/v1/manager/requests` and displays a spinning loading indicator (`RefreshCw` animation).
 
-### 3.2 メトリクスサマリーカード (Metrics Cards Row)
-- ダッシュボード上部に全4つのメトリクスカードを等幅グリッドで表示。
-- **カード構成:**
-  1. **確認待ち (Pending Review):** `SUBMITTED_MANAGER` (ステータス 2) - 黄色系ボーダーと数値（`border-amber-500/20`）
-  2. **確認中 (Reviewing):** `MANAGER_REVIEWING` (ステータス 3) - 青紫系（`border-indigo-500/20`）
-  3. **確認済み (Verified):** `MANAGER_VERIFIED` (ステータス 4) - 緑系（`border-emerald-500/20`）
-  4. **差戻し (Rejected):** `REJECTED_MANAGER` (ステータス 5) - 赤系（`border-rose-500/20`）
-- **インタラクション:**
-  - 各カードをクリックすると、申請一覧テーブルに該当するステータスIDのフィルタが適用される（トグル動作）。
-  - 各カード右上には、現在のレビュー状態を示すパルスリングアニメーション（`animate-ping`）を配置。
+### 3.2 Metrics Summary Cards Row
+- Display all 4 metric cards in an equal-width grid at the top of the dashboard.
+- **Card Composition:**
+  1. **Pending Review:** `SUBMITTED_MANAGER` (Status 2) — Amber border and text (`border-amber-500/20`)
+  2. **Reviewing:** `MANAGER_REVIEWING` (Status 3) — Indigo (`border-indigo-500/20`)
+  3. **Verified:** `MANAGER_VERIFIED` (Status 4) — Emerald (`border-emerald-500/20`)
+  4. **Rejected:** `REJECTED_MANAGER` (Status 5) — Rose (`border-rose-500/20`)
+- **Interactions:**
+  - Clicking a card applies the corresponding status ID filter to the request table (toggle behavior).
+  - A pulse ring animation (`animate-ping`) is displayed at the top-right of each card to indicate the current review state.
 
-### 3.3 申請検索およびフィルタエリア (Search & Filters)
-- テーブル上部に3カラムの横並びフィルタパネルを設置。
-  - **申請者検索:** 虫眼鏡アイコン（`Search`）付きテキストインプット。申請者の氏名部分一致検索。
-  - **ステータス選択:** セレクトボックス dropdown。全ステータス、確認待ち、確認中、確認済み、差戻しから選択可能。
-  - **申請日選択:** カレンダーアイコン（`Calendar`）付きのHTML5日付ピッカー（`type="date"`）。
-- フィルターが変更されるたびに、300msのデバウンス処理を経て自動的にデータリストをフェッチする。
+### 3.3 Search & Filters
+- A 3-column horizontal filter panel is placed above the table.
+  - **Applicant Search:** Text input with a magnifying glass icon (`Search`). Performs partial match search on applicant name.
+  - **Status Selection:** Select dropdown. Options: All, Pending Review, Reviewing, Verified, Rejected.
+  - **Date Selection:** HTML5 date picker (`type="date"`) with a calendar icon (`Calendar`).
+- The data list is automatically re-fetched with a 300ms debounce whenever a filter is changed.
 
-### 3.4 申請一覧グリッドテーブル (Request Table List)
-- デスクトップ幅でグリッド全体の **7カラム（約60%幅）** を占有。
-- 各カラムの割り当て:
-  - **申請番号:** 固定幅・等幅フォント（`font-mono text-indigo-600`）
-  - **申請者:** テキスト（太字）
-  - **金額:** 右寄せ（太字、`totalAmount` + 通貨コード `CURRENCY_CODES` のフォーマット）
-  - **申請日:** 日付（`YYYY-MM-DD`）
-  - **至急フラグ:** `desiredPaymentDate` が現在時刻から48時間以内の場合に、赤色パルスバッジ「至急」を表示。
-  - **ステータス:** 右端に色分けされた丸角ステータスバッジ（`STATUS_COLORS` に準拠）を表示。
-- テーブル行はホバー時に薄いグレー（`hover:bg-slate-50/80`）になり、選択中の行は薄い青紫（`bg-indigo-50/50`）でハイライトされる。
+### 3.4 Request Table List
+- Occupies the **full width** of the grid on desktop (no right-side panel).
+- Column assignments:
+  - **Request Number:** Fixed-width, monospace font (`font-mono text-indigo-600`)
+  - **Applicant:** Text (bold)
+  - **Amount:** Right-aligned (bold, formatted as `totalAmount` + currency code from `CURRENCY_CODES`)
+  - **Application Date:** Date format (`YYYY/M/D`)
+  - **Urgent Flag:** Displays a red pulse badge "Urgent" when `desiredPaymentDate` is within 48 hours of the current time.
+  - **Status:** Right-aligned, rounded status badge with color coding (per `STATUS_COLORS`).
+- Table rows highlight with a light gray on hover (`hover:bg-slate-50/80`). Row click navigates to the dedicated detail page at `/manager/requests/:id`.
 
-### 3.5 承認検証パネル (Verification Panel)
-- デスクトップ幅でグリッド全体の **5カラム（約40%幅）** を占有。
-- 申請が選択されていない場合は「詳細を表示する申請を選択してください」というプレースホルダー枠（点線ボーダーとフォルダアイコン）を表示。
-- 申請が選択されている場合は、以下の通り詳細情報をスクロール表示する。
+### 3.5 Detail Page — `/manager/requests/:id` Dedicated Page
+- A dedicated page navigated to via table row click on the list page.
+- **Header:** A "← Back to List" button returns to the list page.
+- **Skeleton Loading:** A skeleton placeholder is displayed during page transition; actual data is rendered after fetch completes.
+- The following sections are displayed in a scrollable layout.
 
-#### 3.5.1 基本属性グリッド
-- 申請者、社員番号、所属部署/ブランチ、希望支払日、支払タイプ、支払方法を2列構成でスッキリと表示。
-- 希望支払日は至急度を高めるため赤文字（`text-rose-600`）で強調。
-- 支払方法が「銀行振込」等の場合は、口座情報（`bankAccountInfo`）をカード枠（`bg-slate-50 border-slate-100`）で強調表示。
+#### 3.5.1 Basic Attributes Grid
+- Displays applicant name, employee number, branch/department, desired payment date, payment type, and payment method in a clean 2-column layout.
+- Desired payment date is highlighted in red text (`text-rose-600`) to emphasize urgency.
+- When the payment method is "Bank Transfer" etc., account information (`bankAccountInfo`) is displayed in a highlighted card frame (`bg-slate-50 border-slate-100`).
 
-#### 3.5.2 支払内訳テーブル (Breakdown Grid)
-- 申請に含まれる明細（1〜15行）をテーブル構成で表示。
-- ヘッダー: No, 日付, 内容, 金額。
-- フッター: 明細の金額合計行を太字かつ背景色（`bg-slate-50/70`）で表示。
+#### 3.5.2 Payment Breakdown Table (Breakdown Grid)
+- Displays line items (1–15 rows) included in the request in a table layout.
+- Header: No, Date, Description, Amount.
+- Footer: Displays the total amount row in bold with a background color (`bg-slate-50/70`).
 
-#### 3.5.3 添付領収書エリア
-- アップロードされた領収書ファイルを一覧表示。
-- ファイルサイズ（KB）をグレーの補助文字で併記。
-- 「プレビュー」リンクをクリックすると、ブラウザの別タブで安全にファイルを表示可能。
+#### 3.5.3 Receipt Attachment Area
+- Lists uploaded receipt files.
+- Displays file size (KB) in gray auxiliary text.
+- Clicking the "Preview" link opens the file safely in a new browser tab.
 
-#### 3.5.4 承認プロセス履歴 (Timeline)
-- 時系列順（古いものから順）に並べられた縦線のタイムライン。
-- 担当者名、日付、その時のアクションバッジ、および入力されたコメントを表示。
+#### 3.5.4 Approval History Timeline
+- A vertical timeline displayed in chronological order (oldest first).
+- Shows the responsible person's name, date, action badge, and any entered comments.
 
-#### 3.5.5 検証意思決定フォーム (Decision Form)
-- 現在のステータスが `SUBMITTED_MANAGER` または `MANAGER_REVIEWING` の場合のみ表示される。
-- **コメント入力エリア:**
-  - 最大500文字制限のテキストエリア。右下にリアルタイムの文字数カウンターを配置（500文字を超えると赤く警告表示）。
-- **エラー警告表示枠:**
-  - バリデーションエラー（差し戻しなのに理由が10文字未満など）がある場合、赤色の枠（`bg-rose-50 border-rose-200 text-rose-700`）でエラーメッセージを表示。
-- **アクションボタンコンポーネント:**
-  - **差し戻す:** 左側ボタン（赤色アウトライン `border-rose-200 text-rose-700 bg-rose-50/30`）。
-  - **承認する:** 右側ボタン（紫色ベタ塗り `bg-indigo-600 text-white shadow-md`）。
-
----
-
-## 4. レスポンシブ設計ブレークポイント (Responsive Breakpoints)
-
-- **デスクトップ (Width >= 1024px):**
-  - メトリクスサマリーを横4カラムに配置。
-  - 左ペイン（申請一覧）と右ペイン（検証パネル）を `grid-cols-12` で `lg:col-span-7` と `lg:col-span-5` のスプリットレイアウトで左右に横並び表示。
-- **タブレット (768px <= Width < 1024px):**
-  - メトリクスサマリーを横2行2列に配置。
-  - スプリットレイアウトを解除し縦積み (`grid-cols-1`) に変更。
-  - 申請テーブルの下に検証パネルが積み重なって表示される。
-- **モバイル (Width < 768px):**
-  - メトリクスサマリーカードを非表示にするか、アコーディオンで折りたたみ可能にする。
-  - 申請一覧テーブルを画面いっぱいに表示。行をクリックすると全画面オーバーレイのモーダルダイアログとして検証パネルを表示し、閉じるボタンで一覧に戻る動作をサポートする。
+#### 3.5.5 Verification Decision Form
+- Displayed only when the current status is `SUBMITTED_MANAGER` or `MANAGER_REVIEWING`.
+- **Comment Input Area:**
+  - A text area with a 500-character limit. A real-time character counter is placed at the bottom-right (turns red when exceeding 500 characters).
+- **Error Warning Display:**
+  - When validation errors exist (e.g., rejection reason less than 10 characters), an error message is displayed in a red frame (`bg-rose-50 border-rose-200 text-rose-700`).
+- **Action Button Components:**
+  - **Reject:** Left button (red outline `border-rose-200 text-rose-700 bg-rose-50/30`).
+  - **Approve:** Right button (solid indigo `bg-indigo-600 text-white shadow-md`).
 
 ---
 
-## 5. リアルタイムデータ同期
+## 4. Responsive Breakpoints
 
-- WebSocket（Socket.io）通信を通じて、`statusUpdate` および `request:status-changed` イベントをバックグラウンドでリッスン。
-- 他のユーザー（申請者自身やシステム管理者）によって該当申請のステータスが更新された場合、画面のリロードを必要とせず自動的にダッシュボード一覧および開いている詳細情報が最新データへ書き換えられる。
+- **Desktop (Width >= 1024px):**
+  - Metrics summary in a 4-column horizontal row.
+  - List page: Table displayed at full width. Navigation to dedicated detail page for details.
+  - Detail page: "← Back to List" button to return to list.
+- **Tablet (768px <= Width < 1024px):**
+  - Metrics summary in a 2x2 grid.
+  - List page: Table displayed at full width. Row click navigates to dedicated detail page.
+  - Detail page: Stacked layout.
+- **Mobile (Width < 768px):**
+  - Metric summary cards hidden or collapsed into an accordion.
+  - List page: Table fills the entire screen. Row click navigates to dedicated detail page.
+  - Detail page: Full-screen display. "← Back to List" button returns to list.
+
+---
+
+## 5. Real-Time Data Synchronization
+
+- Listens to `statusUpdate` and `request:status-changed` events in the background via WebSocket (Socket.io) communication.
+- When another user (applicant or system administrator) updates the status of a request, the dashboard list and any open detail view are automatically updated with the latest data without requiring a page reload.
