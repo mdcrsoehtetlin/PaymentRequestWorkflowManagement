@@ -28,6 +28,7 @@ jest.mock('redis', () => ({
 
 function createMockQueryBuilder() {
   return {
+    leftJoinAndMapOne: jest.fn().mockReturnThis(),
     leftJoinAndSelect: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
@@ -38,6 +39,7 @@ function createMockQueryBuilder() {
     update: jest.fn().mockReturnThis(),
     getCount: jest.fn().mockResolvedValue(0),
     getMany: jest.fn().mockResolvedValue([]),
+    getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
     getRawOne: jest.fn().mockResolvedValue(null),
     execute: jest.fn().mockResolvedValue({ affected: 1, generatedMaps: [] }),
   };

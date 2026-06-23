@@ -63,32 +63,37 @@ describe('ApproverService', () => {
     overrides: Partial<PaymentRequest> = {},
   ): PaymentRequest =>
     ({
-      paymentRequestId: 100,
-      requestNumber: 'PR-2026-001',
+      id: 100,
+      request_number: 'PR-2026-001',
       applicant_user_id: 1,
       applicant: mockApplicantUser,
-      managerUserId: 5,
+      manager_user_id: 5,
       manager: mockManagerUser,
       final_approver_user_id: undefined,
-      finalApprover: undefined,
+      final_approver: undefined,
       current_assigned_to_user_id: null,
+      accounting_user_id: null,
       status_id: PaymentStatus.SUBMITTED_APPROVER,
-      applicationDate: '2026-06-01',
-      desiredPaymentDate: '2026-06-15',
-      totalAmount: '50000',
-      currencyId: 1,
-      paymentTypeId: 1,
-      paymentMethodId: 1,
+      application_date: '2026-06-01',
+      desired_payment_date: '2026-06-15',
+      total_amount: '50000',
+      currency_id: 1,
+      payment_type_id: 1,
+      payment_method_id: 1,
       purpose: 'Office supplies purchase',
-      managerVerificationDate: new Date('2026-06-10'),
-      submittedToApproverDate: new Date('2026-06-11'),
-      approvalDate: null,
-      isDeleted: false,
-      createdDate: new Date('2026-06-01'),
-      modifiedDate: new Date('2026-06-01'),
-      breakdownItems: [],
-      receiptFiles: [],
-      approvalLogs: [],
+      bank_account_info: null,
+      request_content: null,
+      has_receipt: false,
+      manager_verification_date: new Date('2026-06-10'),
+      submitted_to_approver_date: new Date('2026-06-11'),
+      submitted_to_manager_date: null,
+      approval_date: null,
+      payment_completed_date: null,
+      is_deleted: false,
+      created_date: new Date('2026-06-01'),
+      modified_date: new Date('2026-06-01'),
+      receipts: [],
+      logs: [],
       ...overrides,
     }) as unknown as PaymentRequest;
 
@@ -218,8 +223,8 @@ describe('ApproverService', () => {
       await service.findAssignedRequests(mockApproverUserId, query);
 
       expect(qb['andWhere']).toHaveBeenCalledWith(
-        'request.status_id = :status_id',
-        { status_id: PaymentStatus.APPROVER_REVIEWING },
+        'request.status_id = :statusId',
+        { statusId: PaymentStatus.APPROVER_REVIEWING },
       );
     });
 
@@ -255,13 +260,13 @@ describe('ApproverService', () => {
       await service.findAssignedRequests(mockApproverUserId, query);
 
       expect(qb['andWhere']).toHaveBeenCalledWith(
-        'request.submittedToApproverDate >= :dateFrom',
+        'request.submitted_to_approver_date >= :dateFrom',
         {
           dateFrom: '2026-06-01',
         },
       );
       expect(qb['andWhere']).toHaveBeenCalledWith(
-        'request.submittedToApproverDate <= :dateTo',
+        'request.submitted_to_approver_date <= :dateTo',
         {
           dateTo: '2026-06-30',
         },
@@ -296,7 +301,10 @@ describe('ApproverService', () => {
 
       await service.findAssignedRequests(mockApproverUserId, query);
 
-      expect(qb['orderBy']).toHaveBeenCalledWith('request.totalAmount', 'DESC');
+      expect(qb['orderBy']).toHaveBeenCalledWith(
+        'request.total_amount',
+        'DESC',
+      );
     });
 
     it('should sort by managerVerificationDate by default', async () => {
@@ -311,7 +319,7 @@ describe('ApproverService', () => {
       await service.findAssignedRequests(mockApproverUserId, query);
 
       expect(qb['orderBy']).toHaveBeenCalledWith(
-        'request.managerVerificationDate',
+        'request.manager_verification_date',
         'DESC',
       );
     });
