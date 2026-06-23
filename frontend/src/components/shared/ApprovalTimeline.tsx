@@ -1,6 +1,6 @@
 import type { ApprovalActionType, ApprovalLogWithUser } from '../../types';
 import { formatDateTime } from '../../utils/format';
-import { ACTION_LABELS_JP, ACTION_BADGE_COLORS } from '../../utils/constants';
+import { ACTION_LABELS_EN, ACTION_BADGE_COLORS } from '../../utils/constants';
 
 interface ApprovalTimelineProps {
   logs: ApprovalLogWithUser[];
@@ -8,7 +8,7 @@ interface ApprovalTimelineProps {
 
 export function ApprovalTimeline({ logs }: ApprovalTimelineProps) {
   if (!logs || logs.length === 0) {
-    return <p className="text-sm text-slate-500 italic">承認履歴はありません</p>;
+    return <p className="text-sm text-slate-500 italic">No approval history</p>;
   }
 
   return (
@@ -16,7 +16,7 @@ export function ApprovalTimeline({ logs }: ApprovalTimelineProps) {
       {logs.map((log) => {
         const isRejection = log.actionTypeId === 3 || log.actionTypeId === 4; // REJECTED or RETURNED
         const badgeColor = ACTION_BADGE_COLORS[log.actionTypeId as ApprovalActionType] || 'bg-slate-100 text-slate-800';
-        const actionLabel = ACTION_LABELS_JP[log.actionTypeId as ApprovalActionType] || '不明';
+        const actionLabel = ACTION_LABELS_EN[log.actionTypeId as ApprovalActionType] || 'Unknown';
 
         return (
           <div key={log.approvalLogId} className="relative pl-6">

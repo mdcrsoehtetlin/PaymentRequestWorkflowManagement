@@ -112,8 +112,7 @@ const PaymentRequestDetail: React.FC = () => {
   };
 
   const handleEditToggle = () => {
-    if (!data) return;
-    if (!isEditing) {
+    if (!isEditing && data) {
       setEditData({
         currency_id: data.currency_id,
         application_date: data.application_date.split('T')[0],
@@ -130,7 +129,7 @@ const PaymentRequestDetail: React.FC = () => {
     try {
       setSubmitting(true);
       setError(null);
-      await updatePaymentRequest(id!, editData);
+      await updatePaymentRequest(id!, editData ?? {});
       setIsEditing(false);
       await loadData();
     } catch (err: unknown) {
@@ -284,7 +283,8 @@ const PaymentRequestDetail: React.FC = () => {
                           type="text"
                           value={item.description}
                           onChange={(e) => {
-                            const newB = [...editData!.breakdowns!];
+                            if (!editData?.breakdowns) return;
+                            const newB = [...editData.breakdowns];
                             newB[i].description = e.target.value;
                             setEditData({...editData, breakdowns: newB});
                           }}
@@ -300,7 +300,8 @@ const PaymentRequestDetail: React.FC = () => {
                           type="number"
                           value={item.amount}
                           onChange={(e) => {
-                            const newB = [...editData!.breakdowns!];
+                            if (!editData?.breakdowns) return;
+                            const newB = [...editData.breakdowns];
                             newB[i].amount = parseFloat(e.target.value) || 0;
                             setEditData({...editData, breakdowns: newB});
                           }}
@@ -318,7 +319,7 @@ const PaymentRequestDetail: React.FC = () => {
               {isEditing && (
                 <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
                   <button 
-                    onClick={() => setEditData({...editData, breakdowns: [...editData!.breakdowns!, { description: '', amount: 0 }]})}
+                    onClick={() => editData && setEditData({...editData, breakdowns: [...(editData.breakdowns ?? []), { description: '', amount: 0 }]})}
                     className="text-sm text-blue-600 font-medium hover:underline"
                   >
                     + Add Item

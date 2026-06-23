@@ -32,7 +32,7 @@ import { RolesGuard } from './modules/shared/guards/roles.guard';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
         autoLoadEntities: true,
-        synchronize: configService.get<boolean>('database.synchronize'),
+        synchronize: true,
         logging: configService.get<boolean>('database.logging'),
         ssl: configService.get<boolean>('database.ssl')
           ? { rejectUnauthorized: false }
