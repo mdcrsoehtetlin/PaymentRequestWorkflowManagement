@@ -12,24 +12,11 @@ import { User } from './user.entity';
  * @description Immutable audit log entity tracking all workflow state transitions.
  * Database trigger `protect_approval_logs_immutable` must be active to prevent
  * UPDATE/DELETE operations on this table, ensuring audit trail integrity.
- *
- * Migration SQL:
- * CREATE OR REPLACE FUNCTION protect_approval_logs_immutability()
- * RETURNS TRIGGER AS $$
- * BEGIN
- *   RAISE EXCEPTION 'Audit logs are immutable. UPDATE/DELETE operations are prohibited.';
- *   RETURN NULL;
- * END;
- * $$ LANGUAGE plpgsql;
- *
- * CREATE TRIGGER trg_approval_logs_immutable
- * BEFORE UPDATE OR DELETE ON approval_logs
- * FOR EACH ROW EXECUTE FUNCTION protect_approval_logs_immutability();
  */
 @Entity('approval_logs')
 export class ApprovalLog {
   @PrimaryGeneratedColumn({ name: 'approval_log_id', type: 'bigint' })
-  id!: string;
+  approvalLogId!: string;
 
   @Column({ type: 'int' })
   payment_request_id!: number;
@@ -40,8 +27,8 @@ export class ApprovalLog {
   @Column({ type: 'int', nullable: true })
   action_type_id!: number;
 
-  @Column({ type: 'int', nullable: true })
-  previous_status_id!: number;
+  @Column({ name: 'previous_status_id', type: 'int', nullable: true })
+  previousStatusId!: number;
 
   @Column({ type: 'int', nullable: true })
   new_status_id!: number;
@@ -58,7 +45,7 @@ export class ApprovalLog {
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   timestamp!: Date;
 
-  @ManyToOne(() => PaymentRequest, (request) => request.logs)
+  @ManyToOne('PaymentRequest', 'approvalLogs')
   @JoinColumn({ name: 'payment_request_id' })
   payment_request!: PaymentRequest;
 

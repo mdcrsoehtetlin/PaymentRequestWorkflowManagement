@@ -86,10 +86,24 @@ export class ApplicantService {
       take: limit,
     });
 
+    const mappedItems = items.map((item) => ({
+      id: item.paymentRequestId,
+      request_number: item.requestNumber,
+      status_id: item.statusId,
+      total_amount: item.totalAmount,
+      currency_id: item.currencyId,
+      application_date: item.applicationDate,
+      desired_payment_date: item.desiredPaymentDate,
+      payment_method_id: item.paymentMethodId,
+      has_receipt: item.hasReceipt,
+      created_at: item.createdDate,
+      updated_at: item.modifiedDate,
+    }));
+
     const response: DashboardResponseDto = {
       kpis,
       requests: {
-        items,
+        items: mappedItems,
         total,
         page,
         limit,
@@ -151,12 +165,12 @@ export class ApplicantService {
         currency_id: dto.currency_id || 1,
         application_date:
           dto.application_date || new Date().toISOString().split('T')[0],
-        desired_payment_date:
+        desiredPaymentDate:
           dto.desired_payment_date || new Date().toISOString().split('T')[0],
-        payment_type_id: dto.payment_type_id || 1,
-        payment_method_id: dto.payment_method_id || 1,
+        paymentTypeId: dto.payment_type_id || 1,
+        paymentMethodId: dto.payment_method_id || 1,
         purpose: dto.purpose || 'Draft Purpose',
-        request_content: dto.request_content || 'Draft Content',
+        requestContent: dto.requestContent || 'Draft Content',
       });
 
       const savedRequest = await manager.save(request);
@@ -164,9 +178,9 @@ export class ApplicantService {
       if (dto.breakdowns && dto.breakdowns.length > 0) {
         const items = dto.breakdowns.map((b, index) =>
           manager.create(PaymentBreakdownItem, {
-            payment_request_id: savedRequest.id,
-            line_number: index + 1,
-            item_date:
+            paymentRequestId: savedRequest.paymentRequestId,
+            lineNumber: index + 1,
+            itemDate:
               dto.application_date || new Date().toISOString().split('T')[0],
             description: b.description,
             amount: b.amount,
@@ -176,17 +190,16 @@ export class ApplicantService {
       }
 
       const log = manager.create(ApprovalLog, {
-        payment_request_id: savedRequest.id,
-        action_taken_by_user_id: applicantId,
-        action_type_id: 1, // Created
-        new_status_id: 1,
+        paymentRequestId: savedRequest.paymentRequestId,
+        actionTakenByUserId: Number(applicantId),
+        actionTypeId: 1,
+        newStatusId: 1,
         comment: 'Draft created',
-        ip_address: '127.0.0.1',
-        user_agent: 'System',
+        ipAddress: '127.0.0.1',
+        userAgent: 'System',
       });
       await manager.save(log);
 
-      // Invalidate the first page cache to reflect the new draft
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
       return savedRequest;
@@ -208,22 +221,21 @@ export class ApplicantService {
       });
 
       if (!request) throw new NotFoundException('Payment request not found');
-      if (![1, 5, 9].includes(request.status_id)) {
+      if (![1, 5, 9].includes(request.statusId)) {
         throw new BadRequestException(
           'Only Draft or Rejected requests can be submitted to Manager',
         );
       }
 
-      // Strict validation
-      if (!request.currency_id)
+      if (!request.currencyId)
         throw new BadRequestException('Currency is required');
-      if (!request.application_date)
+      if (!request.applicationDate)
         throw new BadRequestException('Application date is required');
-      if (!request.desired_payment_date)
+      if (!request.desiredPaymentDate)
         throw new BadRequestException('Desired payment date is required');
-      if (!request.payment_method_id)
+      if (!request.paymentMethodId)
         throw new BadRequestException('Payment method is required');
-      if (!request.breakdowns || request.breakdowns.length === 0)
+      if (!request.breakdownItems || request.breakdownItems.length === 0)
         throw new BadRequestException(
           'At least one breakdown item is required',
         );
@@ -235,21 +247,23 @@ export class ApplicantService {
       if (total <= 0)
         throw new BadRequestException('Total amount must be greater than 0');
 
-      // State transition
-      request.status_id = 2; // Submitted (Manager)
-      request.has_receipt = request.receipts && request.receipts.length > 0;
+      const previousStatus = request.statusId;
+      request.statusId = 2;
+      request.hasReceipt = !!(
+        request.receiptFiles && request.receiptFiles.length > 0
+      );
 
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
-        payment_request_id: savedRequest.id,
-        action_taken_by_user_id: applicantId,
-        action_type_id: 2, // Submitted
-        previous_status_id: request.status_id,
-        new_status_id: 2,
+        paymentRequestId: savedRequest.paymentRequestId,
+        actionTakenByUserId: Number(applicantId),
+        actionTypeId: 2,
+        previousStatusId: previousStatus,
+        newStatusId: 2,
         comment: 'Submitted to Manager',
-        ip_address: '127.0.0.1',
-        user_agent: 'System',
+        ipAddress: '127.0.0.1',
+        userAgent: 'System',
       });
       await manager.save(log);
 
@@ -286,7 +300,7 @@ export class ApplicantService {
       throw new NotFoundException('Payment request not found');
     }
 
-    if (request.status_id !== 1 && request.status_id !== 4) {
+    if (request.statusId !== 1 && request.statusId !== 4) {
       throw new BadRequestException(
         'Receipts can only be uploaded for Draft or Rejected requests',
       );
@@ -296,20 +310,22 @@ export class ApplicantService {
       await this.fileUploadService.saveFile(file, requestId);
 
     const receipt = this.receiptFileRepo.create({
-      payment_request_id: requestId,
-      file_name: storedFileName,
-      file_size: file.size,
-      mime_type: file.mimetype,
-      storage_key: fileStoragePath,
-      is_deleted: false,
+      paymentRequestId: Number(requestId),
+      originalFileName: storedFileName,
+      storedFileName,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      fileStoragePath,
+      isDeleted: false,
     });
 
     const savedReceipt = await this.receiptFileRepo.save(receipt);
 
-    // Update has_receipt flag
-    await this.paymentRequestRepo.update(requestId, { has_receipt: true });
+    await this.paymentRequestRepo.update(
+      { paymentRequestId: Number(requestId) },
+      { hasReceipt: true },
+    );
 
-    // Invalidate cache
     await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
     return savedReceipt;
@@ -332,27 +348,25 @@ export class ApplicantService {
         throw new NotFoundException('Payment request not found');
       }
 
-      if (request.status_id !== 4) {
-        // MANAGER_VERIFIED
+      if (request.statusId !== 4) {
         throw new BadRequestException(
           'Only Manager-Verified requests can be submitted to Final Approver',
         );
       }
 
-      // State transition
-      request.status_id = 6; // SUBMITTED_APPROVER
+      request.statusId = 6;
 
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
-        payment_request_id: savedRequest.id,
-        action_taken_by_user_id: applicantId,
-        action_type_id: 3, // SUBMITTED (using 3 as general submit action type)
-        previous_status_id: 4,
-        new_status_id: 6,
+        paymentRequestId: savedRequest.paymentRequestId,
+        actionTakenByUserId: Number(applicantId),
+        actionTypeId: 3,
+        previousStatusId: 4,
+        newStatusId: 6,
         comment: 'Submitted to Final Approver',
-        ip_address: '127.0.0.1',
-        user_agent: 'System',
+        ipAddress: '127.0.0.1',
+        userAgent: 'System',
       });
       await manager.save(log);
 
@@ -389,31 +403,30 @@ export class ApplicantService {
 
       if (!request) throw new NotFoundException('Payment request not found');
 
-      const editableStatuses = [1, 5, 9]; // DRAFT, REJECTED_MANAGER, REJECTED_APPROVER
-      if (!editableStatuses.includes(request.status_id)) {
+      const editableStatuses = [1, 5, 9];
+      if (!editableStatuses.includes(request.statusId)) {
         throw new BadRequestException('Request is not in an editable state');
       }
 
-      // Update fields
-      if (dto.currency_id !== undefined) request.currency_id = dto.currency_id;
+      if (dto.currency_id !== undefined) request.currencyId = dto.currency_id;
       if (dto.application_date !== undefined)
-        request.application_date = dto.application_date;
+        request.applicationDate = dto.application_date;
       if (dto.desired_payment_date !== undefined)
-        request.desired_payment_date = dto.desired_payment_date;
+        request.desiredPaymentDate = dto.desired_payment_date;
       if (dto.payment_method_id !== undefined)
-        request.payment_method_id = dto.payment_method_id;
+        request.paymentMethodId = dto.payment_method_id;
 
       if (dto.breakdowns) {
         await manager.delete(PaymentBreakdownItem, {
-          payment_request_id: requestId,
+          paymentRequestId: Number(requestId),
         });
         const items = dto.breakdowns.map((b, index) =>
           manager.create(PaymentBreakdownItem, {
-            payment_request_id: requestId,
-            line_number: index + 1,
-            item_date:
+            paymentRequestId: Number(requestId),
+            lineNumber: index + 1,
+            itemDate:
               dto.application_date ||
-              request.application_date ||
+              request.applicationDate ||
               new Date().toISOString().split('T')[0],
             description: b.description,
             amount: b.amount,
@@ -428,14 +441,14 @@ export class ApplicantService {
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
-        payment_request_id: savedRequest.id,
-        action_taken_by_user_id: applicantId,
-        action_type_id: 2, // EDITED
-        previous_status_id: request.status_id,
-        new_status_id: request.status_id,
+        paymentRequestId: savedRequest.paymentRequestId,
+        actionTakenByUserId: Number(applicantId),
+        actionTypeId: 2,
+        previousStatusId: request.statusId,
+        newStatusId: request.statusId,
         comment: 'Request edited',
-        ip_address: '127.0.0.1',
-        user_agent: 'System',
+        ipAddress: '127.0.0.1',
+        userAgent: 'System',
       });
       await manager.save(log);
 
@@ -459,28 +472,28 @@ export class ApplicantService {
         throw new NotFoundException('Payment request not found');
       }
 
-      if (request.status_id !== 1) {
+      if (request.statusId !== 1) {
         throw new BadRequestException('Only Draft requests can be deleted');
       }
 
-      request.is_deleted = true;
+      request.isDeleted = true;
       await manager.save(request);
 
       await manager.update(
         ReceiptFile,
-        { payment_request_id: requestId },
-        { is_deleted: true },
+        { paymentRequestId: Number(requestId) },
+        { isDeleted: true },
       );
 
       const log = manager.create(ApprovalLog, {
-        payment_request_id: request.id,
-        action_taken_by_user_id: applicantId,
-        action_type_id: 2, // General edit/update action type since no deleted type exists
-        previous_status_id: 1,
-        new_status_id: 1,
+        paymentRequestId: request.paymentRequestId,
+        actionTakenByUserId: Number(applicantId),
+        actionTypeId: 2,
+        previousStatusId: 1,
+        newStatusId: 1,
         comment: 'Draft deleted',
-        ip_address: '127.0.0.1',
-        user_agent: 'System',
+        ipAddress: '127.0.0.1',
+        userAgent: 'System',
       });
       await manager.save(log);
 

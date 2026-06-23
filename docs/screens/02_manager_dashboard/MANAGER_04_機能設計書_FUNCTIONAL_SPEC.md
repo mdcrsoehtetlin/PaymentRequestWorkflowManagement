@@ -19,6 +19,7 @@
 | :--- | :--- | :--- | :--- |
 | 1.0 | 2026-06-12 | Senior Principal Architect | Initial release. Full functional specification for the Manager Dashboard subsystem covering verification queues, automatic reviewing transitions, detail inspection, receipt verification, approval/rejection operations, approval logs, and WebSocket notifications. |
 | 2.0 | 2026-06-15 | Senior Principal Architect | Converted file structure and design to fully conform to the standard `FUNCTIONAL_SPECIFICATION_TEMPLATE.md`, integrating detailed specifications from Requirement, Database, and Development Rules documents. |
+| 2.1 | 2026-06-23 | Senior Principal Architect | Refactored layout from split-pane to full-width table + dedicated detail page. Row click now navigates to `/manager/requests/:id` instead of opening a side panel. Added skeleton loading on detail page. Updated screen transition and responsive design specifications. |
 
 ---
 
@@ -289,7 +290,7 @@ Not applicable to this screen — the `MANAGER` actor has no deletion privileges
 
 ## 5. Screen Specifications
 
-### 5.1 Screen: Pending Verification Queue (`/manager/dashboard`)
+### 5.1 Screen: Pending Verification Queue (`/manager`)
 
 **Purpose:** Displays the list of requests currently awaiting the Manager's verification.
 
@@ -299,11 +300,11 @@ Not applicable to this screen — the `MANAGER` actor has no deletion privileges
 
 | Column ID | Column Name | Data Source | Display Format | Sortable | Filterable |
 | :--- | :--- | :--- | :--- | :---: | :---: |
-| COL-01 | Request Number | `payment_requests.request_number` | "PRF-YYYY-NNN" (Anchor Link to detail view) | ✓ | ✓ |
-| COL-02 | Applicant | `users.full_name` (Applicant) | String | ✓ | ✓ |
-| COL-03 | Branch | `users.branch` (Applicant) | String | ✗ | ✓ |
-| COL-04 | Application Date | `payment_requests.application_date` | YYYY-MM-DD | ✓ | ✓ |
-| COL-05 | Total Amount | `payment_requests.total_amount` | Currency + Decimal (e.g. USD 1,500.00) | ✓ | ✗ |
+| COL-01 | Request ID | `payment_requests.request_number` | "PRF-YYYY-NNN" (Anchor Link to detail view) | ✓ | ✓ |
+| COL-02 | Applicant Name | `users.full_name` (Applicant) | String | ✓ | ✓ |
+| COL-03 | Amount | `payment_requests.total_amount` | Currency + Decimal (e.g. USD 1,500.00) | ✓ | ✗ |
+| COL-04 | Date | `payment_requests.application_date` | YYYY-MM-DD | ✓ | ✓ |
+| COL-05 | Urgent Flag | Computed from `desired_payment_date` | Red Badge/Icon (Active if `desired_payment_date` is <= 48 hours from today or overdue) | ✓ | ✓ |
 | COL-06 | Status | `payment_statuses.status_name` | Badge (Yellow: Submitted, Blue: Reviewing) | ✓ | ✓ |
 
 **Action Controls:**
@@ -315,7 +316,7 @@ Not applicable to this screen — the `MANAGER` actor has no deletion privileges
 
 ---
 
-### 5.2 Screen: Request Detail View (Split View / Modal Layout)
+### 5.2 Screen: Request Detail View (Dedicated Detail Page — `/manager/requests/:id`)
 
 **Purpose:** Renders the details of a single request, breakdown, attachment preview, and verification actions.
 
@@ -365,11 +366,13 @@ Timeline component rendering all previous `approval_logs` entries:
 
 | UI Element | Type | Description / Behavior |
 | :--- | :--- | :--- |
-| **Verify Button** | Button (Primary Green) | Triggers verification flow. Displays confirmation modal: "Are you sure you want to verify this request?". |
-| **Reject Button** | Button (Danger Red) | Opens Rejection Modal requiring comment. |
-| **Rejection Comment Input**| Text Area | In Rejection Modal. Length validator enforced (>=10 chars, max 500 chars). |
+| UI Element | Type | Description / Behavior |
+| :--- | :--- | :--- |
+| **Approve Button (Verify)** | Button (Primary Green) | Triggers approval/verification flow. Displays confirmation modal: "Are you sure you want to approve/verify this request?". |
+| **Reject Button** | Button (Danger Red) | Opens Rejection Modal requiring a comment. |
+| **Rejection Comment Input**| Text Area | In Rejection Modal. Mandatory for rejections. Length validator enforced (>=10 chars, max 500 chars). |
 | **Cancel Rejection Button**| Button | Closes Rejection Modal and resets input. |
-| **Submit Rejection Button**| Button | Submits rejection and transitions request back to Applicant. |
+| **Submit Rejection Button**| Button | Submits rejection and transitions request back to Applicant with the mandatory comment. |
 
 #### 5.2.3 Dynamic Alert Evaluation
 
@@ -445,11 +448,11 @@ All request detail parameters are read-only. The only interactive inputs are:
 
 | Field | Display Name | Data Source | Display Format |
 | :--- | :--- | :--- | :--- |
-| Request Number | 申請番号 | `payment_requests.request_number` | String (e.g., "PRF-2026-0001") |
-| Applicant | 申請者 | `users.full_name` | String |
-| Branch | 支店 | `users.branch` | String |
-| Application Date | 申請日 | `payment_requests.application_date` | YYYY-MM-DD |
-| Total Amount | 合計金額 | `payment_requests.total_amount` | Decimal (12,2) with currency code |
+| Request ID | 申請番号 (Request Number) | `payment_requests.request_number` | String (e.g., "PRF-2026-0001") |
+| Applicant Name | 申請者氏名 | `users.full_name` | String |
+| Amount | 合計金額 | `payment_requests.total_amount` | Decimal (12,2) with currency code |
+| Date | 申請日 | `payment_requests.application_date` | YYYY-MM-DD |
+| Urgent Flag | 至急フラグ | Computed from `desired_payment_date` | Red Badge/Icon (Active if `desired_payment_date` <= 48 hours or overdue) |
 | Status Badge | ステータス | `payment_statuses.status_name` | Colored Badge |
 
 #### 7.2.2 Request Detail View
@@ -626,8 +629,8 @@ Every state-modifying action performed by the actor is recorded in the `approval
 
 | Screen State | Trigger | Content Displayed |
 | :--- | :--- | :--- |
-| **List View (Default)** | Dashboard initial load. | Table of requests with status `SUBMITTED_MANAGER` and `MANAGER_REVIEWING`. |
-| **Detail Split View** | Click on a specific record row from the list. | Display detailed parameters, breakdown items, receipt attachments, and verification forms. |
+| **List View (Default)** | Dashboard initial load (`/manager`). | Full-width table of requests with status `SUBMITTED_MANAGER` and `MANAGER_REVIEWING`. |
+| **Detail Page** | Click on a specific record row from the list. | Navigates to `/manager/requests/:id`. Shows skeleton loading during data fetch, then displays detailed parameters, breakdown items, receipt attachments, and verification forms. Includes "← Back to List" button. |
 
 ### 12.3 Outbound Navigation
 
@@ -660,9 +663,9 @@ Every state-modifying action performed by the actor is recorded in the `approval
 
 | Device Category | Viewport Range | Layout Adaptation |
 | :--- | :--- | :--- |
-| Desktop | ≥ 1024px | Two-column split layout with list on left, detail view on right. |
-| Tablet | 768px – 1023px | Single-column layout. Row click collapses list and opens detail panel as modal overlay. |
-| Mobile | < 768px | Stacked card view. Hides less critical columns, optimized modal interfaces for comments and actions. |
+| Desktop | ≥ 1024px | Full-width table on list page. Dedicated detail page with skeleton loading on row click. |
+| Tablet | 768px – 1023px | Full-width table on list page. Dedicated detail page with stacked layout. |
+| Mobile | < 768px | Full-width table on list page. Full-screen detail page with "← Back to List" navigation. |
 
 ### 13.4 Display Order / Sorting Rules
 

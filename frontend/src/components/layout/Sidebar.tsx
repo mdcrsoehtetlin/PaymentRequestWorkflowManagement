@@ -1,4 +1,4 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -6,7 +6,6 @@ import { useAuth } from '../../hooks/useAuth';
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  currentRole: string;
 }
 
 const roleMenuConfig: Record<string, { title: string; dashboardPath: string; menuItems: { label: string; path: string }[] }> = {
@@ -60,6 +59,8 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
   const roleConfig = roleMenuConfig[currentRole] ?? roleMenuConfig.APPLICANT;
   const title = roleConfig.title;
   const dashboardPath = roleConfig.dashboardPath;
+
+  const menuItems = allMenuItems.filter(item => item.roles.includes(user?.role as string));
 
   return (
     <>

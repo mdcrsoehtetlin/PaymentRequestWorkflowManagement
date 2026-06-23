@@ -22,7 +22,7 @@ export class ReceiptFile {
     length: 255,
     nullable: true,
   })
-  file_name!: string;
+  originalFileName!: string;
 
   @Column({
     name: 'stored_file_name',
@@ -30,7 +30,7 @@ export class ReceiptFile {
     length: 255,
     nullable: true,
   })
-  stored_file_name!: string;
+  storedFileName!: string;
 
   @Column({ type: 'bigint', nullable: true })
   file_size!: number;
@@ -47,15 +47,15 @@ export class ReceiptFile {
   storage_key!: string;
 
   @Column({ name: 'uploaded_by_user_id', type: 'int', nullable: true })
-  uploaded_by_user_id!: number;
+  uploadedByUserId!: number;
 
-  @Column({ type: 'boolean', default: false })
-  is_deleted!: boolean;
+  @Column({ name: 'is_deleted', type: 'boolean', default: false })
+  isDeleted!: boolean;
 
   @CreateDateColumn({ name: 'uploaded_date' })
-  created_at!: Date;
+  uploadedDate!: Date;
 
-  @ManyToOne(() => PaymentRequest, (request) => request.receipts)
+  @ManyToOne('PaymentRequest', 'receiptFiles')
   @JoinColumn({ name: 'payment_request_id' })
-  payment_request!: PaymentRequest;
+  paymentRequest!: PaymentRequest;
 }

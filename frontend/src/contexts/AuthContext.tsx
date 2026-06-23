@@ -1,38 +1,12 @@
-/* eslint-disable react-refresh/only-export-components */
 import {
-  createContext,
-  useContext,
   useState,
   useEffect,
   useCallback,
   type ReactNode,
 } from 'react';
-
-// Internal shared imports
-import type { JwtPayload } from '../types';
-
-// Local module imports
+import { AuthContext } from './auth-context';
 import { authService } from '../services/auth.service';
-
-interface AuthContextType {
-  user: JwtPayload | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  /**
-   * @description Authenticates the user with email and password
-   * @param email - The user's email
-   * @param password - The user's password
-   * @returns The decoded JWT payload
-   */
-  login: (email: string, password: string) => Promise<JwtPayload>;
-  /**
-   * @description Logs out the current user and destroys the session
-   * @returns Promise that resolves when the logout is complete
-   */
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import type { JwtPayload } from '../types';
 
 /**
  * @description Provides authentication state to the entire application.
@@ -43,14 +17,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<JwtPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On mount: decode token from localStorage to restore session
   useEffect(() => {
     const initAuth = async () => {
       try {
         const decoded = await authService.getCurrentUser();
         setUser(decoded);
       } catch {
-        // Token missing or malformed — treat as unauthenticated
         setUser(null);
       } finally {
         setIsLoading(false);

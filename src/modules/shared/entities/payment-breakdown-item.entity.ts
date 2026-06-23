@@ -4,7 +4,6 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { PaymentRequest } from './payment-request.entity';
@@ -18,10 +17,10 @@ export class PaymentBreakdownItem {
   payment_request_id!: number;
 
   @Column({ name: 'line_number', type: 'int', default: 1 })
-  line_number!: number;
+  lineNumber!: number;
 
   @Column({ name: 'item_date', type: 'date', nullable: true })
-  item_date!: string;
+  itemDate!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   description!: string;
@@ -45,9 +44,9 @@ export class PaymentBreakdownItem {
   created_at!: Date;
 
   @UpdateDateColumn({ name: 'modified_date' })
-  updated_at!: Date;
+  modifiedDate!: Date;
 
-  @ManyToOne(() => PaymentRequest, (request) => request.breakdowns)
+  @ManyToOne('PaymentRequest', 'breakdownItems')
   @JoinColumn({ name: 'payment_request_id' })
-  payment_request!: PaymentRequest;
+  paymentRequest!: PaymentRequest;
 }

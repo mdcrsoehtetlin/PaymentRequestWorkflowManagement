@@ -12,7 +12,6 @@ interface UserRecord {
   branch: string;
   roleId: number;
   isActive: boolean;
-  version: number;
 }
 
 interface UsersResponse {
@@ -73,11 +72,12 @@ export function UserManagementWorkspace() {
 
   const filtersRef = useRef(filters);
   const paginationRef = useRef(pagination);
-
   useEffect(() => {
     filtersRef.current = filters;
+  }, [filters]);
+  useEffect(() => {
     paginationRef.current = pagination;
-  }, [filters, pagination]);
+  }, [pagination]);
 
   const fetchUsers = useCallback(async () => {
     const f = filtersRef.current;

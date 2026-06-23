@@ -10,7 +10,6 @@ interface UserRecord {
   branch: string;
   roleId: number;
   isActive: boolean;
-  version: number;
 }
 
 interface UserFormModalProps {
@@ -55,27 +54,29 @@ export function UserFormModal({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (mode === 'edit' && user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData({
-        employeeNumber: user.employeeNumber.replace(/^EMP-/, ''),
-        fullName: user.fullName,
-        email: user.email,
-        branch: user.branch,
-        roleId: user.roleId,
-      });
-    } else {
-      setFormData({
-        employeeNumber: '',
-        fullName: '',
-        email: '',
-        branch: 'Yangon',
-        roleId: 1,
-      });
-    }
-    setTemporaryPassword(null);
-    setError(null);
-    setCopied(false);
+    const timer = setTimeout(() => {
+      if (mode === 'edit' && user) {
+        setFormData({
+          employeeNumber: user.employeeNumber.replace(/^EMP-/, ''),
+          fullName: user.fullName,
+          email: user.email,
+          branch: user.branch,
+          roleId: user.roleId,
+        });
+      } else {
+        setFormData({
+          employeeNumber: '',
+          fullName: '',
+          email: '',
+          branch: 'Yangon',
+          roleId: 1,
+        });
+      }
+      setTemporaryPassword(null);
+      setError(null);
+      setCopied(false);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [mode, user, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,13 +104,11 @@ export function UserFormModal({
           fullName: formData.fullName,
           branch: formData.branch,
           roleId: formData.roleId,
-          version: user.version,
         });
         onSuccess();
       } else if (mode === 'reset' && user) {
         const response = await apiClient.post(
           `/admin/users/${user.userId}/reset-password`,
-          { version: user.version },
         );
         setTemporaryPassword(response.data.temporaryPassword);
       }

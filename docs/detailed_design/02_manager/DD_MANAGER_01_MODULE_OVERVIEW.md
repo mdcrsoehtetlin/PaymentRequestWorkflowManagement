@@ -18,7 +18,7 @@ The **Manager Module** (担当マネージャーモジュール) is the verifica
 | UC-MGR-01 | View Dashboard | View a paginated list of assigned payment requests with status KPI cards and queue metrics. |
 | UC-MGR-02 | View Request Queue | View all pending payment requests submitted to the manager for verification. |
 | UC-MGR-03 | View Request Details | View the full read-only details of an assigned payment request including receipt attachments. |
-| UC-MGR-04 | View Receipt Attachments | Download or preview receipt files (PDF, JPG, PNG) attached to a request. |
+| UC-MGR-04 | View Receipt Attachments | Download or preview receipt files (PDF, JPG, PNG) attached to a request. | 
 | UC-MGR-05 | Verify Request | Approve a payment request after verification, transitioning it to `MANAGER_VERIFIED`. |
 | UC-MGR-06 | Reject Request | Reject a payment request with mandatory comments, transitioning it to `REJECTED_MANAGER`. |
 | UC-MGR-07 | Add Review Comments | Add comments and feedback during the verification process for audit trail. |

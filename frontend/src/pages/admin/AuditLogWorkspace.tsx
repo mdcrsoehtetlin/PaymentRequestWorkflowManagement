@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Eye } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
@@ -80,11 +79,12 @@ export function AuditLogWorkspace() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filtersRef = useRef(filters);
   const paginationRef = useRef(pagination);
-
   useEffect(() => {
     filtersRef.current = filters;
+  }, [filters]);
+  useEffect(() => {
     paginationRef.current = pagination;
-  }, [filters, pagination]);
+  }, [pagination]);
   const [selectedLog, setSelectedLog] = useState<AuditLogRecord | null>(null);
   const [sorting, setSorting] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
     sortBy: '',
@@ -145,11 +145,17 @@ export function AuditLogWorkspace() {
   }, [doFetchLogs]);
 
   useEffect(() => {
-    doFetchLogs();
+    debounceRef.current = setTimeout(() => doFetchLogs(), 0);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [doFetchLogs]);
 
   useEffect(() => {
-    doFetchLogs();
+    debounceRef.current = setTimeout(() => doFetchLogs(), 0);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [pagination.page, pagination.pageSize, doFetchLogs]);
 
   const sortedLogs = useMemo(() => {

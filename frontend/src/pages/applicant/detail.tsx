@@ -278,7 +278,7 @@ const PaymentRequestDetail: React.FC = () => {
                       <div className="w-8 h-8 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
                         {i + 1}
                       </div>
-                      {isEditing ? (
+                      {isEditing && editData ? (
                         <input 
                           type="text"
                           value={item.description}
@@ -295,7 +295,7 @@ const PaymentRequestDetail: React.FC = () => {
                       )}
                     </div>
                     <div className="ml-4">
-                      {isEditing ? (
+                      {isEditing && editData ? (
                         <input 
                           type="number"
                           value={item.amount}

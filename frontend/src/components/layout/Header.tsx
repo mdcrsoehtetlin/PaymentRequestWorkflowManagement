@@ -1,14 +1,12 @@
 import { Menu, Bell } from 'lucide-react';
-import type { JwtPayload } from '../../types';
 import { LanguageSwitcher } from '../shared/LanguageSwitcher';
 
 interface HeaderProps {
-  user: JwtPayload;
   onMenuToggle: () => void;
   notificationCount?: number;
 }
 
-export function Header({ user, onMenuToggle, notificationCount = 0 }: HeaderProps) {
+export function Header({ onMenuToggle, notificationCount = 0 }: HeaderProps) {
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
       {/* Left side: Hamburger (mobile/tablet) */}
@@ -33,16 +31,6 @@ export function Header({ user, onMenuToggle, notificationCount = 0 }: HeaderProp
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse border-2 border-white box-content"></span>
           )}
         </button>
-
-        <div className="hidden sm:flex items-center gap-3 pl-4 border-l border-slate-200">
-          <div className="text-right">
-            <p className="text-sm font-medium text-slate-900 leading-none">{user.fullName}</p>
-            <p className="text-xs text-slate-500 mt-1 leading-none">{user.role}</p>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
-            {user.fullName?.charAt(0) || 'U'}
-          </div>
-        </div>
       </div>
     </header>
   );

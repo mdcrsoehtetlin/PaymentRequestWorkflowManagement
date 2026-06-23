@@ -6,6 +6,7 @@ import { ToastContainer } from './components/shared/Toast';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ApplicantDashboard } from './pages/applicant/ApplicantDashboard';
 import { ManagerDashboard } from './pages/manager/ManagerDashboard';
+import { ManagerRequestDetail } from './pages/manager/ManagerRequestDetail';
 import { ApproverDashboard } from './pages/approver/ApproverDashboard';
 import { AccountingDashboard } from './pages/accounting/AccountingDashboard';
 import { PaymentDetailPage } from './pages/accounting/PaymentDetailPage';
@@ -29,9 +30,14 @@ export default function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/manager/*" element={
+          <Route path="/manager" element={
             <ProtectedRoute allowedRoles={[RoleCode.MANAGER]}>
               <ManagerDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/manager/requests/:id" element={
+            <ProtectedRoute allowedRoles={[RoleCode.MANAGER]}>
+              <ManagerRequestDetail />
             </ProtectedRoute>
           } />
           

@@ -30,6 +30,7 @@ function createMockQueryBuilder() {
   return {
     leftJoinAndMapOne: jest.fn().mockReturnThis(),
     leftJoinAndSelect: jest.fn().mockReturnThis(),
+    leftJoinAndMapOne: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
@@ -175,10 +176,8 @@ describe('AdminService', () => {
     };
 
     it('should update user and return updated details', async () => {
-      const mockQb = createMockQueryBuilder();
-      mockQb.execute.mockResolvedValue({ affected: 1, generatedMaps: [] });
       mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
-      mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
       mockUserRepo.findOne.mockResolvedValueOnce({
         ...baseUser,
         fullName: 'Updated Name',
@@ -187,7 +186,7 @@ describe('AdminService', () => {
       const result = await service.updateUser(1, updateDto);
 
       expect(result.fullName).toBe('Updated Name');
-      expect(mockQb.execute).toHaveBeenCalled();
+      expect(mockUserRepo.update).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
@@ -329,11 +328,8 @@ describe('AdminService', () => {
 
   describe('resetPassword', () => {
     it('should reset password and return temporary password', async () => {
-      const mockQb = createMockQueryBuilder();
-      mockQb.execute.mockResolvedValue({ affected: 1, generatedMaps: [] });
       mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
-      mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
-      mockUserRepo.findOne.mockResolvedValueOnce({ ...baseUser });
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
 
       const result = await service.resetPassword(1);
 

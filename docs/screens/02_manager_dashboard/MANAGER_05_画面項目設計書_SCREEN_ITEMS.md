@@ -105,12 +105,13 @@ This screen is an integrated dashboard designed for users with the system author
 | 5 | `txt_search_keyword` | Search Keyword Entry | TextBox | String(100) | Optional | Empty | Special characters sanitized | — | Triggers incremental client-side filtering on applicant name, description, etc. |
 | 6 | `btn_refresh_list` | Manual Refresh Button | Button | — | — | Enabled / Sync Icon | — | — | Forces API re-request fallback if WebSocket dropped. |
 | 7 | `tbl_pending_queue` | Pending Queue Data Grid | Grid/Table | Object | — | Targeted records list | Max display records: `PENDING_QUEUE_PAGE_SIZE` (10 rows) | — | Data scoped by manager context. Triggers Row Click Event. |
-| 8 | `col_request_id` | Grid: Request ID | Label | String | — | `payment_requests.id` | Unique string with prefix format | `payment_requests.id` | — |
-| 9 | `col_created_date` | Grid: Submission Date | Label | DATE | — | `payment_requests.created_date` | YYYY-MM-DD Format | `payment_requests.created_date` | The date the request was submitted. |
-| 10 | `col_applicant_name` | Grid: Applicant Name | Label | String | — | `users.full_name` | — | `users.full_name` | Full name of applicant employee. |
-| 11 | `col_total_amount` | Grid: Total Amount | Label | NUMERIC | — | `payment_requests.total_amount` | Currency format (e.g., ¥15,400) | `payment_requests.total_amount` | Formatted with commas and currency symbols. |
-| 12 | `col_status_name` | Grid: Current Status | Label | String | — | Map label from `status_id` | "Submitted to Manager" / "Manager Reviewing" | `payment_requests.status_id` | Color-coded according to state (Warning / Processing). |
-| 13 | `ctrl_pagination` | Pagination Controls | Component | — | — | 1st Page | Based on matching scope counts | — | Includes Prev/Next buttons and indices. |
+| 8 | `col_request_id` | Grid: Request ID | Label | String | — | `payment_requests.request_number` | Unique string with prefix format | `payment_requests.request_number` | Unique Request ID. |
+| 9 | `col_applicant_name` | Grid: Applicant Name | Label | String | — | `users.full_name` | — | `users.full_name` | Full name of applicant employee. |
+| 10 | `col_total_amount` | Grid: Amount | Label | NUMERIC | — | `payment_requests.total_amount` | Currency format (e.g., ¥15,400) | `payment_requests.total_amount` | Formatted with commas and currency symbols. |
+| 11 | `col_application_date` | Grid: Date | Label | DATE | — | `payment_requests.application_date` | YYYY-MM-DD Format | `payment_requests.application_date` | The date the request was submitted by applicant. |
+| 12 | `col_urgent_flag` | Grid: Urgent Flag | Icon/Badge | — | — | Red Exclamation/Bell Icon | — | Computed from `desired_payment_date` | Active if desired_payment_date is <= 48 hours or overdue. |
+| 13 | `col_status_name` | Grid: Current Status | Label | String | — | Map label from `status_id` | "Submitted to Manager" / "Manager Reviewing" | `payment_requests.status_id` | Color-coded according to state (Warning / Processing). |
+| 14 | `ctrl_pagination` | Pagination Controls | Component | — | — | 1st Page | Based on matching scope counts | — | Includes Prev/Next buttons and indices. |
 
 ### 4.3 Section [C]: Request Detail & Action Panel Area (右カラム：申請詳細・審査パネル)
 
@@ -118,23 +119,23 @@ This screen is an integrated dashboard designed for users with the system author
 
 | No. | Item ID | Item Name (Logical) | Component Type | Data Type & Max Length | Required | Initial State / Default Value | Input Constraints / Formats | Data Source / DB Mapping | Remarks / Business Rules |
 | :---: | :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
-| 14 | `lbl_detail_status` | Detail: Current Status Text | Label | String | — | Selected row's state string | — | `payment_requests.status_id` | Auto-transitions to state `4 (Reviewing)` upon select if current state is `3`. |
-| 15 | `lbl_detail_req_id` | Detail: Request ID | Label | String | — | `payment_requests.id` | Read-only | `payment_requests.id` | — |
-| 16 | `lbl_detail_created_at` | Detail: Submission Timestamp | Label | DATE | — | `payment_requests.created_date` | YYYY-MM-DD HH:mm:ss | `payment_requests.created_date` | Read-only. |
-| 17 | `lbl_detail_app_name` | Detail: Applicant Name | Label | String | — | `users.full_name` | Read-only | `users.full_name` | — |
-| 18 | `lbl_detail_app_dept` | Detail: Applicant Branch/Dept | Label | String | — | `users.branch` / Dept Info | Read-only | `users.branch` | — |
-| 19 | `lbl_detail_item_type` | Detail: Payment Item Breakdown | Label | String | — | Ledger categorization | Read-only | — | e.g., Entertainment (交際費), Consumables (消耗品費). |
-| 20 | `lbl_detail_due_date` | Detail: Desired Payment Deadline | Label | DATE | — | `payment_requests.payment_deadline` | YYYY-MM-DD (Read-only) | `payment_requests.payment_deadline` | — |
-| 21 | `lbl_detail_total_amt` | Detail: Total Amount (Tax Incl.) | Label | NUMERIC | — | `payment_requests.total_amount` | Currency formatted (Read-only) | `payment_requests.total_amount` | — |
-| 22 | `lbl_detail_tax_amt` | Detail: Internal Consumption Tax | Label | NUMERIC | — | `payment_requests.tax_amount` | Currency formatted (Read-only) | `payment_requests.tax_amount` | — |
-| 23 | `txt_detail_purpose` | Detail: Purpose / Description | TextArea | String | — | `payment_requests.purpose` | Read-only, multi-line view | `payment_requests.purpose` | Newlines must be rendered properly. |
-| 24 | `lnk_receipt_file` | Receipt File Name Link | Link | String | — | `receipt_attachments.file_name` | Opens in a new tab | `receipt_attachments.file_name` | Uses short-lived signed URLs for security. |
-| 25 | `img_receipt_preview` | Receipt Inline Preview Area | Previewer | — | — | Thumbnail / First page PDF | PNG, JPG, PDF supported | — | Placeholder rendered if unsupported mime-type. |
-| 26 | `txt_manager_comment` | Review Manager Comment Box | TextArea | String(500) | Conditional | Empty | Max 500 characters (`VAL-MGR-001`), sanitized | — | Min length 10 characters required when Rejecting (`VAL-MGR-002`). |
-| 27 | `btn_action_reject` | Send Back / Reject Button | Button | — | — | Enabled / Visible | Triggers `VAL-MGR-002` | — | Transitions state to 5. Appends log to `approval_logs`. |
-| 28 | `btn_action_verify` | Approve / Verify Button | Button | — | — | Enabled / Visible | Triggers Optimistic Lock rules | — | Transitions state to 6. Appends log to `approval_logs`. |
-| 29 | `btn_close_panel` | Panel Close Button | Button | — | — | Enabled / "閉じる" | — | — | Clears panel context and unselects active row. |
-| 30 | `hdn_modified_date` | Hidden: Last Modified Date | Hidden | String | — | `payment_requests.modified_date` | Timestamp string text | `payment_requests.modified_date` | Used for Concurrency Checking (Optimistic Locking). |
+| 15 | `lbl_detail_status` | Detail: Current Status Text | Label | String | — | Selected row's state string | — | `payment_requests.status_id` | Auto-transitions to state `4 (Reviewing)` upon select if current state is `3`. |
+| 16 | `lbl_detail_req_id` | Detail: Request ID | Label | String | — | `payment_requests.request_number` | Read-only | `payment_requests.request_number` | Request ID format: PRF-YYYY-NNN. |
+| 17 | `lbl_detail_created_at` | Detail: Submission Timestamp | Label | DATE | — | `payment_requests.created_date` | YYYY-MM-DD HH:mm:ss | `payment_requests.created_date` | Read-only. |
+| 18 | `lbl_detail_app_name` | Detail: Applicant Name | Label | String | — | `users.full_name` | Read-only | `users.full_name` | Full name of applicant. |
+| 19 | `lbl_detail_app_dept` | Detail: Applicant Branch/Dept | Label | String | — | `users.branch` / Dept Info | Read-only | `users.branch` | Branch/Department of applicant. |
+| 20 | `lbl_detail_item_type` | Detail: Payment Item Breakdown | Label | String | — | Ledger categorization | Read-only | — | e.g., Entertainment (交際費), Consumables (消耗品費). |
+| 21 | `lbl_detail_due_date` | Detail: Desired Payment Deadline | Label | DATE | — | `payment_requests.desired_payment_date` | YYYY-MM-DD (Read-only) | `payment_requests.desired_payment_date` | Desired payment date. |
+| 22 | `lbl_detail_total_amt` | Detail: Total Amount (Tax Incl.) | Label | NUMERIC | — | `payment_requests.total_amount` | Currency formatted (Read-only) | `payment_requests.total_amount` | — |
+| 23 | `lbl_detail_tax_amt` | Detail: Internal Consumption Tax | Label | NUMERIC | — | `payment_requests.tax_amount` | Currency formatted (Read-only) | `payment_requests.tax_amount` | — |
+| 24 | `txt_detail_purpose` | Detail: Purpose / Description | TextArea | String | — | `payment_requests.purpose` | Read-only, multi-line view | `payment_requests.purpose` | Purpose and description text. |
+| 25 | `lnk_receipt_file` | Receipt File Name Link | Link | String | — | `receipt_attachments.file_name` | Opens in a new tab | `receipt_attachments.file_name` | Attached invoice/receipt file download link. |
+| 26 | `img_receipt_preview` | Receipt Inline Preview Area | Previewer | — | — | Thumbnail / First page PDF | PNG, JPG, PDF supported | — | Attached invoice/receipt inline preview. |
+| 27 | `txt_manager_comment` | Review Manager Comment Box | TextArea | String(500) | Conditional | Empty | Max 500 characters (`VAL-MGR-001`), sanitized | — | Min length 10 characters required when Rejecting (`VAL-MGR-002`). |
+| 28 | `btn_action_reject` | Send Back / Reject Button | Button | — | — | Enabled / Visible | Triggers `VAL-MGR-002` | — | Transitions state to 5. Appends log to `approval_logs`. Requires comment. |
+| 29 | `btn_action_verify` | Approve / Verify Button | Button | — | — | Enabled / Visible | Triggers Optimistic Lock rules | — | Transitions state to 4. Appends log to `approval_logs`. Labeled as "Approve" (or "Verify"). |
+| 30 | `btn_close_panel` | Panel Close Button | Button | — | — | Enabled / "閉じる" | — | — | Clears panel context and unselects active row. |
+| 31 | `hdn_modified_date` | Hidden: Last Modified Date | Hidden | String | — | `payment_requests.modified_date` | Timestamp string text | `payment_requests.modified_date` | Used for Concurrency Checking (Optimistic Locking). |
 
 ---
 

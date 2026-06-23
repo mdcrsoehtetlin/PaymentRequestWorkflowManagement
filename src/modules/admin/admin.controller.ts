@@ -18,7 +18,6 @@ import { RoleCode, JwtPayload, PaginatedResponse } from '../shared/types';
 import { AdminService } from './admin.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
 
 interface UserResponse {
@@ -108,7 +107,6 @@ export class AdminController {
    * @param dto The update payload.
    * @returns The updated user object.
    * @throws {NotFoundException} If user not found.
-   * @throws {ConflictException} If record concurrent edit conflict.
    */
   @Patch('users/:id')
   async updateUser(
@@ -139,9 +137,9 @@ export class AdminController {
   /**
    * @description Resets a user's password and evicts active sessions.
    * @param id The ID of the user to reset password for.
+   * @param dto The reset password DTO.
    * @returns New temporary password (displayed once).
    * @throws {NotFoundException} If user not found.
-   * @throws {ConflictException} If record concurrent edit conflict.
    */
   @Post('users/:id/reset-password')
   async resetPassword(

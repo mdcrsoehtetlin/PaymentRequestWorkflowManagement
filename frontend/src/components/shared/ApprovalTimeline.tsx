@@ -21,7 +21,7 @@ export function ApprovalTimeline({ logs }: ApprovalTimelineProps) {
         return (
           <div key={log.approvalLogId} className="relative pl-6">
             <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-slate-300"></div>
-            
+
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
               <div>
                 <span className="font-semibold text-slate-900 mr-2">{log.actionTakenByUser.fullName}</span>

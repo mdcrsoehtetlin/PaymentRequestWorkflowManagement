@@ -17,7 +17,6 @@ import { ApprovalLog } from '../shared/entities/approval-log.entity';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
 
 const BCRYPT_ROUNDS = 12;
@@ -221,26 +220,13 @@ export class AdminService {
       throw new NotFoundException('ユーザーが見つかりません');
     }
 
-    const result = await this.userRepository
-      .createQueryBuilder()
-      .update(User)
-      .set({
-        fullName: dto.fullName ?? user.fullName,
-        department: dto.department ?? user.department,
-        branch: dto.branch ?? user.branch,
-        roleId: dto.roleId ?? user.roleId,
-        isActive: dto.isActive ?? user.isActive,
-      })
-      .where('userId = :id', {
-        id,
-      })
-      .execute();
-
-    if (result.affected === 0) {
-      throw new ConflictException(
-        'このレコードは他のユーザーによって変更されました。更新してやり直してください。',
-      );
-    }
+    await this.userRepository.update(id, {
+      fullName: dto.fullName ?? user.fullName,
+      department: dto.department ?? user.department,
+      branch: dto.branch ?? user.branch,
+      roleId: dto.roleId ?? user.roleId,
+      isActive: dto.isActive ?? user.isActive,
+    });
 
     const updated = await this.userRepository.findOne({
       where: { userId: id },
@@ -338,10 +324,8 @@ export class AdminService {
   /**
    * @description Generates a new temporary password for a user.
    * @param id The user ID to reset password for.
-   * @param dto The reset password payload.
    * @returns The new temporary password (displayed once).
    * @throws {NotFoundException} If user not found.
-   * @throws {ConflictException} If record concurrent edit conflict.
    */
   async resetPassword(id: number): Promise<{
     userId: number;
@@ -357,22 +341,7 @@ export class AdminService {
     const temporaryPassword = this.generateTemporaryPassword();
     const passwordHash = await this.hashPassword(temporaryPassword);
 
-    const result = await this.userRepository
-      .createQueryBuilder()
-      .update(User)
-      .set({
-        passwordHash,
-      })
-      .where('userId = :id', {
-        id,
-      })
-      .execute();
-
-    if (result.affected === 0) {
-      throw new ConflictException(
-        'このレコードは他のユーザーによって変更されました。更新してやり直してください。',
-      );
-    }
+    await this.userRepository.update(id, { passwordHash });
 
     await this.evictUserSessions(id);
 
@@ -509,18 +478,18 @@ export class AdminService {
 
     return {
       data: data.map((log) => ({
-        approvalLogId: log.id,
-        paymentRequestId: Number(log.payment_request_id),
-        actionTakenByUserId: Number(log.action_taken_by_user_id),
+        approvalLogId: log.approvalLogId,
+        paymentRequestId: Number(log.paymentRequestId),
+        actionTakenByUserId: Number(log.actionTakenByUserId),
         actorName:
           (log as ApprovalLog & { actionTakenByUser?: User }).actionTakenByUser
             ?.fullName ?? 'Unknown',
-        actionTypeId: log.action_type_id,
-        previousStatusId: log.previous_status_id,
-        newStatusId: log.new_status_id,
+        actionTypeId: log.actionTypeId,
+        previousStatusId: log.previousStatusId,
+        newStatusId: log.newStatusId,
         comment: log.comment,
-        ipAddress: log.ip_address,
-        userAgent: log.user_agent,
+        ipAddress: log.ipAddress,
+        userAgent: log.userAgent,
         timestamp: log.timestamp,
       })),
       meta: {
