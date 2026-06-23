@@ -41,7 +41,7 @@ export class ManagerController {
    * @throws {Error} If verification fails.
    */
   @Post(':id/verify')
-  async verifyRequest(
+  verifyRequest(
     @Request() req: { user: JwtPayload },
     @Param('id', ParseIntPipe) id: number,
     @Body('comment') comment?: string,
@@ -59,7 +59,7 @@ export class ManagerController {
    * @throws {Error} If rejection fails.
    */
   @Post(':id/reject')
-  async rejectRequest(
+  rejectRequest(
     @Request() req: { user: JwtPayload },
     @Param('id', ParseIntPipe) id: number,
     @Body('comment') comment: string,

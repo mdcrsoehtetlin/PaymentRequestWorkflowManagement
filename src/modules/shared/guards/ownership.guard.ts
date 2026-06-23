@@ -19,24 +19,24 @@ export class OwnershipGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<{
-      user: JwtPayload;
-      params: { id: string };
+      user?: JwtPayload;
+      params: Record<string, string>;
       paymentRequest?: PaymentRequest;
     }>();
-    const user: JwtPayload = request.user;
-    const userId = user.sub;
+    const user = request.user;
+    const userId = user?.sub;
     const requestId = parseInt(request.params.id, 10);
 
     if (!requestId) return true;
 
     const paymentRequest = await this.repo.findOne({
-      where: { paymentRequestId: requestId, isDeleted: false },
+      where: { id: requestId, is_deleted: false },
     });
 
     if (!paymentRequest) {
       throw new NotFoundException('指定された申請が見つかりません');
     }
-    if (paymentRequest.applicantUserId !== userId) {
+    if (paymentRequest.applicant_user_id !== userId) {
       throw new ForbiddenException('この操作を実行する権限がありません');
     }
 

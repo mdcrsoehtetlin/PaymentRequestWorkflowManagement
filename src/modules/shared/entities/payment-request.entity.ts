@@ -4,166 +4,162 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
   OneToMany,
+  ManyToOne,
   JoinColumn,
-  VersionColumn,
 } from 'typeorm';
-import { User } from './user.entity';
 import { PaymentBreakdownItem } from './payment-breakdown-item.entity';
-import { ApprovalLog } from './approval-log.entity';
 import { ReceiptFile } from './receipt-file.entity';
+import { ApprovalLog } from './approval-log.entity';
+import { User } from './user.entity';
 
 @Entity('payment_requests')
 export class PaymentRequest {
   @PrimaryGeneratedColumn({ name: 'payment_request_id' })
-  paymentRequestId!: number;
+  id!: number;
 
-  @Column({ name: 'request_number', unique: true, length: 50 })
-  requestNumber!: string;
+  @Column({ unique: true, type: 'varchar', length: 50 })
+  request_number!: string;
 
-  @Column({ name: 'applicant_user_id' })
-  applicantUserId!: number;
+  @Column({ name: 'applicant_user_id', type: 'int' })
+  applicant_user_id!: number;
 
-  @ManyToOne(() => User, (user) => user.paymentRequestsAsApplicant, {
-    onDelete: 'RESTRICT',
-    onUpdate: 'CASCADE',
-  })
-  @JoinColumn({ name: 'applicant_user_id' })
-  applicant!: User;
+  @Column({ name: 'manager_user_id', type: 'int', nullable: true })
+  manager_user_id!: number | null;
 
-  @Column({ name: 'manager_user_id', nullable: true })
-  managerUserId!: number;
+  @Column({ name: 'final_approver_user_id', type: 'int', nullable: true })
+  final_approver_user_id!: number | null;
 
-  @ManyToOne(() => User, (user) => user.paymentRequestsAsManager, {
-    onDelete: 'SET NULL',
-    onUpdate: 'CASCADE',
-    nullable: true,
-  })
-  @JoinColumn({ name: 'manager_user_id' })
-  manager!: User;
+  @Column({ name: 'accounting_user_id', type: 'int', nullable: true })
+  accounting_user_id!: number | null;
 
-  @Column({ name: 'final_approver_user_id', nullable: true })
-  finalApproverUserId!: number;
+  @Column({ name: 'current_assigned_to_user_id', type: 'int', nullable: true })
+  current_assigned_to_user_id!: number | null;
 
-  @ManyToOne(() => User, (user) => user.paymentRequestsAsApprover, {
-    onDelete: 'SET NULL',
-    onUpdate: 'CASCADE',
-    nullable: true,
-  })
-  @JoinColumn({ name: 'final_approver_user_id' })
-  finalApprover!: User;
+  @Column({ name: 'manager_user_id', type: 'int', nullable: true })
+  manager_user_id!: number | null;
 
-  @Column({ name: 'accounting_user_id', nullable: true })
-  accountingUserId!: number;
+  @Column({ name: 'final_approver_user_id', type: 'int', nullable: true })
+  final_approver_user_id!: number | null;
 
-  @ManyToOne(() => User, (user) => user.paymentRequestsAsAccounting, {
-    onDelete: 'SET NULL',
-    onUpdate: 'CASCADE',
-    nullable: true,
-  })
-  @JoinColumn({ name: 'accounting_user_id' })
-  accounting!: User;
+  @Column({ name: 'accounting_user_id', type: 'int', nullable: true })
+  accounting_user_id!: number | null;
 
-  @Column({ name: 'current_assigned_to_user_id', nullable: true })
-  currentAssignedToUserId!: number;
+  @Column({ type: 'int' })
+  status_id!: number;
 
-  @ManyToOne(() => User, (user) => user.assignedPaymentRequests, {
-    onDelete: 'SET NULL',
-    onUpdate: 'CASCADE',
-    nullable: true,
-  })
-  @JoinColumn({ name: 'current_assigned_to_user_id' })
-  currentAssignedTo!: User;
+  @Column({ type: 'numeric', precision: 12, scale: 2 })
+  total_amount!: string;
 
-  @Column({ name: 'application_date', type: 'date' })
-  applicationDate!: Date | string;
+  @Column({ type: 'int' })
+  currency_id!: number;
 
-  @Column({ name: 'desired_payment_date', type: 'date' })
-  desiredPaymentDate!: Date | string;
+  @Column({ type: 'date' })
+  application_date!: string;
 
-  @Column({ name: 'total_amount', type: 'numeric', precision: 12, scale: 2 })
-  totalAmount!: string; // Map to string in NestJS to prevent precision loss
+  @Column({ type: 'date' })
+  desired_payment_date!: string;
 
-  @Column({ name: 'currency_id' })
-  currencyId!: number;
+  @Column({ type: 'int' })
+  payment_type_id!: number;
 
-  @Column({ name: 'payment_type_id' })
-  paymentTypeId!: number;
+  @Column({ type: 'int' })
+  payment_method_id!: number;
 
-  @Column({ name: 'payment_method_id' })
-  paymentMethodId!: number;
-
-  @Column({ length: 500 })
+  @Column({ type: 'varchar', length: 500 })
   purpose!: string;
 
-  @Column({ name: 'bank_account_info', length: 200, nullable: true })
-  bankAccountInfo!: string;
+  @Column({
+    name: 'bank_account_info',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  bank_account_info!: string | null;
 
-  @Column({ name: 'request_content', type: 'text' })
-  requestContent!: string;
+  @Column({ type: 'text' })
+  request_content!: string;
 
-  @Column({ name: 'has_receipt', default: true })
-  hasReceipt!: boolean;
+  @Column({ name: 'bank_account_info', type: 'text', nullable: true })
+  bank_account_info!: string | null;
 
-  @Column({ name: 'status_id' })
-  statusId!: number;
+  @Column({ type: 'boolean', default: false })
+  has_receipt!: boolean;
 
   @Column({
     name: 'submitted_to_manager_date',
-    type: 'timestamp with time zone',
+    type: 'timestamptz',
     nullable: true,
   })
-  submittedToManagerDate!: Date;
+  submitted_to_manager_date!: Date | null;
 
   @Column({
     name: 'manager_verification_date',
-    type: 'timestamp with time zone',
+    type: 'timestamptz',
     nullable: true,
   })
-  managerVerificationDate!: Date;
+  manager_verification_date!: Date | null;
 
   @Column({
     name: 'submitted_to_approver_date',
-    type: 'timestamp with time zone',
+    type: 'timestamptz',
     nullable: true,
   })
-  submittedToApproverDate!: Date;
+  submitted_to_approver_date!: Date | null;
 
-  @Column({
-    name: 'approval_date',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  approvalDate!: Date;
+  @Column({ name: 'approval_date', type: 'timestamptz', nullable: true })
+  approval_date!: Date | null;
 
   @Column({
     name: 'payment_completed_date',
-    type: 'timestamp with time zone',
+    type: 'timestamptz',
     nullable: true,
   })
-  paymentCompletedDate!: Date;
+  payment_completed_date!: Date | null;
 
-  @CreateDateColumn({ name: 'created_date', type: 'timestamp with time zone' })
-  createdDate!: Date;
+  @Column({ type: 'boolean', default: false })
+  is_deleted!: boolean;
 
-  @UpdateDateColumn({ name: 'modified_date', type: 'timestamp with time zone' })
-  modifiedDate!: Date;
+  @Column({ name: 'submitted_to_manager_date', type: 'date', nullable: true })
+  submitted_to_manager_date!: string | null;
 
-  @Column({ name: 'is_deleted', default: false })
-  isDeleted!: boolean;
+  @Column({ name: 'manager_verification_date', type: 'date', nullable: true })
+  manager_verification_date!: string | null;
 
-  @VersionColumn()
-  version!: number;
+  @Column({ name: 'submitted_to_approver_date', type: 'date', nullable: true })
+  submitted_to_approver_date!: string | null;
 
-  @OneToMany(() => PaymentBreakdownItem, (item) => item.paymentRequest, {
-    cascade: true,
-  })
-  breakdownItems!: PaymentBreakdownItem[];
+  @Column({ name: 'approval_date', type: 'date', nullable: true })
+  approval_date!: string | null;
 
-  @OneToMany(() => ApprovalLog, (log) => log.paymentRequest)
-  approvalLogs!: ApprovalLog[];
+  @Column({ name: 'payment_completed_date', type: 'date', nullable: true })
+  payment_completed_date!: string | null;
 
-  @OneToMany(() => ReceiptFile, (file) => file.paymentRequest)
-  receiptFiles!: ReceiptFile[];
+  @CreateDateColumn({ name: 'created_date' })
+  created_at!: Date;
+
+  @ManyToOne(() => User, { eager: false })
+  @JoinColumn({ name: 'final_approver_user_id' })
+  final_approver!: User | null;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'applicant_user_id' })
+  applicant!: User;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'manager_user_id' })
+  manager!: User | null;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'final_approver_user_id' })
+  final_approver!: User | null;
+
+  @OneToMany(() => PaymentBreakdownItem, (item) => item.payment_request)
+  breakdowns!: PaymentBreakdownItem[];
+
+  @OneToMany(() => ReceiptFile, (file) => file.payment_request)
+  receipts!: ReceiptFile[];
+
+  @OneToMany(() => ApprovalLog, (log) => log.payment_request)
+  logs!: ApprovalLog[];
 }

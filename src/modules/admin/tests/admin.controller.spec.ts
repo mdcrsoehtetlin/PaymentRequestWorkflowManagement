@@ -3,7 +3,6 @@ import { AdminController } from '../admin.controller';
 import { AdminService } from '../admin.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { AuditLogQueryDto } from '../dto/audit-log-query.dto';
 
 describe('AdminController', () => {
@@ -88,6 +87,7 @@ describe('AdminController', () => {
     it('should call adminService.createUser with DTO', async () => {
       const dto: CreateUserDto = {
         email: 'new@example.com',
+        password: 'securePass123',
         fullName: 'New User',
         employeeNumber: 'EMP-002',
         branch: 'Yangon',
@@ -160,15 +160,14 @@ describe('AdminController', () => {
 
   describe('POST /users/:id/reset-password', () => {
     it('should call adminService.resetPassword with id and DTO', async () => {
-      const dto: ResetPasswordDto = {};
       mockService.resetPassword.mockResolvedValue({
         userId: 1,
         temporaryPassword: 'newpass',
       });
 
-      const result = await controller.resetPassword(1, dto);
+      const result = await controller.resetPassword(1);
 
-      expect(mockService.resetPassword).toHaveBeenCalledWith(1, dto);
+      expect(mockService.resetPassword).toHaveBeenCalledWith(1);
       expect(result.temporaryPassword).toBe('newpass');
     });
   });

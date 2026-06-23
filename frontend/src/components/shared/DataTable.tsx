@@ -35,7 +35,7 @@ export function DataTable<T>({
   columns,
   data,
   isLoading = false,
-  emptyMessage = 'No data found',
+  emptyMessage = 'No data available',
   onRowClick,
   pagination,
   sorting,
@@ -107,7 +107,7 @@ export function DataTable<T>({
             >
               {[10, 20, 50].map((size) => (
                 <option key={size} value={size}>
-                  {size} items
+                  {size} rows
                 </option>
               ))}
             </select>
@@ -119,7 +119,7 @@ export function DataTable<T>({
             <span className="mx-2 font-medium text-slate-900">
               {Math.min(pagination.page * pagination.pageSize, pagination.totalItems)}
             </span>
-            / Total <span className="mx-1 font-medium text-slate-900">{pagination.totalItems}</span> items
+            of <span className="mx-1 font-medium text-slate-900">{pagination.totalItems}</span> results
           </div>
 
           <div className="flex items-center space-x-2">
@@ -128,7 +128,7 @@ export function DataTable<T>({
               disabled={pagination.page <= 1}
               className="px-3 py-1 border border-slate-300 rounded bg-white text-slate-600 disabled:opacity-50 hover:bg-slate-50 text-sm font-medium"
             >
-               Previous
+              Previous
             </button>
             <span className="text-sm text-slate-600 px-2">
               {pagination.page} / {pagination.totalPages || 1}
@@ -138,7 +138,7 @@ export function DataTable<T>({
               disabled={pagination.page >= pagination.totalPages}
               className="px-3 py-1 border border-slate-300 rounded bg-white text-slate-600 disabled:opacity-50 hover:bg-slate-50 text-sm font-medium"
             >
-               Next
+              Next
             </button>
           </div>
         </div>

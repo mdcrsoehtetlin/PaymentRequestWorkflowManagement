@@ -1,4 +1,4 @@
-import { STATUS_LABELS_EN, STATUS_COLORS } from '../../types';
+import { STATUS_COLORS, STATUS_LABELS_EN } from '../../types';
 
 interface StatusBadgeProps {
   statusId: number;
@@ -18,7 +18,6 @@ export function StatusBadge({ statusId, size = 'md' }: StatusBadgeProps) {
     'inline-flex items-center rounded-full font-medium border';
   const sizeClasses =
     size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs';
-  // STATUS_COLORS already includes border classes per design system §9.2.2
   const colorClasses =
     STATUS_COLORS[statusId as keyof typeof STATUS_COLORS] ??
     'bg-gray-100 text-gray-700 border-gray-200';

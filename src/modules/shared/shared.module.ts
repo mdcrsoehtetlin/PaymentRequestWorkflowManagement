@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
 
 // Entities
 import { User } from './entities/user.entity';
@@ -16,6 +17,7 @@ import { WebsocketGateway } from './websocket.gateway';
 import { RequestNumberService } from './services/request-number.service';
 import { FileUploadService } from './services/file-upload.service';
 import { AuditLogService } from './services/audit-log.service';
+import { RedisService } from './services/redis.service';
 
 /**
  * @description SharedModule — the foundation layer for all feature modules.
@@ -39,17 +41,32 @@ import { AuditLogService } from './services/audit-log.service';
     ]),
   ],
   providers: [
+    {
+      provide: 'REDIS_CLIENT',
+      useFactory: (configService: ConfigService) => {
+        return new Redis({
+          host: configService.get<string>('redis.host', 'localhost'),
+          port: configService.get<number>('redis.port', 6379),
+          password:
+            configService.get<string>('redis.password', '') || undefined,
+        });
+      },
+      inject: [ConfigService],
+    },
     WebsocketGateway,
     RequestNumberService,
     FileUploadService,
     AuditLogService,
+    RedisService,
   ],
   exports: [
     TypeOrmModule,
+    'REDIS_CLIENT',
     WebsocketGateway,
     RequestNumberService,
     FileUploadService,
     AuditLogService,
+    RedisService,
   ],
 })
 export class SharedModule {}

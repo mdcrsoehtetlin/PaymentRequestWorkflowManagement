@@ -4,6 +4,7 @@ import {
   ConfigModule as NestConfigModule,
   ConfigService,
 } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from './config/config.module';
 import { SharedModule } from './modules/shared/shared.module';
@@ -19,6 +20,7 @@ import { RolesGuard } from './modules/shared/guards/roles.guard';
 @Module({
   imports: [
     ConfigModule,
+    CacheModule.register({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [NestConfigModule],
       inject: [ConfigService],
@@ -30,7 +32,7 @@ import { RolesGuard } from './modules/shared/guards/roles.guard';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
         autoLoadEntities: true,
-        synchronize: configService.get<boolean>('database.synchronize'),
+        synchronize: true,
         logging: configService.get<boolean>('database.logging'),
         ssl: configService.get<boolean>('database.ssl')
           ? { rejectUnauthorized: false }
