@@ -36,7 +36,9 @@ export class LoggingInterceptor implements NestInterceptor {
     const { method, url, ip } = req;
     const user = req.user as JwtPayload | undefined;
     const userId = user?.sub;
-    const requestId = req.headers['x-request-id'] || 'N/A';
+    const requestId = Array.isArray(req.headers['x-request-id'])
+      ? req.headers['x-request-id'].join(',')
+      : req.headers['x-request-id'] || 'N/A';
     const startTime = Date.now();
 
     return next.handle().pipe(
