@@ -1,10 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileEdit, Send, XCircle, CheckCircle, Plus, FileText, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { fetchPaymentRequests, deleteDraft } from './services/api';
-import type { DashboardResponseDto } from './services/api';
-import { useApplicantSocket } from './hooks/useApplicantSocket';
-
+import { useWebSocket } from './hooks/use-websocket';
+import { usePaymentRequests } from './hooks/use-payment-requests';
 import { StatusBadge } from '../../components/shared';
 
 const formatCurrency = (amount: string, currencyId: number) => {
@@ -15,60 +13,32 @@ const formatCurrency = (amount: string, currencyId: number) => {
 
 const ApplicantDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [data, setData] = useState<DashboardResponseDto | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [page, setPage] = useState<number>(1);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const limit = 10;
   
-  const { lastUpdate, clearLastUpdate } = useApplicantSocket('1');
+  const { lastUpdate, clearLastUpdate } = useWebSocket('1');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const result = await fetchPaymentRequests(page, limit);
-      setData(result);
-    } catch (error) {
-      console.error('Failed to load dashboard data', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [page]);
+  const {
+    data,
+    loading,
+    page,
+    setPage,
+    deleteId,
+    setDeleteId,
+    handleDelete
+  } = usePaymentRequests(limit, lastUpdate);
 
   useEffect(() => {
     if (lastUpdate) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setToastMessage(`Request ${lastUpdate.requestNumber} status updated!`);
-      loadData();
-      
       const timer = setTimeout(() => {
         setToastMessage(null);
         clearLastUpdate();
       }, 5000);
-      
       return () => clearTimeout(timer);
     }
-  }, [lastUpdate, loadData, clearLastUpdate]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadData();
-  }, [loadData]);
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    try {
-      setLoading(true);
-      await deleteDraft(deleteId);
-      setDeleteId(null);
-      await loadData();
-    } catch (error) {
-      console.error('Failed to delete draft', error);
-      alert('Failed to delete draft');
-      setLoading(false);
-    }
-  };
+  }, [lastUpdate, clearLastUpdate]);
 
   const kpis = data?.kpis || {
     total_draft: 0,

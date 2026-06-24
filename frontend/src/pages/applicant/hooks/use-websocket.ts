@@ -14,7 +14,12 @@ export interface StatusUpdatePayload {
   timestamp: string;
 }
 
-export const useApplicantSocket = (applicantId: string = '1') => {
+/**
+ * @description Custom hook to manage WebSocket connection for real-time payment request status updates.
+ * @param {string} applicantId - The ID of the applicant.
+ * @returns {Object} An object containing the socket instance, the last received status update, and a function to clear the last update.
+ */
+export const useWebSocket = (applicantId: string = '1') => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [lastUpdate, setLastUpdate] = useState<StatusUpdatePayload | null>(
     null,

@@ -158,19 +158,22 @@ export class ApplicantService {
       }
 
       const request = manager.create(PaymentRequest, {
-        request_number: requestNumber,
-        applicant_user_id: applicantId,
-        status_id: 1, // Draft
-        total_amount: totalAmount.toString(),
-        currency_id: dto.currency_id || 1,
-        application_date:
+        requestNumber: requestNumber,
+        applicantUserId: applicantId,
+        statusId: 1, // Draft
+        totalAmount: totalAmount.toString(),
+        currencyId: dto.currency_id || 1,
+        applicationDate:
           dto.application_date || new Date().toISOString().split('T')[0],
         desiredPaymentDate:
           dto.desired_payment_date || new Date().toISOString().split('T')[0],
         paymentTypeId: dto.payment_type_id || 1,
         paymentMethodId: dto.payment_method_id || 1,
-        purpose: dto.purpose || 'Draft Purpose',
-        request_content: dto.request_content || 'Draft Content',
+        managerUserId: dto.target_manager_id || null,
+        purpose: dto.purpose || '',
+        requestContent: dto.request_content || '',
+        hasReceipt: dto.has_receipt || false,
+        bankAccountInfo: dto.bank_account_info || null,
       });
 
       const savedRequest = await manager.save(request);
@@ -178,7 +181,7 @@ export class ApplicantService {
       if (dto.breakdowns && dto.breakdowns.length > 0) {
         const items = dto.breakdowns.map((b, index) =>
           manager.create(PaymentBreakdownItem, {
-            id: savedRequest.id,
+            payment_request_id: savedRequest.id,
             lineNumber: index + 1,
             itemDate:
               dto.application_date || new Date().toISOString().split('T')[0],
@@ -190,9 +193,9 @@ export class ApplicantService {
       }
 
       const log = manager.create(ApprovalLog, {
-        id: savedRequest.id,
+        paymentRequestId: savedRequest.id,
         actionTakenByUserId: Number(applicantId),
-        actionTypeId: 1,
+        actionTypeId: 1, // CREATED
         newStatusId: 1,
         comment: 'Draft created',
         ipAddress: '127.0.0.1',
@@ -235,6 +238,14 @@ export class ApplicantService {
         throw new BadRequestException('Desired payment date is required');
       if (!request.paymentMethodId)
         throw new BadRequestException('Payment method is required');
+      if (!request.paymentTypeId)
+        throw new BadRequestException('Payment type is required');
+      if (!request.purpose || !request.purpose.trim())
+        throw new BadRequestException('Purpose is required');
+      if (!request.requestContent || !request.requestContent.trim())
+        throw new BadRequestException('Payment request content is required');
+      if (!request.managerUserId)
+        throw new BadRequestException('Target manager must be selected');
       if (!request.breakdowns || request.breakdowns.length === 0)
         throw new BadRequestException(
           'At least one breakdown item is required',
@@ -247,16 +258,25 @@ export class ApplicantService {
       if (total <= 0)
         throw new BadRequestException('Total amount must be greater than 0');
 
+      if (request.hasReceipt) {
+        const activeReceipts =
+          request.receipts?.filter((r) => !r.isDeleted) || [];
+        if (activeReceipts.length === 0) {
+          throw new BadRequestException(
+            'At least one receipt file must be attached when Receipt Present is Yes',
+          );
+        }
+      }
+
       const previousStatus = request.statusId;
       request.statusId = 2;
-      request.hasReceipt = !!(request.receipts && request.receipts.length > 0);
 
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
-        id: savedRequest.id,
+        paymentRequestId: savedRequest.id,
         actionTakenByUserId: Number(applicantId),
-        actionTypeId: 2,
+        actionTypeId: 3, // SUBMITTED
         previousStatusId: previousStatus,
         newStatusId: 2,
         comment: 'Submitted to Manager',
@@ -301,6 +321,13 @@ export class ApplicantService {
     if (request.statusId !== 1 && request.statusId !== 4) {
       throw new BadRequestException(
         'Receipts can only be uploaded for Draft or Rejected requests',
+      );
+    }
+
+    const nameRegex = /^.+_\d{8}_\d+\.(pdf|png|jpg|jpeg)$/i;
+    if (!nameRegex.test(file.originalname)) {
+      throw new BadRequestException(
+        'File name must follow the format {Description}_{YYYYMMDD}_{Seq}.{ext} (e.g., Taxi_20231025_01.pdf)',
       );
     }
 
@@ -357,9 +384,9 @@ export class ApplicantService {
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
-        id: savedRequest.id,
+        paymentRequestId: savedRequest.id,
         actionTakenByUserId: Number(applicantId),
-        actionTypeId: 3,
+        actionTypeId: 3, // SUBMITTED
         previousStatusId: 4,
         newStatusId: 6,
         comment: 'Submitted to Final Approver',
@@ -439,9 +466,9 @@ export class ApplicantService {
       const savedRequest = await manager.save(request);
 
       const log = manager.create(ApprovalLog, {
-        id: savedRequest.id,
+        paymentRequestId: savedRequest.id,
         actionTakenByUserId: Number(applicantId),
-        actionTypeId: 2,
+        actionTypeId: 2, // EDITED
         previousStatusId: request.statusId,
         newStatusId: request.statusId,
         comment: 'Request edited',
@@ -484,9 +511,9 @@ export class ApplicantService {
       );
 
       const log = manager.create(ApprovalLog, {
-        id: request.id,
+        paymentRequestId: request.id,
         actionTakenByUserId: Number(applicantId),
-        actionTypeId: 2,
+        actionTypeId: 2, // EDITED (soft-delete action)
         previousStatusId: 1,
         newStatusId: 1,
         comment: 'Draft deleted',

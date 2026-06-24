@@ -201,3 +201,74 @@
 - Setup tasks and Foundational tasks marked [P] can run in parallel.
 - DTO creation across different user stories can run in parallel.
 - Frontend component UI design (like `StatusBadge.tsx`, `BreakdownItemTable.tsx`) can be built in parallel with backend services.
+
+---
+
+## Phase 12: Convergence
+
+**Purpose**: Close gaps identified between the implementation and the specification.
+
+- [X] T056 CRITICAL: Add missing JSDoc comments to `ownership.guard.ts` and `useApplicantSocket.ts` per Constitution I (missing)
+- [X] T057 Add missing FR-002 UI fields (Payment Type, Target Manager, Receipt Present, Purpose, Request Content, Employee Info) to frontend form and `create-payment-request.dto.ts` per FR-002 (missing)
+- [X] T058 Enforce server-side receipt file naming convention validation `{Description}_{Date}_{Seq}.{ext}` in receipt upload per FR-003 (missing)
+- [X] T059 Extract inline breakdown logic into `BreakdownItemTable.tsx` component per T021 (partial)
+- [X] T060 Extract inline total calculation into `calculate-total.ts` per T023 (missing)
+- [X] T061 Extract inline dashboard fetching logic into `use-payment-requests.ts` hook per T016 (missing)
+- [X] T062 Rename `useApplicantSocket.ts` to `use-websocket.ts` to enforce kebab-case per Constitution I / T047 (contradicts)
+
+---
+
+## Phase 13: Convergence
+
+**Purpose**: Close gaps identified between the implementation and the specification.
+
+- [x] T063 Implement `submitToManager` logic in `applicant.service.ts` and `applicant.controller.ts` per US3 / T025, T026 (missing)
+- [x] T064 Add server-side validation to `submitToManager` to block request submission if `has_receipt = true` but no receipts are attached per FR-014 (missing)
+- [x] T065 Integrate `ReceiptUpload.tsx` component into `form.tsx` so applicants can upload receipts during draft creation/edit per US4 / T033 (missing)
+
+---
+
+## Phase 14: Convergence
+
+**Purpose**: Close gaps identified between the implementation and the specification.
+
+- [x] T066 Ensure receipt upload UI is visible during new draft creation in `form.tsx` (currently hidden without `createdDraftId`) per US4 / T065 (partial)
+
+---
+
+## Phase 15: Convergence
+
+**Purpose**: Close critical gaps causing "Failed to save draft" error and other issues in the new payment request flow.
+
+- [x] T067 CRITICAL: Fix entity property names in `applicant.service.ts` `createDraft` — use camelCase TS names (`requestNumber`, `applicantUserId`, `statusId`, `totalAmount`, `currencyId`, `applicationDate`, `requestContent`) instead of snake_case DB column names per Constitution I (contradicts)
+- [x] T068 CRITICAL: Fix `PaymentBreakdownItem` FK assignment in `createDraft` — use `payment_request_id: savedRequest.id` instead of `id: savedRequest.id` per FR-002 (contradicts)
+- [x] T069 CRITICAL: Fix `ApprovalLog` FK assignment across all service methods — use `paymentRequestId: savedRequest.id` instead of `id: savedRequest.id` per FR-007 (contradicts)
+- [x] T070 Fix frontend `api.ts` submit-to-manager URL from `/submit-manager` to `/submit-to-manager` to match backend controller per FR-009 (contradicts)
+- [x] T071 Fix `form.tsx` dropdown option values to match enums — Currency (MMK=1, USD=2, JPY=3, THB=4), Payment Method (Bank Transfer=1, Cash=2, Check=3) per FR-002 (contradicts)
+- [x] T072 Replace all `alert()` calls in `form.tsx` with toast notifications via `globalToast` CustomEvent per Constitution V (contradicts)
+- [x] T073 Integrate client-side validation in `form.tsx` with proper draft/submit mode validation per FR-014 (missing)
+- [x] T074 Add conditional `bank_account_info` field in `form.tsx` when Payment Method is Bank Transfer or Cash per FR-014 / Scenario 2 (missing)
+- [x] T075 Convert breakdown `amount` from string to number before sending to backend API per FR-013 (partial)
+- [x] T076 Persist `target_manager_id` from DTO to entity `managerUserId` in backend `createDraft` per FR-009 (missing)
+- [x] T077 Update focus ring colors from `focus:ring-blue-500` to `focus:ring-indigo-500` in `form.tsx` per Constitution V (contradicts)
+- [x] T078 Add `max={today}` to `application_date` input to prevent future dates per Scenario 2 (partial)
+- [x] T079 Add `maxLength` attributes — Purpose (255 chars), Request Content (1000 chars) per FR-002 (partial)
+- [x] T080 Fix `submitToManager` action type from `actionTypeId: 2` (EDITED) to `actionTypeId: 3` (SUBMITTED) per FR-007 (contradicts)
+- [x] T081 Add complete field validation in `submitToManager` — check purpose, requestContent, paymentTypeId, managerUserId per FR-014 (missing)
+- [x] T082 Fix `detail.tsx` receipt upload visibility from `[1, 4]` to `EDITABLE_STATUSES [1, 5, 9]` per US4 / Scenario 4 (contradicts)
+- [x] T083 Use `STATUS_LABELS_EN` for approval log status display in `detail.tsx` instead of hardcoded strings per FR-011 (missing)
+- [x] T084 Write unit tests for fixed `createDraft` and `submitToManager` in `applicant.service.spec.ts` per Constitution testing standards (missing)
+- [x] T085 Write unit tests for `form.tsx` validation logic covering draft save and submission modes per Constitution testing standards (NA: testing libraries not installed on frontend, backend validation fully tested)
+- [x] T086 Fix `RequestNumberService` `generateNext()` algorithm to parse integer sequence numbers instead of string-based `MAX()`, resolving the 500 duplicate key error.
+- [x] T087 Implement direct receipt file upload selection during new draft creation in `form.tsx`, automatically uploading the file upon successful draft save per user request.
+- [x] T088 Change `apiClient.patch` to `apiClient.put` in `form.tsx` for updating a draft, since the backend controller uses `@Put(':id')` instead of `@Patch(':id')`.
+
+---
+
+## Phase 16: Convergence 2 (Detail View Gaps)
+
+**Purpose**: Close remaining gaps in the applicant request detail view, specifically around editing rejected requests and commenting.
+
+- [x] T089 Update `detail.tsx` to display all request fields (Purpose, Content, Target Manager, Payment Type, Currency Type, Bank Account Info) in read-only mode per FR-001. (missing)
+- [x] T090 Update `detail.tsx` Edit mode (`isEditing`) to allow modifying all the aforementioned missing fields per Scenario 6. (missing)
+- [x] T091 Implement the "Add Comment" box in `detail.tsx` to allow applicants to reply to rejection comments, displaying it in the activity log immediately per Scenario 6. (missing)

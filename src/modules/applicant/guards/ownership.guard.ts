@@ -6,8 +6,19 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 
+/**
+ * Guard that ensures a user can only access resources they own.
+ * Currently allows requests to proceed and marks them as verified;
+ * actual ownership is verified at the controller/service level.
+ */
 @Injectable()
 export class OwnershipGuard implements CanActivate {
+  /**
+   * @description Validates if the current user is authenticated and marks the request for ownership verification.
+   * @param {ExecutionContext} context - The execution context of the request.
+   * @returns {boolean | Promise<boolean> | Observable<boolean>} True if user exists, false/throws otherwise.
+   * @throws {ForbiddenException} If the user is not authenticated.
+   */
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {

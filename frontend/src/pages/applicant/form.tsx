@@ -1,62 +1,246 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, Send } from 'lucide-react';
 import apiClient from '../../services/api-client';
+import { uploadReceipt } from './services/api';
+import { BreakdownItemTable } from './components/BreakdownItemTable';
+import ReceiptUpload from './components/ReceiptUpload';
+import { calculateTotal, type BreakdownItem } from './utils/calculate-total';
+import { useAuthContext } from '../../contexts/AuthContext';
+import {
+  PaymentMethod,
+  Currency,
+  PaymentType,
+  PAYMENT_METHOD_LABELS_EN,
+  PAYMENT_TYPE_LABELS_EN,
+  CURRENCY_CODES,
+  BANK_INFO_REQUIRED_METHODS,
+} from '../../types';
+
+/**
+ * Dispatches a globalToast custom event used by the ToastContainer component.
+ * Constitution V forbids browser alert()/confirm() dialogs.
+ */
+const triggerToast = (
+  type: 'success' | 'error' | 'warning' | 'info',
+  message: string,
+): void => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('globalToast', { detail: { type, message } }),
+    );
+  }
+};
 
 const PaymentRequestForm: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [loading, setLoading] = useState(false);
+  const today = new Date().toISOString().split('T')[0];
+  
   const [formData, setFormData] = useState({
-    currency_id: 1,
-    application_date: new Date().toISOString().split('T')[0],
-    desired_payment_date: new Date().toISOString().split('T')[0],
-    payment_type_id: 1,
-    payment_method_id: 1,
+    currency_id: Currency.MMK as number,
+    application_date: today,
+    desired_payment_date: today,
+    payment_type_id: PaymentType.ADVANCE_PAYMENT as number,
+    payment_method_id: PaymentMethod.BANK_TRANSFER as number,
+    target_manager_id: 1,
+    has_receipt: false,
+    purpose: '',
+    request_content: '',
+    bank_account_info: '',
   });
-  const [breakdowns, setBreakdowns] = useState([{ description: '', amount: 0 }]);
 
-  const handleAddBreakdown = () => {
-    if (breakdowns.length >= 15) return;
-    setBreakdowns([...breakdowns, { description: '', amount: 0 }]);
+  const [breakdowns, setBreakdowns] = useState<BreakdownItem[]>([
+    { department: '', projectName: '', description: '', amount: '' }
+  ]);
+
+  const [createdDraftId, setCreatedDraftId] = useState<string | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  /** Validates the form for draft save (relaxed) */
+  const validateDraft = (): string[] => {
+    const errors: string[] = [];
+    // At least one breakdown item with description or amount
+    const validBreakdowns = breakdowns.filter(
+      (b) => b.description.trim() !== '' || (parseFloat(b.amount) > 0),
+    );
+    if (validBreakdowns.length === 0) {
+      errors.push('At least one breakdown item is required.');
+    }
+    // Application date cannot be in the future
+    if (formData.application_date > today) {
+      errors.push('Application date cannot be a future date.');
+    }
+    // Desired payment date must be today or later
+    if (formData.desired_payment_date < today) {
+      errors.push('Desired payment date must be today or later.');
+    }
+    return errors;
   };
 
-  const handleRemoveBreakdown = (index: number) => {
-    if (breakdowns.length <= 1) return;
-    setBreakdowns(breakdowns.filter((_, i) => i !== index));
+  /** Validates the form for submission (strict) */
+  const validateSubmit = (): string[] => {
+    const errors = validateDraft();
+    if (!formData.purpose.trim()) {
+      errors.push('Purpose / Usage is required.');
+    }
+    if (formData.purpose.length > 255) {
+      errors.push('Purpose must not exceed 255 characters.');
+    }
+    if (!formData.request_content.trim()) {
+      errors.push('Payment Request Content is required.');
+    }
+    if (formData.request_content.length > 1000) {
+      errors.push('Payment Request Content must not exceed 1000 characters.');
+    }
+    if (!formData.target_manager_id) {
+      errors.push('Target Manager must be selected.');
+    }
+    if (!formData.currency_id) {
+      errors.push('Currency must be selected.');
+    }
+    if (!formData.payment_type_id) {
+      errors.push('Payment Type must be selected.');
+    }
+    if (!formData.payment_method_id) {
+      errors.push('Payment Method must be selected.');
+    }
+    // Bank account required for Bank Transfer or Cash
+    if (
+      BANK_INFO_REQUIRED_METHODS.includes(formData.payment_method_id) &&
+      !formData.bank_account_info.trim()
+    ) {
+      errors.push('Bank Account / Phone information is required for this payment method.');
+    }
+    // Receipt validation
+    if (formData.has_receipt && !createdDraftId) {
+      errors.push('Please save as draft and upload receipt files before submitting.');
+    }
+    // Breakdown amounts > 0
+    const validBreakdowns = breakdowns.filter(
+      (b) => b.description.trim() !== '' || (parseFloat(b.amount) > 0),
+    );
+    for (const b of validBreakdowns) {
+      const amt = parseFloat(b.amount);
+      if (isNaN(amt) || amt <= 0) {
+        errors.push('All breakdown item amounts must be greater than 0.');
+        break;
+      }
+      if (amt > 1000000000) {
+        errors.push('Breakdown item amounts must not exceed 1,000,000,000.');
+        break;
+      }
+    }
+    return errors;
   };
 
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = async (): Promise<void> => {
+    const errors = validateDraft();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      triggerToast('error', errors[0]);
+      return;
+    }
+    setValidationErrors([]);
+
     try {
       setLoading(true);
       const payload = {
         ...formData,
-        breakdowns: breakdowns.filter(b => b.description.trim() !== '' || b.amount > 0),
+        breakdowns: breakdowns
+          .filter((b) => b.description.trim() !== '' || parseFloat(b.amount) > 0)
+          .map((b) => ({
+            description: b.description,
+            amount: parseFloat(b.amount) || 0,
+          })),
       };
       
-      await apiClient.post('/applicant/payment-requests/draft', payload, {
-        withCredentials: true,
-      });
-      
-      navigate('/applicant');
-    } catch (error) {
+      if (createdDraftId) {
+        await apiClient.put(`/applicant/payment-requests/${createdDraftId}`, payload, {
+          withCredentials: true,
+        });
+        if (formData.has_receipt && receiptFile) {
+           await uploadReceipt(createdDraftId, receiptFile);
+        }
+        triggerToast('success', 'Draft updated successfully.');
+      } else {
+        const response = await apiClient.post('/applicant/payment-requests/draft', payload, {
+          withCredentials: true,
+        });
+        const newDraftId = response.data.data.id.toString();
+        setCreatedDraftId(newDraftId);
+        
+        if (formData.has_receipt && receiptFile) {
+           await uploadReceipt(newDraftId, receiptFile);
+        }
+
+        triggerToast('success', 'Draft saved successfully.');
+      }
+    } catch (error: unknown) {
       console.error('Failed to save draft', error);
-      alert('Failed to save draft. Please try again.');
+      const apiError = error as { response?: { data?: { message?: string } } };
+      triggerToast('error', apiError.response?.data?.message || 'Failed to save draft. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const totalAmount = breakdowns.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const handleSubmitManager = async (): Promise<void> => {
+    if (!createdDraftId) {
+      triggerToast('warning', 'Please save as draft first before submitting.');
+      return;
+    }
+
+    const errors = validateSubmit();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      triggerToast('error', errors[0]);
+      return;
+    }
+    setValidationErrors([]);
+
+    try {
+      setLoading(true);
+      await apiClient.post(`/applicant/payment-requests/${createdDraftId}/submit-to-manager`, {}, {
+        withCredentials: true,
+      });
+      triggerToast('success', 'Request submitted to Manager successfully.');
+      navigate('/applicant');
+    } catch (error: unknown) {
+      console.error('Failed to submit to manager', error);
+      const apiError = error as { response?: { data?: { message?: string } } };
+      triggerToast('error', apiError.response?.data?.message || 'Failed to submit. Please check all fields and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalAmount = calculateTotal(breakdowns);
+
+  // Read employee info from auth context (fallback to placeholder for development)
+  const employeeInfo = {
+    number: user?.employeeNumber || 'EMP-90210',
+    name: user?.fullName || 'Jane Doe',
+    branch: user?.branch || 'Yangon Main',
+    department: 'Engineering', // department not in JWT; loaded from profile API
+  };
+
+  const showBankAccountField = BANK_INFO_REQUIRED_METHODS.includes(
+    formData.payment_method_id,
+  );
 
   return (
     <div className="p-6 md:p-8 min-h-screen bg-slate-50 font-sans">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Header */}
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate(-1)}
             className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500"
+            aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -66,143 +250,291 @@ const PaymentRequestForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Form Content */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-6 border-b border-slate-100 space-y-6">
-            <h2 className="text-lg font-semibold text-slate-800">Basic Information</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
-                <select 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 bg-white"
-                  value={formData.currency_id}
-                  onChange={(e) => setFormData({...formData, currency_id: Number(e.target.value)})}
-                >
-                  <option value={1}>USD ($)</option>
-                  <option value={2}>EUR (€)</option>
-                  <option value={3}>JPY (¥)</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Payment Method</label>
-                <select 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 bg-white"
-                  value={formData.payment_method_id}
-                  onChange={(e) => setFormData({...formData, payment_method_id: Number(e.target.value)})}
-                >
-                  <option value={1}>Bank Transfer</option>
-                  <option value={2}>Credit Card</option>
-                  <option value={3}>Cash</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Application Date</label>
-                <input 
-                  type="date" 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 bg-white"
-                  value={formData.application_date}
-                  onChange={(e) => setFormData({...formData, application_date: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Desired Payment Date</label>
-                <input 
-                  type="date" 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 bg-white"
-                  value={formData.desired_payment_date}
-                  onChange={(e) => setFormData({...formData, desired_payment_date: e.target.value})}
-                />
-              </div>
-            </div>
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <p className="text-sm font-semibold mb-1">Please fix the following errors:</p>
+            <ul className="text-sm list-disc list-inside space-y-1">
+              {validationErrors.map((err, i) => (
+                <li key={i}>{err}</li>
+              ))}
+            </ul>
           </div>
+        )}
 
-          <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-slate-800">Breakdown Items</h2>
-              <button 
-                onClick={handleAddBreakdown}
-                disabled={breakdowns.length >= 15}
-                className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
-              >
-                <Plus className="w-4 h-4" /> Add Item
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {breakdowns.map((item, index) => (
-                <div key={index} className="flex gap-4 items-start bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <div className="flex-1">
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Description</label>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Basic Information */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-6 space-y-6">
+                <h2 className="text-lg font-semibold text-slate-800 border-b border-slate-100 pb-2">Request Details</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Purpose / Usage <span className="text-red-500">*</span>
+                    </label>
                     <input 
                       type="text" 
-                      placeholder="E.g., Office Supplies"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 bg-white"
-                      value={item.description}
-                      onChange={(e) => {
-                        const newBreakdowns = [...breakdowns];
-                        newBreakdowns[index].description = e.target.value;
-                        setBreakdowns(newBreakdowns);
-                      }}
+                      placeholder="e.g. Q3 Marketing Campaign Expenses"
+                      maxLength={255}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-900"
+                      value={formData.purpose}
+                      onChange={(e) => setFormData({...formData, purpose: e.target.value})}
+                      aria-required="true"
                     />
+                    <p className="text-xs text-slate-400 mt-1">{formData.purpose.length}/255 characters</p>
                   </div>
-                  <div className="w-48">
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Amount</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2 text-slate-400">$</span>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Payment Request Content <span className="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                      rows={3}
+                      placeholder="Detailed explanation of the request..."
+                      maxLength={1000}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-900 resize-none"
+                      value={formData.request_content}
+                      onChange={(e) => setFormData({...formData, request_content: e.target.value})}
+                      aria-required="true"
+                    />
+                    <p className="text-xs text-slate-400 mt-1">{formData.request_content.length}/1000 characters</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Target Manager <span className="text-red-500">*</span>
+                    </label>
+                    <select 
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-900 bg-white"
+                      value={formData.target_manager_id}
+                      onChange={(e) => setFormData({...formData, target_manager_id: Number(e.target.value)})}
+                      aria-required="true"
+                    >
+                      <option value={1}>John Smith (Engineering Dept)</option>
+                      <option value={2}>Sarah Connor (Operations)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Payment Type <span className="text-red-500">*</span>
+                    </label>
+                    <select 
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-900 bg-white"
+                      value={formData.payment_type_id}
+                      onChange={(e) => setFormData({...formData, payment_type_id: Number(e.target.value)})}
+                      aria-required="true"
+                    >
+                      {Object.entries(PAYMENT_TYPE_LABELS_EN).map(([id, label]) => (
+                        <option key={id} value={Number(id)}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Payment Method <span className="text-red-500">*</span>
+                    </label>
+                    <select 
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-900 bg-white"
+                      value={formData.payment_method_id}
+                      onChange={(e) => setFormData({...formData, payment_method_id: Number(e.target.value)})}
+                      aria-required="true"
+                    >
+                      {Object.entries(PAYMENT_METHOD_LABELS_EN).map(([id, label]) => (
+                        <option key={id} value={Number(id)}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Currency <span className="text-red-500">*</span>
+                    </label>
+                    <select 
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-900 bg-white"
+                      value={formData.currency_id}
+                      onChange={(e) => setFormData({...formData, currency_id: Number(e.target.value)})}
+                      aria-required="true"
+                    >
+                      {Object.entries(CURRENCY_CODES).map(([id, code]) => (
+                        <option key={id} value={Number(id)}>{code}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Conditional Bank Account / Phone field */}
+                  {showBankAccountField && (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Bank Account / Phone <span className="text-red-500">*</span>
+                      </label>
                       <input 
-                        type="number" 
-                        min="0"
-                        step="0.01"
-                        className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 bg-white"
-                        value={item.amount || ''}
-                        onChange={(e) => {
-                          const newBreakdowns = [...breakdowns];
-                          newBreakdowns[index].amount = parseFloat(e.target.value) || 0;
-                          setBreakdowns(newBreakdowns);
-                        }}
+                        type="text"
+                        placeholder="Enter bank account number or phone number"
+                        maxLength={200}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-900"
+                        value={formData.bank_account_info}
+                        onChange={(e) => setFormData({...formData, bank_account_info: e.target.value})}
+                        aria-required="true"
                       />
                     </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Application Date</label>
+                    <input 
+                      type="date" 
+                      max={today}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-900 bg-white"
+                      value={formData.application_date}
+                      onChange={(e) => setFormData({...formData, application_date: e.target.value})}
+                    />
                   </div>
-                  <button 
-                    onClick={() => handleRemoveBreakdown(index)}
-                    disabled={breakdowns.length <= 1}
-                    className="mt-6 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Desired Payment Date</label>
+                    <input 
+                      type="date" 
+                      min={today}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-900 bg-white"
+                      value={formData.desired_payment_date}
+                      onChange={(e) => setFormData({...formData, desired_payment_date: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2 pt-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Receipt Present? <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="radio" 
+                          name="has_receipt" 
+                          checked={formData.has_receipt === true}
+                          onChange={() => setFormData({...formData, has_receipt: true})}
+                          className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-slate-700">Yes</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="radio" 
+                          name="has_receipt" 
+                          checked={formData.has_receipt === false}
+                          onChange={() => setFormData({...formData, has_receipt: false})}
+                          className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-slate-700">No</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
-              ))}
+              </div>
+            </div>
+
+            {/* Breakdowns */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-6 space-y-4">
+                <BreakdownItemTable items={breakdowns} onChange={setBreakdowns} />
+                
+                <div className="flex justify-end pt-4 border-t border-slate-100">
+                  <div className="text-right">
+                    <p className="text-sm text-slate-500 font-medium">Total Amount</p>
+                    <p className="text-3xl font-bold text-slate-900">{totalAmount}</p>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            <div className="flex justify-end pt-4 border-t border-slate-100">
-              <div className="text-right">
-                <p className="text-sm text-slate-500">Total Amount</p>
-                <p className="text-2xl font-bold text-slate-900">${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+            {formData.has_receipt && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-6 space-y-4">
+                  <h2 className="text-lg font-semibold text-slate-800 border-b border-slate-100 pb-2">Receipts</h2>
+                  {createdDraftId ? (
+                    <ReceiptUpload paymentRequestId={createdDraftId} onUploadSuccess={() => {}} />
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center">
+                      <p className="text-slate-600 mb-4 text-sm">Select a receipt file to attach. It will be uploaded when you save the draft.</p>
+                      <input 
+                         type="file" 
+                         className="block w-full text-sm text-slate-500
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-full file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-indigo-50 file:text-indigo-700
+                          hover:file:bg-indigo-100 cursor-pointer"
+                         onChange={(e) => {
+                            if (e.target.files && e.target.files.length > 0) {
+                              setReceiptFile(e.target.files[0]);
+                            }
+                         }}
+                      />
+                      {receiptFile && <p className="text-sm text-indigo-600 mt-3 text-left">Selected: {receiptFile.name}</p>}
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
+            
+          </div>
+
+          {/* Sidebar / Employee Info & Actions */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">Employee Information</h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Employee Number</p>
+                  <p className="text-sm font-semibold text-slate-900">{employeeInfo.number}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Name</p>
+                  <p className="text-sm font-semibold text-slate-900">{employeeInfo.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Branch</p>
+                  <p className="text-sm font-semibold text-slate-900">{employeeInfo.branch}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Department</p>
+                  <p className="text-sm font-semibold text-slate-900">{employeeInfo.department}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-3">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">Actions</h3>
+              
+              <button 
+                onClick={handleSaveDraft}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
+              >
+                <Save className="w-4 h-4" />
+                {loading ? 'Saving...' : 'Save Draft'}
+              </button>
+              
+              <button 
+                onClick={handleSubmitManager}
+                disabled={!createdDraftId || loading}
+                className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-lg transition-all ${
+                  createdDraftId 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' 
+                    : 'bg-blue-50 text-blue-400 cursor-not-allowed'
+                }`}
+                title={createdDraftId ? "Submit to Manager" : "Save as draft first before submitting"}
+              >
+                <Send className="w-4 h-4" />
+                Submit to Manager
+              </button>
             </div>
           </div>
           
-          {/* Actions */}
-          <div className="p-6 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
-            <button 
-              onClick={() => navigate(-1)}
-              className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={handleSaveDraft}
-              disabled={loading}
-              className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
-            >
-              <Save className="w-4 h-4" />
-              {loading ? 'Saving...' : 'Save Draft'}
-            </button>
-          </div>
         </div>
       </div>
     </div>
