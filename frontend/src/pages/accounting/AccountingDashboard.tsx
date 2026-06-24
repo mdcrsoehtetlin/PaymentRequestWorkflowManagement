@@ -70,6 +70,7 @@ export function AccountingDashboard() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">
           {t('dashboard.accounting.title', 'Accounting Dashboard')}
+          <p className="mt-2 text-sm text-slate-500">{t('dashboard.accounting.welcome_message')}</p>
         </h1>
         <div className="flex items-center gap-3">
           {!isConnected && (

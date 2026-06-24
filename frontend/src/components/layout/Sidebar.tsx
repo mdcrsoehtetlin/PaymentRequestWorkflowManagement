@@ -18,17 +18,13 @@ const roleMenuConfig: Record<string, { title: string; dashboardPath: string; men
   MANAGER: {
     title: 'Manager Console',
     dashboardPath: '/manager',
-    menuItems: [
-      { label: 'Dashboard', path: '/manager' },
-      { label: 'Verification Queue', path: '/manager/queue' },
-    ],
+    menuItems: [],
   },
   ACCOUNTING: {
     title: 'Accounting Console',
     dashboardPath: '/accounting',
     menuItems: [
       { label: 'Dashboard', path: '/accounting' },
-      { label: 'Payment Processing', path: '/accounting/payments' },
     ],
   },
   ADMIN: {
