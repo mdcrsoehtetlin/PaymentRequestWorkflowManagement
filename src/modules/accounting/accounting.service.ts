@@ -11,6 +11,9 @@ import { Redis } from 'ioredis';
 
 // Entities
 import { PaymentRequest } from '../shared/entities/payment-request.entity';
+import { ApprovalLog } from '../shared/entities/approval-log.entity';
+import { PaymentBreakdownItem } from '../shared/entities/payment-breakdown-item.entity';
+import { ReceiptFile } from '../shared/entities/receipt-file.entity';
 
 // Shared services / types
 import { AuditLogService } from '../shared/services/audit-log.service';
@@ -182,33 +185,68 @@ export class AccountingService {
   async findOneForAccounting(id: number): Promise<AccountingPaymentDetailDto> {
     this.logger.log(`Fetching details for payment request ${id}`);
 
-    const request = await this.paymentRequestRepository.findOne({
-      where: { id: Number(id), statusId: 8, isDeleted: false },
-      relations: [
-        'applicant',
-        'manager',
-        'final_approver',
-        'breakdowns',
-        'receipts',
-        'approvalLogs',
-        'approvalLogs.action_taken_by_user',
-      ],
-      order: {
-        approvalLogs: {
-          timestamp: 'ASC',
-        },
-      },
-    });
+    let request;
+    try {
+      request = await this.paymentRequestRepository
+        .createQueryBuilder('pr')
+        .leftJoinAndSelect('pr.applicant', 'applicant')
+        .leftJoinAndSelect('pr.manager', 'manager')
+        .leftJoinAndSelect('pr.finalApprover', 'finalApprover')
+        .leftJoin('pr.breakdowns', 'breakdowns')
+        .addSelect([
+          'breakdowns.id',
+          'breakdowns.lineNumber',
+          'breakdowns.itemDate',
+          'breakdowns.description',
+          'breakdowns.amount',
+          'breakdowns.quantity',
+          'breakdowns.unit_price',
+        ])
+        .leftJoin('pr.receipts', 'receipts')
+        .addSelect([
+          'receipts.id',
+          'receipts.originalFileName',
+          'receipts.storedFileName',
+          'receipts.file_size',
+          'receipts.mime_type',
+          'receipts.uploadedDate',
+          'receipts.is_deleted',
+        ])
+        .leftJoinAndSelect('pr.approvalLogs', 'approvalLogs')
+        .leftJoinAndSelect('approvalLogs.action_taken_by_user', 'actionUser')
+        .where('pr.payment_request_id = :id', { id: Number(id) })
+        .andWhere('pr.status_id = :statusId', { statusId: 8 })
+        .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false })
+        .orderBy('approvalLogs.timestamp', 'ASC')
+        .getOne();
+    } catch (err) {
+      this.logger.error(
+        `QueryBuilder error for payment request ${id}: ${String(err)}`,
+      );
+      throw err;
+    }
 
     if (!request) {
+      this.logger.warn(
+        `Payment request ${id} not found (status=8, isDeleted=false)`,
+      );
       throw new NotFoundException(
         `Payment request ${id} not found or not in APPROVED state`,
       );
     }
 
-    const activeReceiptFiles = (request.receipts ?? []).filter(
-      (file) => !file.isDeleted,
-    );
+    this.logger.log(`Found payment request ${id}: ${request.requestNumber}`);
+
+    const breakdowns: PaymentBreakdownItem[] = Array.isArray(request.breakdowns)
+      ? request.breakdowns
+      : [];
+    const allReceipts: ReceiptFile[] = Array.isArray(request.receipts)
+      ? request.receipts
+      : [];
+    const activeReceiptFiles = allReceipts.filter((file) => !file.isDeleted);
+    const approvalLogs: ApprovalLog[] = Array.isArray(request.approvalLogs)
+      ? request.approvalLogs
+      : [];
 
     return {
       paymentRequestId: Number(request.id),
@@ -217,11 +255,11 @@ export class AccountingService {
       hasReceipt: request.hasReceipt,
       applicant: {
         userId: Number(request.applicantUserId),
-        fullName: request.applicant.fullName,
-        employeeNumber: request.applicant.employeeNumber,
-        branch: request.applicant.branch,
-        department: request.applicant.department ?? null,
-        email: request.applicant.email,
+        fullName: request.applicant?.fullName ?? 'Unknown',
+        employeeNumber: request.applicant?.employeeNumber ?? 'N/A',
+        branch: request.applicant?.branch ?? 'Unknown',
+        department: request.applicant?.department ?? null,
+        email: request.applicant?.email ?? '',
       },
       paymentDetails: {
         totalAmount: request.totalAmount,
@@ -235,7 +273,7 @@ export class AccountingService {
         applicationDate: request.applicationDate,
         desiredPaymentDate: request.desiredPaymentDate,
       },
-      breakdownItems: (request.breakdowns ?? [])
+      breakdownItems: breakdowns
         .sort((left, right) => left.lineNumber - right.lineNumber)
         .map((item) => ({
           id: Number(item.id),
@@ -254,7 +292,7 @@ export class AccountingService {
         mimeType: file.mime_type,
         uploadedDate: file.uploadedDate,
       })),
-      approvalTimeline: (request.approvalLogs ?? []).map((log) => ({
+      approvalTimeline: approvalLogs.map((log) => ({
         id: log.approvalLogId,
         actionTypeId: log.actionTypeId,
         previousStatusId: log.previousStatusId ?? null,
@@ -262,9 +300,11 @@ export class AccountingService {
         comment: log.comment ?? null,
         timestamp: log.timestamp,
         user: {
-          userId: Number(log.action_taken_by_user),
-          fullName: log.action_taken_by_user.fullName,
-          employeeNumber: log.action_taken_by_user.employeeNumber,
+          userId: log.action_taken_by_user
+            ? Number(log.action_taken_by_user.userId)
+            : 0,
+          fullName: log.action_taken_by_user?.fullName ?? 'Unknown',
+          employeeNumber: log.action_taken_by_user?.employeeNumber ?? 'N/A',
         },
       })),
     };
@@ -316,16 +356,17 @@ export class AccountingService {
       });
 
       // 4. Write immutable audit log (inside same transaction)
-      await this.auditLogService.createLog(manager, {
+      const auditLog = manager.create(ApprovalLog, {
         paymentRequestId: id,
         actionTakenByUserId: ctx.accountingUserId,
         actionTypeId: ApprovalActionType.PAYMENT_COMPLETED,
         previousStatusId,
         newStatusId: PaymentStatus.PAID,
-        comment: ctx.comment ?? null,
+        comment: ctx.comment ?? undefined,
         ipAddress: ctx.ipAddress,
         userAgent: ctx.userAgent,
       });
+      await manager.save(ApprovalLog, auditLog);
     });
 
     // 5. Redis cache eviction (outside transaction — best effort)
