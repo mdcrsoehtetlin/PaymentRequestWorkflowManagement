@@ -9,9 +9,9 @@ export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
 export const MAX_TOTAL_FILE_SIZE = 50 * 1024 * 1024; // 50MB per request
 
 export const FILE_VALIDATION_ERRORS = {
-  INVALID_TYPE: 'VAL-APP-008: 許可されていないファイル形式です',
-  SIZE_EXCEEDED: 'VAL-APP-009: ファイルサイズが上限（10MB）を超えています',
-  REQUIRED: 'VAL-APP-010: 領収書ファイルを添付してください',
+  INVALID_TYPE: 'VAL-APP-008: Invalid file format',
+  SIZE_EXCEEDED: 'VAL-APP-009: File size exceeds the maximum limit (10MB)',
+  REQUIRED: 'VAL-APP-010: Please attach the receipt file',
 };
 
 // Helper functions for programmatic validation (used in services)

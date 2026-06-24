@@ -4,11 +4,9 @@ import {
   IsOptional,
   IsDateString,
   MaxLength,
-  IsNumber,
-  Min,
-  Max,
+  Matches,
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Transform } from 'class-transformer';
 
 /**
  * @description DTO for a single payment breakdown line item.
@@ -34,35 +32,44 @@ export class BreakdownItemDto {
   @IsString()
   @IsNotEmpty({ groups: ['submit'] })
   @IsOptional({ groups: ['draft'] })
-  @MaxLength(200, { message: '品目説明は200文字以内で入力してください' })
+  @MaxLength(200, { message: 'Description must not exceed 200 characters' })
   @Transform(({ value }): string =>
     typeof value === 'string' ? value.trim() : value,
   )
   description?: string;
 
   /**
-   * Amount as a number in the DTO — TypeORM stores as NUMERIC string.
-   * Min enforced only on submit to allow drafts with 0 amount.
+   * Amount handled as string to avoid floating-point precision loss.
    */
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0.01, {
-    groups: ['submit'],
-    message: 'VAL-APP-007: 金額は0より大きい値を入力してください',
+  @IsString()
+  @Matches(/^\d+(\.\d{1,2})?$/, {
+    message:
+      'VAL-APP-007: Amount must be a valid number with up to 2 decimal places',
   })
-  @Max(9999999999.99)
+  @Transform(({ value }): string =>
+    typeof value === 'number' ? value.toString() : value || '0',
+  )
+  @IsNotEmpty({ groups: ['submit'] })
   @IsOptional({ groups: ['draft'] })
-  amount?: number;
+  amount?: string;
 
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsString()
   @IsOptional()
-  @Min(0.01)
-  quantity?: number;
+  @Matches(/^\d+(\.\d{1,2})?$/, {
+    message: 'Quantity must be a valid number with up to 2 decimal places',
+  })
+  @Transform(({ value }): string =>
+    typeof value === 'number' ? value.toString() : value,
+  )
+  quantity?: string;
 
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsString()
   @IsOptional()
-  @Min(0)
-  unitPrice?: number;
+  @Matches(/^\d+(\.\d{1,2})?$/, {
+    message: 'Unit price must be a valid number with up to 2 decimal places',
+  })
+  @Transform(({ value }): string =>
+    typeof value === 'number' ? value.toString() : value,
+  )
+  unitPrice?: string;
 }

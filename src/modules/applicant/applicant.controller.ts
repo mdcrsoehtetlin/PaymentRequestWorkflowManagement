@@ -14,7 +14,10 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
+import { createReadStream } from 'fs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApplicantService } from './applicant.service';
 import { DashboardResponseDto } from './dto/payment-request-response.dto';
@@ -24,7 +27,7 @@ import { JwtAuthGuard } from '../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../shared/guards/roles.guard';
 import { Roles } from '../shared/decorators/roles.decorator';
 import { RoleCode } from '../shared/types';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 
 export interface AuthenticatedRequest extends Request {
   user: {
@@ -66,6 +69,15 @@ export class ApplicantController {
       Number(page),
       Number(limit),
     );
+  }
+
+  @Get('managers')
+  async getActiveManagers() {
+    const data = await this.applicantService.getActiveManagers();
+    return {
+      message: 'Active managers retrieved successfully',
+      data,
+    };
   }
 
   @Get(':id')
@@ -157,6 +169,43 @@ export class ApplicantController {
         file_size: receipt.file_size,
       },
     };
+  }
+
+  @Get(':id/receipts/:receiptId/download')
+  async downloadReceipt(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Param('receiptId') receiptId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const applicantId = Number(req.user.sub);
+    const receipt = await this.applicantService.downloadReceipt(
+      applicantId,
+      Number(id),
+      Number(receiptId),
+    );
+
+    const file = createReadStream(receipt.storage_key);
+    res.set({
+      'Content-Type': receipt.mime_type,
+      'Content-Disposition': `attachment; filename="${receipt.originalFileName}"`,
+    });
+    return new StreamableFile(file);
+  }
+
+  @Delete(':id/receipts/:receiptId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteReceipt(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Param('receiptId') receiptId: string,
+  ) {
+    const applicantId = Number(req.user.sub);
+    await this.applicantService.deleteReceipt(
+      applicantId,
+      Number(id),
+      Number(receiptId),
+    );
   }
 
   @Post(':id/submit-to-manager')

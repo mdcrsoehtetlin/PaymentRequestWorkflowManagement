@@ -24,10 +24,10 @@ export interface PaginatedPaymentRequestResponseDto {
 }
 
 export interface DashboardKpiDto {
-  total_draft: number;
-  total_submitted: number;
-  total_rejected: number;
-  total_approved: number;
+  total_requests: number;
+  pending_review: number;
+  approved: number;
+  rejected: number;
 }
 
 export interface DashboardResponseDto {
@@ -97,4 +97,32 @@ export const updatePaymentRequest = async (
 
 export const deleteDraft = async (id: string): Promise<void> => {
   await apiClient.delete(`${API_BASE_URL}/${id}`);
+};
+
+export const deleteReceipt = async (
+  requestId: string,
+  receiptId: string,
+): Promise<void> => {
+  await apiClient.delete(`${API_BASE_URL}/${requestId}/receipts/${receiptId}`);
+};
+
+export const downloadReceipt = async (
+  requestId: string,
+  receiptId: string,
+  fileName: string,
+): Promise<void> => {
+  const response = await apiClient.get(
+    `${API_BASE_URL}/${requestId}/receipts/${receiptId}/download`,
+    {
+      responseType: 'blob',
+    },
+  );
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', fileName);
+  document.body.appendChild(link);
+  link.click();
+  link.parentNode?.removeChild(link);
+  window.URL.revokeObjectURL(url);
 };
