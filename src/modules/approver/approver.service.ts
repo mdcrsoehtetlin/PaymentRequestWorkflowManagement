@@ -160,7 +160,9 @@ export class ApproverService {
       });
     }
     if (dateTo) {
-      qb.andWhere('request.submitted_to_approver_date <= :dateTo', { dateTo });
+      qb.andWhere('request.submitted_to_approver_date < :dateToNext', {
+        dateToNext: `${dateTo}T23:59:59.999Z`,
+      });
     }
 
     if (search) {
@@ -303,7 +305,7 @@ export class ApproverService {
       relations: [
         'applicant',
         'manager',
-        'final_approver',
+        'finalApprover',
         'receipts',
         'approvalLogs',
         'approvalLogs.action_taken_by_user',
@@ -373,16 +375,22 @@ export class ApproverService {
         freshRequest.modifiedDate = new Date();
         await manager.save(PaymentRequest, freshRequest);
 
-        await this.auditLogService.createLog(manager, {
-          paymentRequestId: id,
-          actionTakenByUserId: approverUserId,
-          actionTypeId: ApprovalActionType.APPR_REVIEW_START,
-          previousStatusId: PaymentStatus.SUBMITTED_APPROVER,
-          newStatusId: PaymentStatus.APPROVER_REVIEWING,
-          comment: 'Approver review started',
-          ipAddress: auditContext.ipAddress,
-          userAgent: auditContext.userAgent,
-        });
+        await manager.query(
+          `INSERT INTO approval_logs
+            (payment_request_id, action_taken_by_user_id, action_type_id,
+             previous_status_id, new_status_id, comment, ip_address, user_agent, timestamp)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)`,
+          [
+            id,
+            approverUserId,
+            ApprovalActionType.APPR_REVIEW_START,
+            PaymentStatus.SUBMITTED_APPROVER,
+            PaymentStatus.APPROVER_REVIEWING,
+            'Approver review started',
+            auditContext.ipAddress,
+            auditContext.userAgent,
+          ],
+        );
       });
 
       await this.redisService.del(`payment_request:payload:${id}`);
@@ -396,11 +404,19 @@ export class ApproverService {
         actionByUserName: approverUser.fullName,
         timestamp: new Date().toISOString(),
       };
-      this.websocketGateway.sendPersonalNotification(
-        request.applicantUserId,
-        'request:status-changed',
-        statusUpdatePayload,
-      );
+
+      try {
+        this.websocketGateway.sendPersonalNotification(
+          request.applicantUserId,
+          'request:status-changed',
+          statusUpdatePayload,
+        );
+      } catch (wsError) {
+        this.logger.warn(
+          `WebSocket notification failed for request ${id}`,
+          wsError,
+        );
+      }
 
       request.statusId = PaymentStatus.APPROVER_REVIEWING;
       request.finalApproverUserId = approverUserId;
@@ -566,6 +582,8 @@ export class ApproverService {
     dto: ApprovePaymentRequestDto,
     auditContext: AuditContext,
   ) {
+    this.logger.log(`Approve request: id=${id}, userId=${approverUserId}`);
+
     const request = await this.paymentRequestRepository.findOne({
       where: { id, isDeleted: false },
     });
@@ -593,61 +611,83 @@ export class ApproverService {
       throw new NotFoundException('Approver user not found');
     }
 
-    await this.dataSource.transaction(async (manager: EntityManager) => {
-      const freshRequest = await manager.findOne(PaymentRequest, {
-        where: {
-          id,
-          statusId: PaymentStatus.APPROVER_REVIEWING,
-        },
-        lock: { mode: 'pessimistic_write' },
+    try {
+      await this.dataSource.transaction(async (manager: EntityManager) => {
+        const freshRequest = await manager.findOne(PaymentRequest, {
+          where: {
+            id,
+            statusId: PaymentStatus.APPROVER_REVIEWING,
+          },
+          lock: { mode: 'pessimistic_write' },
+        });
+
+        if (!freshRequest) {
+          throw new ConflictException(
+            'This request has already been processed or modified by another user.',
+          );
+        }
+
+        freshRequest.statusId = PaymentStatus.APPROVED;
+        freshRequest.approvalDate = new Date();
+        freshRequest.accountingUserId = dto.accountingUserId ?? null;
+        freshRequest.currentAssignedToUserId = dto.accountingUserId ?? null;
+        freshRequest.modifiedDate = new Date();
+        await manager.save(PaymentRequest, freshRequest);
+
+        await manager.query(
+          `INSERT INTO approval_logs
+            (payment_request_id, action_taken_by_user_id, action_type_id,
+             previous_status_id, new_status_id, comment, ip_address, user_agent, timestamp)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)`,
+          [
+            id,
+            approverUserId,
+            ApprovalActionType.APPROVED,
+            PaymentStatus.APPROVER_REVIEWING,
+            PaymentStatus.APPROVED,
+            dto.comment || 'Approved by Final Approver',
+            auditContext.ipAddress,
+            auditContext.userAgent,
+          ],
+        );
       });
 
-      if (!freshRequest) {
-        throw new ConflictException(
-          'This request has already been processed or modified by another user.',
+      await this.redisService.del(`payment_request:payload:${id}`);
+
+      try {
+        const statusUpdatePayload = {
+          paymentRequestId: request.id,
+          requestNumber: request.requestNumber,
+          previousStatusId: PaymentStatus.APPROVER_REVIEWING,
+          newStatusId: PaymentStatus.APPROVED,
+          actionByUserId: approverUserId,
+          actionByUserName: approverUser.fullName,
+          timestamp: new Date().toISOString(),
+        };
+
+        this.websocketGateway.sendPersonalNotification(
+          request.applicantUserId,
+          'request:status-changed',
+          statusUpdatePayload,
+        );
+
+        this.websocketGateway.sendStatusUpdate(
+          'ACCOUNTING',
+          statusUpdatePayload,
+        );
+      } catch (wsError) {
+        this.logger.warn(
+          `WebSocket notification failed for request ${id}`,
+          wsError,
         );
       }
 
-      freshRequest.statusId = PaymentStatus.APPROVED;
-      freshRequest.approvalDate = new Date();
-      freshRequest.accountingUserId = dto.accountingUserId ?? null;
-      freshRequest.currentAssignedToUserId = dto.accountingUserId ?? null;
-      freshRequest.modifiedDate = new Date();
-      await manager.save(PaymentRequest, freshRequest);
-
-      await this.auditLogService.createLog(manager, {
-        paymentRequestId: id,
-        actionTakenByUserId: approverUserId,
-        actionTypeId: ApprovalActionType.APPROVED,
-        previousStatusId: PaymentStatus.APPROVER_REVIEWING,
-        newStatusId: PaymentStatus.APPROVED,
-        comment: dto.comment || 'Approved by Final Approver',
-        ipAddress: auditContext.ipAddress,
-        userAgent: auditContext.userAgent,
-      });
-    });
-
-    await this.redisService.del(`payment_request:payload:${id}`);
-
-    const statusUpdatePayload = {
-      paymentRequestId: request.id,
-      requestNumber: request.requestNumber,
-      previousStatusId: PaymentStatus.APPROVER_REVIEWING,
-      newStatusId: PaymentStatus.APPROVED,
-      actionByUserId: approverUserId,
-      actionByUserName: approverUser.fullName,
-      timestamp: new Date().toISOString(),
-    };
-
-    this.websocketGateway.sendPersonalNotification(
-      request.applicantUserId,
-      'request:status-changed',
-      statusUpdatePayload,
-    );
-
-    this.websocketGateway.sendStatusUpdate('ACCOUNTING', statusUpdatePayload);
-
-    return { success: true, message: 'Request successfully approved.' };
+      this.logger.log(`Request ${id} approved successfully`);
+      return { success: true, message: 'Request successfully approved.' };
+    } catch (error) {
+      this.logger.error(`Failed to approve request ${id}`, error);
+      throw error;
+    }
   }
 
   async reject(
@@ -656,6 +696,8 @@ export class ApproverService {
     dto: RejectPaymentRequestDto,
     auditContext: AuditContext,
   ) {
+    this.logger.log(`Reject request: id=${id}, userId=${approverUserId}`);
+
     const request = await this.paymentRequestRepository.findOne({
       where: { id, isDeleted: false },
     });
@@ -683,59 +725,78 @@ export class ApproverService {
       throw new NotFoundException('Approver user not found');
     }
 
-    await this.dataSource.transaction(async (manager: EntityManager) => {
-      const freshRequest = await manager.findOne(PaymentRequest, {
-        where: {
-          id,
-          statusId: PaymentStatus.APPROVER_REVIEWING,
-        },
-        lock: { mode: 'pessimistic_write' },
+    try {
+      await this.dataSource.transaction(async (manager: EntityManager) => {
+        const freshRequest = await manager.findOne(PaymentRequest, {
+          where: {
+            id,
+            statusId: PaymentStatus.APPROVER_REVIEWING,
+          },
+          lock: { mode: 'pessimistic_write' },
+        });
+
+        if (!freshRequest) {
+          throw new ConflictException(
+            'This request has already been processed or modified by another user.',
+          );
+        }
+
+        freshRequest.statusId = PaymentStatus.REJECTED_APPROVER;
+        freshRequest.currentAssignedToUserId = freshRequest.applicantUserId;
+        freshRequest.modifiedDate = new Date();
+        await manager.save(PaymentRequest, freshRequest);
+
+        await manager.query(
+          `INSERT INTO approval_logs
+            (payment_request_id, action_taken_by_user_id, action_type_id,
+             previous_status_id, new_status_id, comment, ip_address, user_agent, timestamp)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)`,
+          [
+            id,
+            approverUserId,
+            ApprovalActionType.APPR_REJECTED,
+            PaymentStatus.APPROVER_REVIEWING,
+            PaymentStatus.REJECTED_APPROVER,
+            dto.comment,
+            auditContext.ipAddress,
+            auditContext.userAgent,
+          ],
+        );
       });
 
-      if (!freshRequest) {
-        throw new ConflictException(
-          'This request has already been processed or modified by another user.',
+      await this.redisService.del(`payment_request:payload:${id}`);
+
+      try {
+        const statusUpdatePayload = {
+          paymentRequestId: request.id,
+          requestNumber: request.requestNumber,
+          previousStatusId: PaymentStatus.APPROVER_REVIEWING,
+          newStatusId: PaymentStatus.REJECTED_APPROVER,
+          actionByUserId: approverUserId,
+          actionByUserName: approverUser.fullName,
+          timestamp: new Date().toISOString(),
+        };
+
+        this.websocketGateway.sendPersonalNotification(
+          request.applicantUserId,
+          'request:status-changed',
+          statusUpdatePayload,
+        );
+      } catch (wsError) {
+        this.logger.warn(
+          `WebSocket notification failed for request ${id}`,
+          wsError,
         );
       }
 
-      freshRequest.statusId = PaymentStatus.REJECTED_APPROVER;
-      freshRequest.currentAssignedToUserId = freshRequest.applicantUserId;
-      freshRequest.modifiedDate = new Date();
-      await manager.save(PaymentRequest, freshRequest);
-
-      await this.auditLogService.createLog(manager, {
-        paymentRequestId: id,
-        actionTakenByUserId: approverUserId,
-        actionTypeId: ApprovalActionType.APPR_REJECTED,
-        previousStatusId: PaymentStatus.APPROVER_REVIEWING,
-        newStatusId: PaymentStatus.REJECTED_APPROVER,
-        comment: dto.comment,
-        ipAddress: auditContext.ipAddress,
-        userAgent: auditContext.userAgent,
-      });
-    });
-
-    await this.redisService.del(`payment_request:payload:${id}`);
-
-    const statusUpdatePayload = {
-      paymentRequestId: request.id,
-      requestNumber: request.requestNumber,
-      previousStatusId: PaymentStatus.APPROVER_REVIEWING,
-      newStatusId: PaymentStatus.REJECTED_APPROVER,
-      actionByUserId: approverUserId,
-      actionByUserName: approverUser.fullName,
-      timestamp: new Date().toISOString(),
-    };
-
-    this.websocketGateway.sendPersonalNotification(
-      request.applicantUserId,
-      'request:status-changed',
-      statusUpdatePayload,
-    );
-
-    return {
-      success: true,
-      message: 'Request successfully rejected and returned to applicant.',
-    };
+      this.logger.log(`Request ${id} rejected successfully`);
+      return {
+        success: true,
+        message: 'Request successfully rejected and returned to applicant.',
+      };
+    } catch (error) {
+      this.logger.error(`Failed to reject request ${id}`, error);
+      throw error;
+    }
   }
 }

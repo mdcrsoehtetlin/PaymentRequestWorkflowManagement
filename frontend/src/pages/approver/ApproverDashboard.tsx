@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { AxiosError } from 'axios';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useToast } from '../../hooks/useToast';
+import type { ApiErrorResponse } from '../../types';
 import type { ApproverRequestDetailView } from './types';
 import { useApproverRequests } from './hooks/useApproverRequests';
 import { useApproverRequestDetail } from './hooks/useApproverRequestDetail';
@@ -10,6 +12,7 @@ import { FilterSearchBar } from './components/FilterSearchBar';
 import { ApproverRequestTable } from './components/ApproverRequestTable';
 import { ApproverRequestDetail } from './ApproverRequestDetail';
 import { approverService } from './services/approver.service';
+import { RefreshButton } from '../../components/shared/RefreshButton';
 
 export function ApproverDashboard() {
   const { t } = useTranslation();
@@ -28,6 +31,7 @@ export function ApproverDashboard() {
   const {
     requestDetail,
     isLoading: isDetailLoading,
+    error: detailError,
     loadRequestDetail,
     clearRequestDetail,
   } = useApproverRequestDetail();
@@ -38,6 +42,7 @@ export function ApproverDashboard() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [statusId, setStatusId] = useState<number | undefined>(undefined);
+  const [sidebarFilter, setSidebarFilter] = useState<number | undefined>(undefined);
   const [summary, setSummary] = useState({ totalQueue: 0, pendingCount: 0, reviewingCount: 0, approvedCount: 0, rejectedCount: 0 });
 
   useEffect(() => {
@@ -45,6 +50,12 @@ export function ApproverDashboard() {
     approverService.fetchSummary().then(setSummary).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!detailError) return;
+    const timer = setTimeout(() => clearRequestDetail(), 5000);
+    return () => clearTimeout(timer);
+  }, [detailError, clearRequestDetail]);
 
   const handleRowClick = async (item: ApproverRequestDetailView) => {
     setSelectedRequestId(item.paymentRequestId);
@@ -57,6 +68,7 @@ export function ApproverDashboard() {
     setDateFrom('');
     setDateTo('');
     setStatusId(undefined);
+    setSidebarFilter(undefined);
     clearRequestDetail();
     setSelectedRequestId(null);
     loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
@@ -64,16 +76,43 @@ export function ApproverDashboard() {
   };
 
   const handleSidebarFilter = (newStatusId?: number) => {
-    setStatusId(newStatusId);
+    setSidebarFilter(newStatusId);
+    setStatusId(undefined);
+    setSearch('');
+    setBranch('');
+    setDateFrom('');
+    setDateTo('');
     if (newStatusId === undefined) {
-      applyFilters({ statusId: undefined, search: search.trim() || undefined, branch: branch.trim() || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined, showAll: true });
+      applyFilters({ statusId: undefined, search: undefined, branch: undefined, dateFrom: undefined, dateTo: undefined, showAll: true });
     } else {
-      applyFilters({ statusId: newStatusId, search: search.trim() || undefined, branch: branch.trim() || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined, showAll: false });
+      applyFilters({ statusId: newStatusId, search: undefined, branch: undefined, dateFrom: undefined, dateTo: undefined, showAll: false });
     }
   };
 
   const handleSearchApply = () => {
     applyFilters({ statusId, search: search.trim() || undefined, branch: branch.trim() || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined });
+  };
+
+  const handleClearFilters = () => {
+    setSearch('');
+    setBranch('');
+    setDateFrom('');
+    setDateTo('');
+    setStatusId(undefined);
+    setSidebarFilter(undefined);
+    applyFilters({ statusId: undefined, search: undefined, branch: undefined, dateFrom: undefined, dateTo: undefined, showAll: true });
+  };
+
+  const handleDateFromChange = (value: string) => {
+    setDateFrom(value);
+    if (dateTo && value > dateTo) {
+      setDateTo('');
+    }
+  };
+
+  const handleDateToChange = (value: string) => {
+    if (dateFrom && value < dateFrom) return;
+    setDateTo(value);
   };
 
   const handleBack = () => {
@@ -89,8 +128,9 @@ export function ApproverDashboard() {
       await approverService.approveRequest(selectedRequestId, payload);
       success('Request approved successfully.');
       await handleBack();
-    } catch {
-      error('Failed to approve request.');
+    } catch (err) {
+      const axiosError = err as AxiosError<ApiErrorResponse>;
+      error(axiosError.response?.data?.message || 'Failed to approve request.');
     }
   };
 
@@ -100,8 +140,9 @@ export function ApproverDashboard() {
       await approverService.rejectRequest(selectedRequestId, payload);
       success('Request rejected successfully.');
       await handleBack();
-    } catch {
-      error('Failed to reject request.');
+    } catch (err) {
+      const axiosError = err as AxiosError<ApiErrorResponse>;
+      error(axiosError.response?.data?.message || 'Failed to reject request.');
     }
   };
 
@@ -134,14 +175,30 @@ export function ApproverDashboard() {
                 <h1 className="text-2xl font-bold text-slate-900">{t('dashboard.approver.title')}</h1>
                 <p className="mt-2 text-sm text-slate-500">{t('dashboard.approver.welcome_message')}</p>
               </div>
-              <button
-                type="button"
-                onClick={handleRefresh}
-                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Refresh
-              </button>
+              <RefreshButton onClick={handleRefresh} />
             </div>
+
+            {detailError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <svg className="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm font-medium text-red-800">{detailError}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearRequestDetail}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-6">
               <SummarySidebar
@@ -150,8 +207,7 @@ export function ApproverDashboard() {
                 reviewingCount={summary.reviewingCount}
                 approvedCount={summary.approvedCount}
                 rejectedCount={summary.rejectedCount}
-                activeFilter={statusId}
-                onRefresh={handleRefresh}
+                activeFilter={sidebarFilter}
                 onFilterChange={handleSidebarFilter}
               />
 
@@ -163,10 +219,11 @@ export function ApproverDashboard() {
                 statusId={statusId}
                 onSearchChange={setSearch}
                 onBranchChange={setBranch}
-                onDateFromChange={setDateFrom}
-                onDateToChange={setDateTo}
+                onDateFromChange={handleDateFromChange}
+                onDateToChange={handleDateToChange}
                 onStatusChange={setStatusId}
                 onSubmit={handleSearchApply}
+                onClear={handleClearFilters}
               />
 
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
