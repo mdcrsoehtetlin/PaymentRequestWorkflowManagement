@@ -27,11 +27,39 @@ export class ManagerService {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
+  private omitCircularRefs(
+    obj: Record<string, unknown>,
+    keys: string[],
+  ): Record<string, unknown> {
+    const result = { ...obj };
+    for (const key of keys) {
+      delete result[key];
+    }
+    return result;
+  }
+
+  private serializeRequest(request: PaymentRequest) {
+    const { breakdowns, receipts, approvalLogs, ...rest } = request;
+    return {
+      ...rest,
+      paymentRequestId: request.id,
+      breakdownItems: (breakdowns ?? []).map((item) =>
+        this.omitCircularRefs(item as any, ['paymentRequest']),
+      ),
+      receiptFiles: (receipts ?? []).map((file) =>
+        this.omitCircularRefs(file as any, ['paymentRequest']),
+      ),
+      approvalLogs: (approvalLogs ?? []).map((log) =>
+        this.omitCircularRefs(log as any, ['payment_request']),
+      ),
+    };
+  }
+
   async getPendingRequests(managerId: number, query: QueryRequestsDto) {
     this.logger.log(
       `Fetching requests for manager: ${managerId} with filters: ${JSON.stringify(query)}`,
     );
-    const { statusId, date, applicant } = query;
+    const { statusId, dateFrom, dateTo, applicant } = query;
 
     const qb = this.paymentRequestRepository
       .createQueryBuilder('request')
@@ -52,19 +80,27 @@ export class ManagerService {
       });
     }
 
-    if (date) {
-      qb.andWhere('request.applicationDate = :date', { date });
+    if (dateFrom) {
+      qb.andWhere('request.applicationDate >= :dateFrom', { dateFrom });
+    }
+
+    if (dateTo) {
+      qb.andWhere('request.applicationDate <= :dateTo', { dateTo });
     }
 
     if (applicant) {
-      qb.andWhere('applicant.full_name ILIKE :applicantName', {
+      qb.andWhere('applicant.fullName ILIKE :applicantName', {
         applicantName: `%${applicant}%`,
       });
     }
 
     qb.orderBy('request.submittedToManagerDate', 'ASC');
 
-    return qb.getMany();
+    const requests = await qb.getMany();
+    return requests.map((r) => ({
+      ...r,
+      paymentRequestId: r.id,
+    }));
   }
 
   async getRequestDetails(
@@ -83,12 +119,7 @@ export class ManagerService {
         currentAssignedToUserId: managerId,
         isDeleted: false,
       },
-      relations: [
-        'applicant',
-        'breakdownItems',
-        'receiptFiles',
-        'approvalLogs',
-      ],
+      relations: ['applicant', 'breakdowns', 'receipts', 'approvalLogs'],
     });
 
     if (!request) {
@@ -121,12 +152,7 @@ export class ManagerService {
 
       const updatedRequest = await this.paymentRequestRepository.findOne({
         where: { id: id },
-        relations: [
-          'applicant',
-          'breakdownItems',
-          'receiptFiles',
-          'approvalLogs',
-        ],
+        relations: ['applicant', 'breakdowns', 'receipts', 'approvalLogs'],
       });
 
       if (updatedRequest) {
@@ -150,7 +176,7 @@ export class ManagerService {
           requestId: id,
         });
 
-        return updatedRequest;
+        return this.serializeRequest(updatedRequest);
       }
     }
 
@@ -161,7 +187,7 @@ export class ManagerService {
       );
     }
 
-    return request;
+    return this.serializeRequest(request);
   }
 
   async verifyRequest(
