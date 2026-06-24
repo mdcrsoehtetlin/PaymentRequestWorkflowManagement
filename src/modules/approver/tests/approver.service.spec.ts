@@ -266,9 +266,9 @@ describe('ApproverService', () => {
         },
       );
       expect(qb['andWhere']).toHaveBeenCalledWith(
-        'request.submitted_to_approver_date <= :dateTo',
+        'request.submitted_to_approver_date < :dateToNext',
         {
-          dateTo: '2026-06-30',
+          dateToNext: '2026-06-30T23:59:59.999Z',
         },
       );
     });
@@ -367,6 +367,7 @@ describe('ApproverService', () => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue(freshRequest),
           save: jest.fn(),
+          query: jest.fn().mockResolvedValue([]),
         } as unknown as EntityManager;
         return (
           cb as unknown as (entityManager: EntityManager) => Promise<unknown>
@@ -496,6 +497,7 @@ describe('ApproverService', () => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue(freshRequest),
           save: jest.fn(),
+          query: jest.fn().mockResolvedValue([]),
         } as unknown as EntityManager;
         return (
           cb as unknown as (entityManager: EntityManager) => Promise<unknown>
@@ -533,6 +535,7 @@ describe('ApproverService', () => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue({ ...mockRequest }),
           save: jest.fn(),
+          query: jest.fn().mockResolvedValue([]),
         } as unknown as EntityManager;
         return (
           cb as unknown as (entityManager: EntityManager) => Promise<unknown>
@@ -631,6 +634,7 @@ describe('ApproverService', () => {
         const mockManager = {
           findOne: jest.fn().mockResolvedValue(freshRequest),
           save: jest.fn(),
+          query: jest.fn().mockResolvedValue([]),
         } as unknown as EntityManager;
         return (
           cb as unknown as (entityManager: EntityManager) => Promise<unknown>
@@ -675,6 +679,7 @@ describe('ApproverService', () => {
                 return Promise.resolve(entity);
               },
             ),
+          query: jest.fn().mockResolvedValue([]),
         } as unknown as EntityManager;
         return (
           cb as unknown as (entityManager: EntityManager) => Promise<unknown>
