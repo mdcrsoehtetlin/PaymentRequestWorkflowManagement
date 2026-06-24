@@ -18,18 +18,31 @@ export class RequestNumberService {
     const year = new Date().getFullYear();
     const prefix = `PRF-${year}-`;
 
-    const result = await this.repo
+    const results = await this.repo
       .createQueryBuilder('r')
-      .select('MAX(r.requestNumber)', 'maxNum')
+      .select('r.requestNumber', 'requestNumber')
       .where('r.requestNumber LIKE :prefix', { prefix: `${prefix}%` })
-      .getRawOne<{ maxNum?: string }>();
+      .getRawMany();
 
-    let nextSeq = 1;
-    if (result?.maxNum) {
-      const currentSeq = parseInt(result.maxNum.split('-')[2], 10);
-      nextSeq = currentSeq + 1;
+    let maxSeq = 0;
+    for (const row of results as {
+      requestNumber?: string;
+      request_number?: string;
+    }[]) {
+      // row.requestNumber or row.request_number based on typeorm raw mapping
+      const reqNum = row.requestNumber || row.request_number;
+      if (reqNum) {
+        const parts = reqNum.split('-');
+        if (parts.length === 3) {
+          const seq = parseInt(parts[2], 10);
+          if (!isNaN(seq) && seq > maxSeq) {
+            maxSeq = seq;
+          }
+        }
+      }
     }
 
+    const nextSeq = maxSeq + 1;
     return `${prefix}${String(nextSeq).padStart(6, '0')}`;
   }
 }

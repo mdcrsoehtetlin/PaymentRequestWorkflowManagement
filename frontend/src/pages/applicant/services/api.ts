@@ -54,7 +54,7 @@ export const fetchPaymentRequestDetail = async (
 
 export const submitToManager = async (id: string): Promise<unknown> => {
   const response = await apiClient.post(
-    `${API_BASE_URL}/${id}/submit-manager`,
+    `${API_BASE_URL}/${id}/submit-to-manager`,
     { id },
   );
   return response.data;

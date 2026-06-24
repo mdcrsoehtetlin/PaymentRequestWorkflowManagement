@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, FileText, AlertCircle } from 'lucide-react';
 import { fetchPaymentRequestDetail, submitToManager, submitToApprover, updatePaymentRequest } from './services/api';
+import apiClient from '../../services/api-client';
 import ReceiptUpload from './components/ReceiptUpload';
+import { STATUS_LABELS_EN, EDITABLE_STATUSES } from '../../types';
 
 interface Breakdown { description: string; amount: number | string; }
 interface Log { id: string; comment: string; new_status_id: number; timestamp: string; }
@@ -16,6 +18,11 @@ interface DetailData {
   application_date: string;
   desired_payment_date: string;
   payment_method_id: number;
+  payment_type_id: number;
+  purpose: string;
+  request_content: string;
+  target_manager_id: number | null;
+  bank_account_info: string | null;
   total_amount: string;
   has_receipt: boolean;
   breakdowns?: Breakdown[];
@@ -34,6 +41,21 @@ const PaymentRequestDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<DetailData> | null>(null);
+  const [replyComment, setReplyComment] = useState('');
+  const [managers, setManagers] = useState<{ userId: number; fullName: string; department: string }[]>([]);
+
+  useEffect(() => {
+    // Fetch managers for the dropdown
+    const fetchManagers = async () => {
+      try {
+        const { data } = await apiClient.get('/admin/users', { params: { role_code: 'MANAGER' } });
+        setManagers(data.data.items || []);
+      } catch (err) {
+        console.error('Failed to load managers', err);
+      }
+    };
+    fetchManagers();
+  }, []);
 
   const loadData = React.useCallback(async () => {
     try {
@@ -90,9 +112,14 @@ const PaymentRequestDetail: React.FC = () => {
     if (!isEditing && data) {
       setEditData({
         currency_id: data.currency_id,
-        application_date: data.application_date.split('T')[0],
-        desired_payment_date: data.desired_payment_date.split('T')[0],
+        application_date: data.application_date ? data.application_date.split('T')[0] : '',
+        desired_payment_date: data.desired_payment_date ? data.desired_payment_date.split('T')[0] : '',
         payment_method_id: data.payment_method_id,
+        payment_type_id: data.payment_type_id,
+        purpose: data.purpose,
+        request_content: data.request_content,
+        target_manager_id: data.target_manager_id,
+        bank_account_info: data.bank_account_info,
         breakdowns: data.breakdowns ? data.breakdowns.map((b) => ({ ...b })) : [],
       });
     }
@@ -238,6 +265,29 @@ const PaymentRequestDetail: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
             
+            {/* Request Content Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-5 space-y-4">
+              <h2 className="text-base font-semibold text-slate-800 border-b border-slate-100 pb-2">Request Details</h2>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Purpose / Usage</label>
+                {isEditing && editData ? (
+                  <input type="text" maxLength={255} value={editData.purpose ?? ''} onChange={e => setEditData({...editData, purpose: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500 outline-none" />
+                ) : (
+                  <p className="text-sm text-slate-900 bg-slate-50 p-3 rounded-lg border border-slate-100">{data.purpose}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Payment Request Content</label>
+                {isEditing && editData ? (
+                  <textarea maxLength={1000} rows={4} value={editData.request_content ?? ''} onChange={e => setEditData({...editData, request_content: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500 outline-none" />
+                ) : (
+                  <p className="text-sm text-slate-900 bg-slate-50 p-3 rounded-lg border border-slate-100 whitespace-pre-wrap">{data.request_content}</p>
+                )}
+              </div>
+            </div>
+
             {/* Breakdowns */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -327,7 +377,7 @@ const PaymentRequestDetail: React.FC = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="text-sm font-medium text-slate-900">{log.comment}</p>
-                        <p className="text-xs text-slate-500 mt-1">Status changed to <span className="font-medium">{log.new_status_id === 1 ? 'Draft' : log.new_status_id === 2 ? 'Submitted' : 'Other'}</span></p>
+                        <p className="text-xs text-slate-500 mt-1">Status changed to <span className="font-medium">{STATUS_LABELS_EN[log.new_status_id as keyof typeof STATUS_LABELS_EN] || `Status ${log.new_status_id}`}</span></p>
                       </div>
                       <span className="text-xs text-slate-400 font-medium">
                         {new Date(log.timestamp).toLocaleString()}
@@ -336,6 +386,39 @@ const PaymentRequestDetail: React.FC = () => {
                   </div>
                 ))}
               </div>
+              {rejectionLog && data.status_id === 5 && (
+                <div className="p-5 border-t border-slate-100 bg-slate-50/50">
+                  <h3 className="text-sm font-medium text-slate-700 mb-2">Reply to Rejection</h3>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Add a comment to explain your updates..." 
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                      value={replyComment}
+                      onChange={(e) => setReplyComment(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter' && replyComment.trim()) {
+                           await apiClient.post(`/applicant/payment-requests/${data.id}/comments`, { comment: replyComment });
+                           setReplyComment('');
+                           loadData();
+                        }
+                      }}
+                    />
+                    <button 
+                      onClick={async () => {
+                        if (replyComment.trim()) {
+                           await apiClient.post(`/applicant/payment-requests/${data.id}/comments`, { comment: replyComment });
+                           setReplyComment('');
+                           loadData();
+                        }
+                      }}
+                      className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>
@@ -365,19 +448,78 @@ const PaymentRequestDetail: React.FC = () => {
               </div>
 
               <div>
-                <p className="text-xs text-slate-500 font-medium mb-1">Payment Method</p>
+                <p className="text-xs text-slate-500 font-medium mb-1">Target Manager</p>
                 {isEditing && editData ? (
-                  <select value={editData.payment_method_id ?? ''} onChange={e => setEditData({...editData, payment_method_id: Number(e.target.value)})} className="w-full px-2 py-1 border rounded text-slate-900 bg-white">
-                    <option value={1}>Bank Transfer</option>
-                    <option value={2}>Credit Card</option>
-                    <option value={3}>Cash</option>
+                  <select value={editData.target_manager_id ?? ''} onChange={e => setEditData({...editData, target_manager_id: Number(e.target.value)})} className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white">
+                    <option value="">Select Manager</option>
+                    {managers.map(m => (
+                      <option key={m.userId} value={m.userId}>{m.fullName} ({m.department})</option>
+                    ))}
                   </select>
                 ) : (
                   <p className="text-sm text-slate-900 font-medium">
-                    {data.payment_method_id === 1 ? 'Bank Transfer' : 'Other'}
+                    {managers.find(m => m.userId === data.target_manager_id)?.fullName || `User ID: ${data.target_manager_id}`}
                   </p>
                 )}
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-slate-500 font-medium mb-1">Payment Type</p>
+                  {isEditing && editData ? (
+                    <select value={editData.payment_type_id ?? ''} onChange={e => setEditData({...editData, payment_type_id: Number(e.target.value)})} className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white">
+                      <option value={1}>Advance Payment</option>
+                      <option value={2}>Reimbursement</option>
+                      <option value={3}>Direct Vendor Payment</option>
+                    </select>
+                  ) : (
+                    <p className="text-sm text-slate-900 font-medium">
+                      {data.payment_type_id === 1 ? 'Advance Payment' : data.payment_type_id === 2 ? 'Reimbursement' : 'Direct Vendor Payment'}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium mb-1">Currency</p>
+                  {isEditing && editData ? (
+                    <select value={editData.currency_id ?? ''} onChange={e => setEditData({...editData, currency_id: Number(e.target.value)})} className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white">
+                      <option value={1}>MMK</option>
+                      <option value={2}>USD</option>
+                      <option value={3}>JPY</option>
+                      <option value={4}>THB</option>
+                    </select>
+                  ) : (
+                    <p className="text-sm text-slate-900 font-medium">
+                      {data.currency_id === 1 ? 'MMK' : data.currency_id === 2 ? 'USD' : data.currency_id === 3 ? 'JPY' : 'THB'}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs text-slate-500 font-medium mb-1">Payment Method</p>
+                {isEditing && editData ? (
+                  <select value={editData.payment_method_id ?? ''} onChange={e => setEditData({...editData, payment_method_id: Number(e.target.value)})} className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white">
+                    <option value={1}>Bank Transfer</option>
+                    <option value={2}>Cash</option>
+                    <option value={3}>Check</option>
+                  </select>
+                ) : (
+                  <p className="text-sm text-slate-900 font-medium">
+                    {data.payment_method_id === 1 ? 'Bank Transfer' : data.payment_method_id === 2 ? 'Cash' : 'Check'}
+                  </p>
+                )}
+              </div>
+
+              {((isEditing && editData?.payment_method_id !== 3) || (!isEditing && data.payment_method_id !== 3)) && (
+                <div>
+                  <p className="text-xs text-slate-500 font-medium mb-1">Bank Account / Phone</p>
+                  {isEditing && editData ? (
+                    <input type="text" maxLength={100} value={editData.bank_account_info ?? ''} onChange={e => setEditData({...editData, bank_account_info: e.target.value})} className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  ) : (
+                    <p className="text-sm text-slate-900 font-medium">{data.bank_account_info}</p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <p className="text-xs text-slate-500 font-medium mb-1">Receipts Attached</p>
@@ -406,7 +548,7 @@ const PaymentRequestDetail: React.FC = () => {
                 <p className="text-sm text-slate-500">No receipts attached.</p>
               )}
 
-              {(data.status_id === 1 || data.status_id === 4) && (
+              {EDITABLE_STATUSES.includes(data.status_id) && (
                 <div className="pt-2 mt-4 border-t border-slate-100">
                   <ReceiptUpload paymentRequestId={data.id} onUploadSuccess={loadData} />
                 </div>

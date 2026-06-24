@@ -20,7 +20,6 @@ import { ApplicantService } from './applicant.service';
 import { DashboardResponseDto } from './dto/payment-request-response.dto';
 import { CreatePaymentRequestDraftDto } from './dto/create-payment-request.dto';
 import { UpdatePaymentRequestDto } from './dto/update-payment-request.dto';
-import { SubmitManagerDto } from './dto/submit-manager.dto';
 import { JwtAuthGuard } from '../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../shared/guards/roles.guard';
 import { Roles } from '../shared/decorators/roles.decorator';
@@ -75,10 +74,45 @@ export class ApplicantController {
     @Param('id') id: string,
   ) {
     const applicantId = Number(req.user.sub);
-    return this.applicantService.getPaymentRequestDetail(
+    const request = await this.applicantService.getPaymentRequestDetail(
       applicantId,
       Number(id),
     );
+
+    return {
+      id: request.id,
+      request_number: request.requestNumber,
+      status_id: request.statusId,
+      currency_id: request.currencyId,
+      application_date: request.applicationDate,
+      desired_payment_date: request.desiredPaymentDate,
+      payment_method_id: request.paymentMethodId,
+      payment_type_id: request.paymentTypeId,
+      purpose: request.purpose,
+      request_content: request.requestContent,
+      target_manager_id: request.managerUserId,
+      bank_account_info: request.bankAccountInfo,
+      total_amount: request.totalAmount,
+      has_receipt: request.hasReceipt,
+      created_at: request.createdDate,
+      updated_at: request.modifiedDate,
+      breakdowns: request.breakdowns?.map((b) => ({
+        id: b.id,
+        description: b.description,
+        amount: b.amount,
+      })),
+      receipts: request.receipts?.map((r) => ({
+        id: r.id,
+        file_name: r.originalFileName,
+        file_size: r.file_size,
+      })),
+      logs: request.approvalLogs?.map((l) => ({
+        id: l.approvalLogId,
+        comment: l.comment,
+        new_status_id: l.newStatusId,
+        timestamp: l.timestamp,
+      })),
+    };
   }
 
   @Post('draft')
@@ -93,25 +127,6 @@ export class ApplicantController {
       data: {
         id: request.id,
         request_number: request.requestNumber,
-      },
-    };
-  }
-
-  @Post(':id/submit-manager')
-  async submitToManager(
-    @Req() req: AuthenticatedRequest,
-    @Body() dto: SubmitManagerDto,
-  ) {
-    const applicantId = Number(req.user.sub);
-    const request = await this.applicantService.submitToManager(
-      applicantId,
-      Number(dto.id),
-    );
-    return {
-      message: 'Request submitted to Manager successfully',
-      data: {
-        id: request.id,
-        statusId: request.statusId,
       },
     };
   }
@@ -140,6 +155,25 @@ export class ApplicantController {
         id: receipt.id,
         file_name: receipt.originalFileName,
         file_size: receipt.file_size,
+      },
+    };
+  }
+
+  @Post(':id/submit-to-manager')
+  async submitToManager(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    const applicantId = Number(req.user.sub);
+    const request = await this.applicantService.submitToManager(
+      applicantId,
+      Number(id),
+    );
+    return {
+      message: 'Request submitted to Manager successfully',
+      data: {
+        id: request.id,
+        status_id: request.statusId,
       },
     };
   }
