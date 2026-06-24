@@ -28,6 +28,8 @@ jest.mock('redis', () => ({
 
 function createMockQueryBuilder() {
   return {
+    select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
     leftJoinAndMapOne: jest.fn().mockReturnThis(),
     leftJoinAndSelect: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
@@ -300,7 +302,7 @@ describe('AdminService', () => {
         startDate: '2026-01-01',
         endDate: '2026-12-31',
         actionTypeId: 1,
-        requestId: 101,
+        requestNumber: 'PR-2026-101',
         actorName: 'Admin',
         page: 1,
         pageSize: 50,

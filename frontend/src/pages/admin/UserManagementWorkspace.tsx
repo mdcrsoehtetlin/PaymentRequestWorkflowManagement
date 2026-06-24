@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Plus, Edit2, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, RefreshCw, Search } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { apiClient } from '../../services/api-client';
 import { UserFormModal } from './components/UserFormModal';
@@ -51,7 +51,6 @@ export function UserManagementWorkspace() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'reset'>('create');
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [sorting, setSorting] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
     sortBy: '',
@@ -107,13 +106,17 @@ export function UserManagementWorkspace() {
     }
   }, []);
 
+  const handleSearch = useCallback(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const isInitialLoad = useRef(true);
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchUsers(), 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [filters, pagination.page, pagination.pageSize, fetchUsers]);
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      fetchUsers();
+    }
+  }, [fetchUsers]);
 
   const handleToggleActive = async (user: UserRecord) => {
     try {
@@ -260,6 +263,11 @@ export function UserManagementWorkspace() {
                 setFilters((prev) => ({ ...prev, keyword: e.target.value }));
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                }
+              }}
               placeholder="社員番号または氏名で検索"
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
@@ -301,6 +309,14 @@ export function UserManagementWorkspace() {
               <option value="false">無効</option>
             </select>
           </div>
+          <button
+            onClick={handleSearch}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Search className="w-4 h-4" />
+            検索
+          </button>
         </div>
       </div>
 

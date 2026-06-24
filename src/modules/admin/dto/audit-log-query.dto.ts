@@ -24,10 +24,9 @@ export class AuditLogQueryDto {
   actionTypeId?: number;
 
   @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  requestId?: number;
+  @IsString()
+  @MaxLength(50)
+  requestNumber?: string;
 
   @IsOptional()
   @IsString()

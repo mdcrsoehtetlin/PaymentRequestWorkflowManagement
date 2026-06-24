@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, Search } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { apiClient } from '../../services/api-client';
 import { MetadataDetailPanel } from './components/MetadataDetailPanel';
@@ -7,6 +7,7 @@ import { MetadataDetailPanel } from './components/MetadataDetailPanel';
 interface AuditLogRecord {
   approvalLogId: string;
   paymentRequestId: number;
+  requestNumber: string | null;
   actionTakenByUserId: number;
   actorName: string;
   actionTypeId: number;
@@ -66,7 +67,7 @@ export function AuditLogWorkspace() {
     startDate: '',
     endDate: '',
     actionTypeId: '',
-    requestId: '',
+    requestNumber: '',
     actorName: '',
   });
   const [pagination, setPagination] = useState({
@@ -76,7 +77,6 @@ export function AuditLogWorkspace() {
     totalPages: 0,
   });
   const [dateError, setDateError] = useState('');
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filtersRef = useRef(filters);
   const paginationRef = useRef(pagination);
   useEffect(() => {
@@ -118,7 +118,7 @@ export function AuditLogWorkspace() {
       if (f.startDate) params.set('startDate', f.startDate);
       if (f.endDate) params.set('endDate', f.endDate);
       if (f.actionTypeId) params.set('actionTypeId', f.actionTypeId);
-      if (f.requestId) params.set('requestId', f.requestId);
+      if (f.requestNumber) params.set('requestNumber', f.requestNumber);
       if (f.actorName) params.set('actorName', f.actorName);
       params.set('page', String(p.page));
       params.set('pageSize', String(p.pageSize));
@@ -139,24 +139,17 @@ export function AuditLogWorkspace() {
     }
   }, []);
 
-  const debouncedFetch = useCallback(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => doFetchLogs(), 300);
+  const handleSearch = useCallback(() => {
+    doFetchLogs();
   }, [doFetchLogs]);
 
+  const isInitialLoad = useRef(true);
   useEffect(() => {
-    debounceRef.current = setTimeout(() => doFetchLogs(), 0);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      doFetchLogs();
+    }
   }, [doFetchLogs]);
-
-  useEffect(() => {
-    debounceRef.current = setTimeout(() => doFetchLogs(), 0);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [pagination.page, pagination.pageSize, doFetchLogs]);
 
   const sortedLogs = useMemo(() => {
     if (!sorting.sortBy) return logs;
@@ -173,10 +166,10 @@ export function AuditLogWorkspace() {
 
   const columns: Column<AuditLogRecord>[] = [
     {
-      key: 'paymentRequestId',
-      header: 'リクエストID',
+      key: 'requestNumber',
+      header: 'リクエスト番号',
       sortable: true,
-      render: (_val, row) => `PRF-${row.paymentRequestId}`,
+      render: (_val, row) => row.requestNumber ?? 'Unknown',
     },
     {
       key: 'actorName',
@@ -193,6 +186,7 @@ export function AuditLogWorkspace() {
       key: 'ipAddress',
       header: 'IPアドレス',
       sortable: true,
+      width: '140px',
     },
     {
       key: 'timestamp',
@@ -230,21 +224,25 @@ export function AuditLogWorkspace() {
       {/* Search Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
         <div className="flex items-end gap-4">
-          <div className="w-40">
+          <div className="w-48">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              リクエストID
+              リクエスト番号
             </label>
             <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
               <span className="px-2 py-2 text-sm text-slate-500 bg-slate-50 border-r border-slate-300 select-none">PRF-</span>
               <input
                 type="text"
-                value={filters.requestId}
+                value={filters.requestNumber}
                 onChange={(e) => {
-                  setFilters((prev) => ({ ...prev, requestId: e.target.value }));
+                  setFilters((prev) => ({ ...prev, requestNumber: e.target.value }));
                   setPagination((prev) => ({ ...prev, page: 1 }));
-                  debouncedFetch();
                 }}
-                placeholder="ID"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
+                placeholder="番号を入力"
                 className="w-full px-2 py-2 text-sm outline-none border-0"
               />
             </div>
@@ -259,7 +257,11 @@ export function AuditLogWorkspace() {
               onChange={(e) => {
                 setFilters((prev) => ({ ...prev, actorName: e.target.value }));
                 setPagination((prev) => ({ ...prev, page: 1 }));
-                debouncedFetch();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                }
               }}
               placeholder="名前で検索"
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -274,7 +276,6 @@ export function AuditLogWorkspace() {
               onChange={(e) => {
                 setFilters((prev) => ({ ...prev, actionTypeId: e.target.value }));
                 setPagination((prev) => ({ ...prev, page: 1 }));
-                debouncedFetch();
               }}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
             >
@@ -295,7 +296,6 @@ export function AuditLogWorkspace() {
               onChange={(e) => {
                 setFilters((prev) => ({ ...prev, startDate: e.target.value }));
                 setPagination((prev) => ({ ...prev, page: 1 }));
-                debouncedFetch();
               }}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
@@ -310,11 +310,18 @@ export function AuditLogWorkspace() {
               onChange={(e) => {
                 setFilters((prev) => ({ ...prev, endDate: e.target.value }));
                 setPagination((prev) => ({ ...prev, page: 1 }));
-                debouncedFetch();
               }}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
+          <button
+            onClick={handleSearch}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Search className="w-4 h-4" />
+            検索
+          </button>
         </div>
         {dateError && (
           <p className="mt-2 text-sm text-red-600">{dateError}</p>

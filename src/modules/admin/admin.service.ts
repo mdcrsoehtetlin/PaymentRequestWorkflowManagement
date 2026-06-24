@@ -404,18 +404,15 @@ export class AdminService {
   }
 
   /**
-   * @description Fetches global audit logs with date range and user filters.
-   * @param startDate Optional start date filter (YYYY-MM-DD).
-   * @param endDate Optional end date filter (YYYY-MM-DD).
-   * @param userId Optional user ID filter.
-   * @param page Page number (default 1).
-   * @param pageSize Items per page (default 50).
-   * @returns Paginated audit log list.
+   * @description Fetches global audit logs with date range, request number, and user filters.
+   * @param query Query parameters including date range, request number, action type, and actor name filters.
+   * @returns Paginated audit log list with request numbers from payment_requests table.
    */
   async getAuditLogs(query: AuditLogQueryDto): Promise<{
     data: Array<{
       approvalLogId: string;
       paymentRequestId: number;
+      requestNumber: string | null;
       actionTakenByUserId: number;
       actorName: string;
       actionTypeId: number;
@@ -433,7 +430,8 @@ export class AdminService {
       totalPages: number;
     };
   }> {
-    const { startDate, endDate, actionTypeId, requestId, actorName } = query;
+    const { startDate, endDate, actionTypeId, requestNumber, actorName } =
+      query;
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 50;
 
@@ -443,12 +441,7 @@ export class AdminService {
 
     const qb = this.approvalLogRepository
       .createQueryBuilder('log')
-      .leftJoinAndMapOne(
-        'log.actionTakenByUser',
-        User,
-        'user',
-        'user.userId = log.action_taken_by_user_id',
-      )
+      .leftJoinAndSelect('log.action_taken_by_user', 'user')
       .leftJoinAndSelect('log.payment_request', 'request');
 
     if (startDate) {
@@ -460,8 +453,10 @@ export class AdminService {
     if (actionTypeId) {
       qb.andWhere('log.action_type_id = :actionTypeId', { actionTypeId });
     }
-    if (requestId) {
-      qb.andWhere('log.payment_request_id = :requestId', { requestId });
+    if (requestNumber) {
+      qb.andWhere('request.request_number ILIKE :requestNumber', {
+        requestNumber: `%${requestNumber}%`,
+      });
     }
     if (actorName) {
       qb.andWhere('user.fullName ILike :actorName', {
@@ -480,10 +475,9 @@ export class AdminService {
       data: data.map((log) => ({
         approvalLogId: log.approvalLogId,
         paymentRequestId: Number(log.paymentRequestId),
+        requestNumber: log.payment_request?.requestNumber ?? null,
         actionTakenByUserId: Number(log.actionTakenByUserId),
-        actorName:
-          (log as ApprovalLog & { actionTakenByUser?: User }).actionTakenByUser
-            ?.fullName ?? 'Unknown',
+        actorName: log.action_taken_by_user?.fullName ?? 'Unknown',
         actionTypeId: log.actionTypeId,
         previousStatusId: log.previousStatusId,
         newStatusId: log.newStatusId,
