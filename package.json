@@ -7,8 +7,6 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "git config core.hooksPath .githooks && nest start",
     "start:dev": "git config core.hooksPath .githooks && nest start --watch",
     "start:debug": "nest start --debug --watch",

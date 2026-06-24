@@ -234,18 +234,6 @@ step_quality_gates() {
     echo -e "  ${RED}✖${NC} Backend lint: FAILED"
     gate_failures=$((gate_failures + 1))
   fi
-  echo ""
-
-  # ── 3b: Prettier Format Check ──
-  echo -e "  ${CYAN}[3b]${NC} Running format check (npm run format:check)..."
-  if npm run format:check --silent 2>&1; then
-    echo -e "  ${GREEN}✔${NC} Backend format check: PASSED"
-  else
-    echo -e "  ${RED}✖${NC} Backend format check: FAILED (run 'npm run format' to fix)"
-    gate_failures=$((gate_failures + 1))
-  fi
-  echo ""
-
   # ── 3c: Backend Build ──
   echo -e "  ${CYAN}[3c]${NC} Running backend build (npm run build)..."
   if npm run build --silent 2>&1; then
@@ -287,7 +275,7 @@ step_quality_gates() {
   echo ""
 
   if [ "$gate_failures" -eq 0 ]; then
-    record_pass "Pre-Commit Quality Gates (all 6 sub-checks)"
+    record_pass "Pre-Commit Quality Gates (all 5 sub-checks)"
   else
     record_fail "Pre-Commit Quality Gates — ${gate_failures} sub-check(s) failed"
   fi

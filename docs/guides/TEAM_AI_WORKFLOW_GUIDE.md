@@ -347,14 +347,13 @@ Implement the `verifyRequest()` method in `src/modules/manager/manager.service.t
        and @Roles() decorators?
        
  □ 7 — SEVEN COMMANDS
-       Run these 7 commands in order:
+       Run these 6 commands in order:
        1. npm run lint          (zero errors)
-       2. npm run format        (auto-format applied)
-       3. npm run build         (zero TypeScript errors)
-       4. npm run test          (all unit tests pass)
-       5. git diff --stat       (confirm only YOUR files changed)
-       6. git diff --name-only  (NO shared layer modifications)
-       7. grep -r "from '\.\./" src/modules/{your-role}/
+       2. npm run build         (zero TypeScript errors)
+       3. npm run test          (all unit tests pass)
+       4. git diff --stat       (confirm only YOUR files changed)
+       5. git diff --name-only  (NO shared layer modifications)
+       6. grep -r "from '\.\./" src/modules/{your-role}/
           (verify no cross-module imports)
 ```
 
@@ -771,7 +770,7 @@ After any S1 or S2 incident caused by AI-generated code:
 
 ---
 
-## 12. 📋 Naming Convention Quick Reference Card
+## 12. 📜 Naming Convention Quick Reference Card
 
 Print this or keep it open during development. This is the **single source of truth** for all naming.
 
@@ -1079,10 +1078,9 @@ By using AI agents in this project, every team member agrees to the following:
 git fetch origin && git merge origin/master
 
 # ─── PRE-COMMIT VALIDATION ───────────────────────
-npm run lint                        # Zero errors required
-npm run format                      # Auto-format all files
-npm run build                       # Zero TypeScript errors
-npm run test                        # All tests pass
+npm run lint                        # Must have 0 errors
+npm run build                       # Must compile cleanly
+npm run test                        # Must pass
 
 # ─── SCOPE VALIDATION ────────────────────────────
 git diff --name-only                # Only YOUR module files

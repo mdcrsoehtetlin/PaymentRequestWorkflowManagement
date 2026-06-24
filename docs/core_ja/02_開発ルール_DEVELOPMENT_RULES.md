@@ -119,10 +119,9 @@ Code formatting is governed by the project-level ESLint and Prettier configurati
 
 **Pre-Commit Checklist:**
 
-1. Run `npm run lint` — Zero errors required.
-2. Run `npm run format` — All files must be auto-formatted.
-3. Run `npm run build` — Compilation must succeed with zero TypeScript errors.
-4. Run `npm run test` — All unit tests must pass.
+1. Run `npm run lint` — 0 errors, 0 warnings allowed.
+2. Run `npm run build` — Backend must compile without TS errors.
+3. Run `npm run test` — All tests must pass.
 
 ### 1.5 Import Ordering Convention
 

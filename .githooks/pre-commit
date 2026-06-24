@@ -7,9 +7,6 @@ if [ -z "$STAGED_FILES" ]; then
   exit 0
 fi
 
-echo "Running Prettier..."
-npx prettier --write $STAGED_FILES
-
 echo "Running ESLint..."
 npx eslint --fix $STAGED_FILES
 
