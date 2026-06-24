@@ -41,8 +41,16 @@ export function MasterDataWorkspace() {
   const getColumns = (): Column<Record<string, unknown>>[] => {
     if (data.length === 0) return [];
     const hiddenKeys = ['is_editable_state', 'is_terminal_state'];
+    const categoryHiddenKeys: Record<MasterCategory, string[]> = {
+      currencies: [],
+      roles: ['role_id'],
+      statuses: ['display_order'],
+      'payment-types': ['payment_type_id'],
+      'payment-methods': ['payment_method_id'],
+    };
+    const currentHiddenKeys = [...hiddenKeys, ...categoryHiddenKeys[activeCategory]];
     const keys = Object.keys(data[0]).filter(
-      (k) => !hiddenKeys.includes(k) && (!k.endsWith('_id') || k === `${activeCategory.replace(/-/g, '_').replace(/s$/, '')}_id`),
+      (k) => !currentHiddenKeys.includes(k) && (!k.endsWith('_id') || k === `${activeCategory.replace(/-/g, '_').replace(/s$/, '')}_id`),
     );
     return keys.map((key) => ({
       key,

@@ -186,6 +186,7 @@ export function AuditLogWorkspace() {
       key: 'ipAddress',
       header: 'IPアドレス',
       sortable: true,
+      width: '140px',
     },
     {
       key: 'timestamp',

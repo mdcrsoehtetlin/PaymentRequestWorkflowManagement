@@ -28,6 +28,8 @@ jest.mock('redis', () => ({
 
 function createMockQueryBuilder() {
   return {
+    select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
     leftJoinAndMapOne: jest.fn().mockReturnThis(),
     leftJoinAndSelect: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),

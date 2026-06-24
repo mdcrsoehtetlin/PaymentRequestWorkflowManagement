@@ -441,12 +441,7 @@ export class AdminService {
 
     const qb = this.approvalLogRepository
       .createQueryBuilder('log')
-      .leftJoinAndMapOne(
-        'log.actionTakenByUser',
-        User,
-        'user',
-        'user.userId = log.action_taken_by_user_id',
-      )
+      .leftJoinAndSelect('log.action_taken_by_user', 'user')
       .leftJoinAndSelect('log.payment_request', 'request');
 
     if (startDate) {
@@ -480,16 +475,9 @@ export class AdminService {
       data: data.map((log) => ({
         approvalLogId: log.approvalLogId,
         paymentRequestId: Number(log.paymentRequestId),
-        requestNumber:
-          (
-            log as ApprovalLog & {
-              payment_request?: { requestNumber?: string };
-            }
-          ).payment_request?.requestNumber ?? null,
+        requestNumber: log.payment_request?.requestNumber ?? null,
         actionTakenByUserId: Number(log.actionTakenByUserId),
-        actorName:
-          (log as ApprovalLog & { actionTakenByUser?: User }).actionTakenByUser
-            ?.fullName ?? 'Unknown',
+        actorName: log.action_taken_by_user?.fullName ?? 'Unknown',
         actionTypeId: log.actionTypeId,
         previousStatusId: log.previousStatusId,
         newStatusId: log.newStatusId,
