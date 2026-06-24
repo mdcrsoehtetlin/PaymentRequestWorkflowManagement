@@ -16,4 +16,13 @@ npx eslint --fix $STAGED_FILES
 # Re-add formatted files
 git add $STAGED_FILES
 
-echo "Pre-commit hook completed successfully."
+echo "Running full project verification (verify-all.sh)..."
+bash scripts/verify-all.sh
+
+VERIFY_EXIT_CODE=$?
+if [ $VERIFY_EXIT_CODE -ne 0 ]; then
+  echo "❌ Verification failed! Commit aborted. Please fix the errors and try again."
+  exit 1
+fi
+
+echo "✅ Pre-commit hook completed successfully."
