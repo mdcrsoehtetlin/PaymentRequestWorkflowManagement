@@ -9,7 +9,11 @@ export class QueryRequestsDto {
 
   @IsOptional()
   @IsString()
-  date?: string;
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsString()
+  dateTo?: string;
 
   @IsOptional()
   @IsString()
