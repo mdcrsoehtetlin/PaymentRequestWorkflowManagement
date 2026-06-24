@@ -6,7 +6,7 @@ import { ApprovePaymentRequestDto } from '../dto/approve-payment-request.dto';
 import { RejectPaymentRequestDto } from '../dto/reject-payment-request.dto';
 import { JwtPayload } from '../../shared/types';
 
-describe('ApproverController', () => {
+describe('ApprController', () => {
   let controller: ApproverController;
   let service: jest.Mocked<ApproverService>;
 
