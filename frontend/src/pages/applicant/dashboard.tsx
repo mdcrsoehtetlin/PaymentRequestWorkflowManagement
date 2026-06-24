@@ -5,31 +5,7 @@ import { fetchPaymentRequests, deleteDraft } from './services/api';
 import type { DashboardResponseDto } from './services/api';
 import { useApplicantSocket } from './hooks/useApplicantSocket';
 
-const StatusBadge: React.FC<{ statusId: number }> = ({ statusId }) => {
-  const getStatusConfig = () => {
-    switch (statusId) {
-      case 1:
-        return { label: 'Draft', classes: 'bg-slate-100 text-slate-700 border-slate-200' };
-      case 2:
-      case 3:
-        return { label: 'Submitted', classes: 'bg-blue-50 text-blue-700 border-blue-200' };
-      case 4:
-        return { label: 'Rejected', classes: 'bg-red-50 text-red-700 border-red-200' };
-      case 5:
-      case 6:
-        return { label: 'Approved', classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-      default:
-        return { label: 'Unknown', classes: 'bg-gray-100 text-gray-700 border-gray-200' };
-    }
-  };
-
-  const config = getStatusConfig();
-  return (
-    <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${config.classes}`}>
-      {config.label}
-    </span>
-  );
-};
+import { StatusBadge } from '../../components/shared';
 
 const formatCurrency = (amount: string, currencyId: number) => {
   // Mock currency mapping

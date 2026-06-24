@@ -89,9 +89,9 @@ describe('ApproverService', () => {
       submitted_to_manager_date: null,
       approval_date: null,
       payment_completed_date: null,
-      is_deleted: false,
-      created_at: new Date('2026-06-01'),
-      updated_at: new Date('2026-06-01'),
+      isDeleted: false,
+      createdDate: new Date('2026-06-01'),
+      modifiedDate: new Date('2026-06-01'),
       receipts: [],
       logs: [],
       ...overrides,
@@ -301,10 +301,7 @@ describe('ApproverService', () => {
 
       await service.findAssignedRequests(mockApproverUserId, query);
 
-      expect(qb['orderBy']).toHaveBeenCalledWith(
-        'request.total_amount',
-        'DESC',
-      );
+      expect(qb['orderBy']).toHaveBeenCalledWith('request.totalAmount', 'DESC');
     });
 
     it('should sort by managerVerificationDate by default', async () => {
@@ -319,7 +316,7 @@ describe('ApproverService', () => {
       await service.findAssignedRequests(mockApproverUserId, query);
 
       expect(qb['orderBy']).toHaveBeenCalledWith(
-        'request.manager_verification_date',
+        'request.managerVerificationDate',
         'DESC',
       );
     });

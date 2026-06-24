@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, FileText, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Send, FileText, AlertCircle } from 'lucide-react';
 import { fetchPaymentRequestDetail, submitToManager, submitToApprover, updatePaymentRequest } from './services/api';
 import ReceiptUpload from './components/ReceiptUpload';
 
@@ -23,32 +23,7 @@ interface DetailData {
   receipts?: Receipt[];
 }
 
-const StatusBadge: React.FC<{ statusId: number }> = ({ statusId }) => {
-  const getStatusConfig = () => {
-    switch (statusId) {
-      case 1:
-        return { label: 'Draft', classes: 'bg-slate-100 text-slate-700 border-slate-200', icon: <FileText className="w-3 h-3" /> };
-      case 2:
-      case 3:
-        return { label: 'Submitted', classes: 'bg-blue-50 text-blue-700 border-blue-200', icon: <Clock className="w-3 h-3" /> };
-      case 4:
-        return { label: 'Rejected', classes: 'bg-red-50 text-red-700 border-red-200', icon: <XCircle className="w-3 h-3" /> };
-      case 5:
-      case 6:
-        return { label: 'Approved', classes: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: <CheckCircle className="w-3 h-3" /> };
-      default:
-        return { label: 'Unknown', classes: 'bg-gray-100 text-gray-700 border-gray-200', icon: null };
-    }
-  };
-
-  const config = getStatusConfig();
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border ${config.classes}`}>
-      {config.icon}
-      {config.label}
-    </span>
-  );
-};
+import { StatusBadge } from '../../components/shared';
 
 const PaymentRequestDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();

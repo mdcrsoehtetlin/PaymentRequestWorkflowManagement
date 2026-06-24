@@ -1,4 +1,4 @@
-import { ApproverDataTable } from './ApproverDataTable';
+import { DataTable } from '../../../components/shared/DataTable';
 import { ApproverStatusBadge } from './ApproverStatusBadge';
 import { formatCurrency, formatDate } from '../../../utils/format';
 import type { ApproverRequestListItem } from '../types';
@@ -57,7 +57,7 @@ export function ApproverRequestTable({
   }));
 
   return (
-    <ApproverDataTable
+    <DataTable
       columns={columns}
       data={rows}
       isLoading={isLoading}
