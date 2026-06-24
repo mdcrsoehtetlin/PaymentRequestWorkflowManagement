@@ -14,6 +14,7 @@ interface FilterSearchBarProps {
   onDateToChange: (value: string) => void;
   onStatusChange: (value?: number) => void;
   onSubmit: () => void;
+  onClear: () => void;
 }
 
 const statusOptions = [
@@ -36,6 +37,7 @@ export function FilterSearchBar({
   onDateToChange,
   onStatusChange,
   onSubmit,
+  onClear,
 }: FilterSearchBarProps) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
@@ -68,6 +70,7 @@ export function FilterSearchBar({
             type="date"
             value={dateFrom}
             onChange={(e) => onDateFromChange(e.target.value)}
+            max={dateTo || undefined}
             className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
           />
         </label>
@@ -78,6 +81,7 @@ export function FilterSearchBar({
             type="date"
             value={dateTo}
             onChange={(e) => onDateToChange(e.target.value)}
+            min={dateFrom || undefined}
             className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
           />
         </label>
@@ -94,14 +98,20 @@ export function FilterSearchBar({
           />
         </label>
 
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-sm text-slate-500">Apply filters to update the list</div>
+        <div className="flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onSubmit}
             className="rounded-xl bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Search
+          </button>
+          <button
+            type="button"
+            onClick={onClear}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500"
+          >
+            Clear Filters
           </button>
         </div>
       </div>

@@ -5,11 +5,10 @@ interface SummarySidebarProps {
   approvedCount: number;
   rejectedCount: number;
   activeFilter?: number;
-  onRefresh: () => void;
   onFilterChange: (statusId?: number) => void;
 }
 
-export function SummarySidebar({ totalQueue, pendingCount, reviewingCount, approvedCount, rejectedCount, activeFilter, onRefresh, onFilterChange }: SummarySidebarProps) {
+export function SummarySidebar({ totalQueue, pendingCount, reviewingCount, approvedCount, rejectedCount, activeFilter, onFilterChange }: SummarySidebarProps) {
   return (
     <aside className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
       <div className="flex items-center justify-between mb-3">
@@ -19,13 +18,6 @@ export function SummarySidebar({ totalQueue, pendingCount, reviewingCount, appro
           className={`text-lg font-semibold hover:text-blue-600 transition-colors ${activeFilter === undefined ? 'text-blue-600' : 'text-slate-900'}`}
         >
           Approval Queue
-        </button>
-        <button
-          type="button"
-          onClick={onRefresh}
-          className="text-sm text-slate-600 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-        >
-          Refresh
         </button>
       </div>
 
