@@ -28,7 +28,6 @@ const roleMenuConfig: Record<string, { title: string; dashboardPath: string; men
     dashboardPath: '/accounting',
     menuItems: [
       { label: 'Dashboard', path: '/accounting' },
-      { label: 'Payment Processing', path: '/accounting/payments' },
     ],
   },
   ADMIN: {
