@@ -6,6 +6,7 @@ import {
   IsInt,
   IsOptional,
   IsBoolean,
+  MinLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -18,12 +19,14 @@ export class CreateUserDto {
   )
   email!: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
+  @MinLength(8)
+  @MaxLength(50)
   @Transform(({ value }): string =>
     typeof value === 'string' ? value.trim() : value,
   )
-  password?: string;
+  password!: string;
 
   @IsNotEmpty()
   @IsString()

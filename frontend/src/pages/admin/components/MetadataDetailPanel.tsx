@@ -3,7 +3,6 @@ import { X } from 'lucide-react';
 interface AuditLogRecord {
   approvalLogId: string;
   paymentRequestId: number;
-  requestNumber: string | null;
   actorName: string;
   actionTypeId: number;
   previousStatusId: number | null;
@@ -55,9 +54,9 @@ export function MetadataDetailPanel({ log, onClose }: MetadataDetailPanelProps) 
           <p className="text-sm font-medium text-slate-900">{log.approvalLogId}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">リクエスト番号</p>
+          <p className="text-xs text-slate-500">リクエストID</p>
           <p className="text-sm font-medium text-slate-900">
-            {log.requestNumber ?? 'Unknown'}
+            PRF-{log.paymentRequestId}
           </p>
         </div>
         <div>
