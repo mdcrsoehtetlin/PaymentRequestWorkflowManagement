@@ -10,9 +10,12 @@
 name: CI — Verify Project Health
 
 on:
+  push:
+    branches:
+      - master
   pull_request:
     branches:
-      - main
+      - master
       - develop
 
 # Cancel any in-progress runs for the same PR to save CI minutes
