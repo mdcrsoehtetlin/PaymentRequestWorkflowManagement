@@ -18,7 +18,7 @@ The `ManagerDashboard` is the landing page for the Manager role. It displays KPI
 
 ## 2. Page Layout Structure
 
-### 2.1 List Page — `/manager` (Full-Width Table)
+### 2.1 List Page — `/manager` (Full-Width Table) 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
