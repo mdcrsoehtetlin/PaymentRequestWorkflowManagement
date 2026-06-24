@@ -1,4 +1,4 @@
-# Functional Specification (機能設計書) — Applicant Dashboard
+# Functional Specification (機能設計書) — Applicant Dashboard 
 
 **Document ID:** PRWM-FSD-SCR-001  
 **Target Screen:** Applicant Dashboard (申請者ダッシュボード)  
