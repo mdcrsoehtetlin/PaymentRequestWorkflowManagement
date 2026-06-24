@@ -7,6 +7,7 @@ import { MetadataDetailPanel } from './components/MetadataDetailPanel';
 interface AuditLogRecord {
   approvalLogId: string;
   paymentRequestId: number;
+  requestNumber: string | null;
   actionTakenByUserId: number;
   actorName: string;
   actionTypeId: number;
@@ -66,7 +67,7 @@ export function AuditLogWorkspace() {
     startDate: '',
     endDate: '',
     actionTypeId: '',
-    requestId: '',
+    requestNumber: '',
     actorName: '',
   });
   const [pagination, setPagination] = useState({
@@ -118,7 +119,7 @@ export function AuditLogWorkspace() {
       if (f.startDate) params.set('startDate', f.startDate);
       if (f.endDate) params.set('endDate', f.endDate);
       if (f.actionTypeId) params.set('actionTypeId', f.actionTypeId);
-      if (f.requestId) params.set('requestId', f.requestId);
+      if (f.requestNumber) params.set('requestNumber', f.requestNumber);
       if (f.actorName) params.set('actorName', f.actorName);
       params.set('page', String(p.page));
       params.set('pageSize', String(p.pageSize));
@@ -173,10 +174,10 @@ export function AuditLogWorkspace() {
 
   const columns: Column<AuditLogRecord>[] = [
     {
-      key: 'paymentRequestId',
-      header: 'リクエストID',
+      key: 'requestNumber',
+      header: 'リクエスト番号',
       sortable: true,
-      render: (_val, row) => `PRF-${row.paymentRequestId}`,
+      render: (_val, row) => row.requestNumber ?? 'Unknown',
     },
     {
       key: 'actorName',
@@ -230,21 +231,21 @@ export function AuditLogWorkspace() {
       {/* Search Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
         <div className="flex items-end gap-4">
-          <div className="w-40">
+          <div className="w-48">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              リクエストID
+              リクエスト番号
             </label>
             <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
               <span className="px-2 py-2 text-sm text-slate-500 bg-slate-50 border-r border-slate-300 select-none">PRF-</span>
               <input
                 type="text"
-                value={filters.requestId}
+                value={filters.requestNumber}
                 onChange={(e) => {
-                  setFilters((prev) => ({ ...prev, requestId: e.target.value }));
+                  setFilters((prev) => ({ ...prev, requestNumber: e.target.value }));
                   setPagination((prev) => ({ ...prev, page: 1 }));
                   debouncedFetch();
                 }}
-                placeholder="ID"
+                placeholder="番号を入力"
                 className="w-full px-2 py-2 text-sm outline-none border-0"
               />
             </div>
