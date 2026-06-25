@@ -24,9 +24,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T001 [US1] Import `LanguageSwitcher` in `frontend/src/pages/admin/AdminDashboardShell.tsx` — add `import { LanguageSwitcher } from '../../components/shared/LanguageSwitcher'`
-- [ ] T002 [US1] Add minimal header bar JSX in `frontend/src/pages/admin/AdminDashboardShell.tsx` — place a `<header>` element above the main content area (inside the flex container, after the sidebar `<aside>`), styled with `sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-3 flex justify-end`, containing only `<LanguageSwitcher />`
-- [ ] T003 [US1] Verify the header is visible on all admin sub-pages (User Management, Master Data, Audit Logs) and the language switcher functions correctly
+- [x] T001 [US1] Import `LanguageSwitcher` in `frontend/src/pages/admin/AdminDashboardShell.tsx` — add `import { LanguageSwitcher } from '../../components/shared/LanguageSwitcher'`
+- [x] T002 [US1] Add minimal header bar JSX in `frontend/src/pages/admin/AdminDashboardShell.tsx` — place a `<header>` element above the main content area (inside the flex container, after the sidebar `<aside>`), styled with `sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-3 flex justify-end`, containing only `<LanguageSwitcher />`
+- [x] T003 [US1] Verify the header is visible on all admin sub-pages (User Management, Master Data, Audit Logs) and the language switcher functions correctly
 
 **Checkpoint**: User Story 1 fully functional — Language switcher works in admin panel
 
@@ -50,8 +50,8 @@
 
 **Purpose**: Final validation and quality checks
 
-- [ ] T005 Run `npm run lint` from `frontend/` — verify zero errors
-- [ ] T006 Run `npm run build` from `frontend/` — verify zero TypeScript errors
+- [x] T005 Run `npm run lint` from `frontend/` — verify zero errors
+- [x] T006 Run `npm run build` from `frontend/` — verify zero TypeScript errors
 - [ ] T007 Run quickstart.md validation scenarios in browser — verify all 5 scenarios pass
 
 ---

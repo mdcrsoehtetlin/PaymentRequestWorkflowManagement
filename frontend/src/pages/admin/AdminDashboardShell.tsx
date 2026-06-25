@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { LanguageSwitcher } from '../../components/shared/LanguageSwitcher';
 import { LogOut, Shield } from 'lucide-react';
 
 /**
@@ -67,11 +68,16 @@ export function AdminDashboardShell() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <div className="p-6">
-          <Outlet />
-        </div>
-      </main>
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="bg-white border-b border-slate-200 px-4 py-3 flex justify-end shrink-0">
+          <LanguageSwitcher />
+        </header>
+        <main className="flex-1 overflow-auto">
+          <div className="p-6">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
