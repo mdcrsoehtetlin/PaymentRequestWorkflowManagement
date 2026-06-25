@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Plus, Edit2, RefreshCw, Search } from 'lucide-react';
+import { Plus, Edit2, RefreshCw } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { SearchFilterBar, type FilterField } from '../../components/shared/SearchFilterBar';
 import { apiClient } from '../../services/api-client';
