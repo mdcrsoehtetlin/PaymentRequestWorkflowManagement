@@ -246,12 +246,11 @@ describe('ApproverService', () => {
       );
     });
 
-    it('should apply date range filters when provided', async () => {
+    it('should apply desired date filter when provided', async () => {
       const query: QueryApproverRequestsDto = {
         page: 1,
         pageSize: 10,
-        dateFrom: '2026-06-01',
-        dateTo: '2026-06-30',
+        desiredDate: '2026-06-01',
       };
 
       const qb = paymentRequestRepo.createQueryBuilder();
@@ -260,15 +259,9 @@ describe('ApproverService', () => {
       await service.findAssignedRequests(mockApproverUserId, query);
 
       expect(qb['andWhere']).toHaveBeenCalledWith(
-        'request.submitted_to_approver_date >= :dateFrom',
+        'request.desired_payment_date = :desiredDate',
         {
-          dateFrom: '2026-06-01',
-        },
-      );
-      expect(qb['andWhere']).toHaveBeenCalledWith(
-        'request.submitted_to_approver_date < :dateToNext',
-        {
-          dateToNext: '2026-06-30T23:59:59.999Z',
+          desiredDate: '2026-06-01',
         },
       );
     });

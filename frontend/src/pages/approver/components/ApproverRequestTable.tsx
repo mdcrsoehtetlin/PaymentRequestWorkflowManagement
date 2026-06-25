@@ -33,27 +33,65 @@ export function ApproverRequestTable({
   onSortChange,
 }: ApproverRequestTableProps) {
   const columns = [
-    { key: 'requestNumber', header: 'Request No.', sortable: true, width: '15%' },
+    {
+      key: 'requestNumber',
+      header: 'Request No.',
+      sortable: true,
+      width: '13%',
+      render: (value: unknown) => (
+        <span className="text-blue-700 font-medium hover:text-blue-900 hover:underline cursor-pointer">
+          {value as string}
+        </span>
+      ),
+    },
     {
       key: 'applicantFullName',
       header: 'Applicant',
-      render: (_value: unknown, row: ApproverRequestListItem) => (
-        <div className="space-y-1">
-          <p className="font-medium text-slate-900">{row.applicant.fullName}</p>
-          <p className="text-xs text-slate-500">{row.applicant.branch}</p>
-        </div>
+      render: (value: unknown) => (
+        <span className="text-sm text-slate-700">{value as string}</span>
       ),
-      width: '22%',
+      width: '16%',
     },
-    { key: 'applicationDate', header: 'Applied Date', sortable: true, width: '12%', render: (value: unknown) => formatDate(value as string) },
-    { key: 'totalAmount', header: 'Total Amount', sortable: true, width: '15%', render: (_value: unknown, row: ApproverRequestListItem) => formatCurrency(row.totalAmount, row.currencyCode) },
-    { key: 'statusId', header: 'Status', sortable: true, width: '16%', render: (value: unknown) => <ApproverStatusBadge statusId={value as number} size="sm" /> },
-    { key: 'createdDate', header: 'Created Date', sortable: true, width: '20%', render: (value: unknown) => formatDate(value as string) },
+    {
+      key: 'applicantBranch',
+      header: 'Branch',
+      render: (value: unknown) => (
+        <span className="text-sm text-slate-700">{value as string}</span>
+      ),
+      width: '12%',
+    },
+    { key: 'applicationDate', header: 'Application Date', sortable: true, width: '13%', render: (value: unknown) => formatDate(value as string) },
+    { key: 'desiredPaymentDate', header: 'Desired Date', sortable: true, width: '12%', render: (value: unknown) => formatDate(value as string) },
+    {
+      key: 'totalAmount',
+      header: 'Amount',
+      sortable: true,
+      width: '14%',
+      render: (_value: unknown, row: ApproverRequestListItem) => (
+        <span className="font-medium text-slate-900">{formatCurrency(row.totalAmount, row.currencyCode)}</span>
+      ),
+    },
+    { key: 'statusId', header: 'Status', sortable: true, width: '12%', render: (value: unknown) => <ApproverStatusBadge statusId={value as number} size="sm" /> },
+    {
+      key: 'action',
+      header: 'Action',
+      width: '8%',
+      render: (_value: unknown, row: ApproverRequestListItem) => (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRowClick(row); }}
+          className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          View Details
+        </button>
+      ),
+    },
   ];
 
   const rows = data.map((item) => ({
     ...item,
     applicantFullName: item.applicant.fullName,
+    applicantBranch: item.applicant.branch,
   }));
 
   return (

@@ -1,11 +1,5 @@
-import type {
-  UserSummary,
-  PaymentRequestDetailView,
-} from '../../types';
-import {
-  PaymentStatus,
-  ApprovalActionType,
-} from '../../types';
+import type { UserSummary, PaymentRequestDetailView } from '../../types';
+import { PaymentStatus, ApprovalActionType } from '../../types';
 
 export type { PaymentBreakdownItem } from '../../types';
 
@@ -17,8 +11,8 @@ export interface ApproverRequestQuery {
   statusId?: number;
   search?: string;
   branch?: string;
-  dateFrom?: string;
-  dateTo?: string;
+  desiredDate?: string;
+  desiredDateAlert?: boolean;
   showAll?: boolean;
 }
 

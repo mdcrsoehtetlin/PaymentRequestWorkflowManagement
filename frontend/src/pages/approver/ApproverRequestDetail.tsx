@@ -1,3 +1,4 @@
+import { Download, ExternalLink, FileText } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/format';
 import type { ApproverRequestDetailView, PaymentBreakdownItem } from './types';
 import { ApproverActionPanel } from './components/ApproverActionPanel';
@@ -111,6 +112,53 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
               </div>
             ) : (
               <p className="text-sm text-slate-500">No breakdown items.</p>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Receipt Files</h3>
+            {request.receiptFiles && request.receiptFiles.length > 0 ? (
+              <>
+                <div className="mb-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      request.receiptFiles!.forEach((file) => {
+                        const link = document.createElement('a');
+                        link.href = file.fileStoragePath;
+                        link.download = file.originalFileName;
+                        link.target = '_blank';
+                        link.rel = 'noreferrer';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      });
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download All Receipts ({request.receiptFiles.length})
+                  </button>
+                </div>
+                <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+                  {request.receiptFiles.map((file) => (
+                    <li key={file.receiptFileId} className="flex items-center justify-between gap-4 p-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <FileText className="h-5 w-5 flex-shrink-0 text-slate-500" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-slate-900">{file.originalFileName}</p>
+                          <p className="text-xs text-slate-500">{file.mimeType} - {(parseInt(file.fileSize) / 1024).toFixed(1)} KB - {formatDate(file.uploadedDate)}</p>
+                        </div>
+                      </div>
+                      <a href={file.fileStoragePath} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50">
+                        Open <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">No receipt files attached.</p>
             )}
           </div>
 
