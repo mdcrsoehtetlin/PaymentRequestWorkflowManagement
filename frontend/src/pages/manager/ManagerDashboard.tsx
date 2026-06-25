@@ -139,10 +139,13 @@ export function ManagerDashboard() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const totalCount = requests.filter(r => r.managerUserId === user?.sub).length;
   const pendingCount = requests.filter(r => r.statusId === PaymentStatus.SUBMITTED_MANAGER).length;
   const reviewingCount = requests.filter(r => r.statusId === PaymentStatus.MANAGER_REVIEWING).length;
   const verifiedCount = requests.filter(r => r.statusId === PaymentStatus.MANAGER_VERIFIED).length;
   const rejectedCount = requests.filter(r => r.statusId === PaymentStatus.REJECTED_MANAGER).length;
+  const approvedCount = requests.filter(r => r.statusId === PaymentStatus.APPROVED).length;
+  const paidCount = requests.filter(r => r.statusId === PaymentStatus.PAID).length;
 
   const totalResults = requests.length;
   const totalPages = Math.ceil(totalResults / pageSize);
@@ -166,10 +169,16 @@ export function ManagerDashboard() {
 
   const statusLabel = (val: number | '') => {
     if (val === '') return t('dashboard.manager.all_statuses');
+    if (val === PaymentStatus.DRAFT) return t('dashboard.manager.status_draft');
     if (val === PaymentStatus.SUBMITTED_MANAGER) return t('dashboard.manager.pending_review');
     if (val === PaymentStatus.MANAGER_REVIEWING) return t('dashboard.manager.reviewing');
     if (val === PaymentStatus.MANAGER_VERIFIED) return t('dashboard.manager.verified');
     if (val === PaymentStatus.REJECTED_MANAGER) return t('dashboard.manager.rejected');
+    if (val === PaymentStatus.SUBMITTED_APPROVER) return t('dashboard.manager.status_submitted_approver');
+    if (val === PaymentStatus.APPROVER_REVIEWING) return t('dashboard.manager.status_approver_reviewing');
+    if (val === PaymentStatus.APPROVED) return t('dashboard.manager.status_approved');
+    if (val === PaymentStatus.REJECTED_APPROVER) return t('dashboard.manager.status_rejected_approver');
+    if (val === PaymentStatus.PAID) return t('dashboard.manager.status_paid');
     return t('dashboard.manager.all_statuses');
   };
 
@@ -197,8 +206,14 @@ export function ManagerDashboard() {
         </div>
 
         {/* Metrics Summary Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           {[
+            {
+              title: t('dashboard.manager.total_assigned'),
+              count: totalCount,
+              color: 'border-blue-500/20 text-blue-700 bg-blue-500/5',
+              glow: 'bg-blue-400',
+            },
             {
               title: t('dashboard.manager.pending_review'),
               count: pendingCount,
@@ -222,6 +237,18 @@ export function ManagerDashboard() {
               count: rejectedCount,
               color: 'border-rose-500/20 text-rose-700 bg-rose-500/5',
               glow: 'bg-rose-400',
+            },
+            {
+              title: t('dashboard.manager.approved'),
+              count: approvedCount,
+              color: 'border-teal-500/20 text-teal-700 bg-teal-500/5',
+              glow: 'bg-teal-400',
+            },
+            {
+              title: t('dashboard.manager.paid'),
+              count: paidCount,
+              color: 'border-violet-500/20 text-violet-700 bg-violet-500/5',
+              glow: 'bg-violet-400',
             },
           ].map((item, idx) => (
             <div
@@ -273,10 +300,16 @@ export function ManagerDashboard() {
                   <div className="absolute mt-1 w-full bg-white rounded-md shadow-lg border border-slate-200 py-1 z-50">
                     {[
                       { value: '' as const, label: t('dashboard.manager.all_statuses') },
+                      { value: PaymentStatus.DRAFT, label: t('dashboard.manager.status_draft') },
                       { value: PaymentStatus.SUBMITTED_MANAGER, label: t('dashboard.manager.pending_review') },
                       { value: PaymentStatus.MANAGER_REVIEWING, label: t('dashboard.manager.reviewing') },
                       { value: PaymentStatus.MANAGER_VERIFIED, label: t('dashboard.manager.verified') },
                       { value: PaymentStatus.REJECTED_MANAGER, label: t('dashboard.manager.rejected') },
+                      { value: PaymentStatus.SUBMITTED_APPROVER, label: t('dashboard.manager.status_submitted_approver') },
+                      { value: PaymentStatus.APPROVER_REVIEWING, label: t('dashboard.manager.status_approver_reviewing') },
+                      { value: PaymentStatus.APPROVED, label: t('dashboard.manager.status_approved') },
+                      { value: PaymentStatus.REJECTED_APPROVER, label: t('dashboard.manager.status_rejected_approver') },
+                      { value: PaymentStatus.PAID, label: t('dashboard.manager.status_paid') },
                     ].map((option) => (
                       <button
                         key={option.value}
@@ -284,11 +317,10 @@ export function ManagerDashboard() {
                           setLocalStatus(option.value);
                           setIsStatusOpen(false);
                         }}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                        localStatus === option.value
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${localStatus === option.value
                             ? 'bg-blue-50 text-blue-700 font-medium'
                             : 'text-slate-700 hover:bg-slate-50'
-                        }`}
+                          }`}
                       >
                         {option.label}
                       </button>
@@ -364,9 +396,8 @@ export function ManagerDashboard() {
                     return (
                       <tr
                         key={req.paymentRequestId}
-                        className={`transition ${
-                          req.statusId === PaymentStatus.MANAGER_REVIEWING ? 'bg-indigo-50/10' : ''
-                        }`}
+                        className={`transition ${req.statusId === PaymentStatus.MANAGER_REVIEWING ? 'bg-indigo-50/10' : ''
+                          }`}
                       >
                         <td className="px-4 py-3.5 text-indigo-600 font-mono tracking-tight">
                           {req.requestNumber}
@@ -382,9 +413,8 @@ export function ManagerDashboard() {
                         </td>
                         <td className="px-4 py-3.5">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                              STATUS_COLORS[req.statusId as PaymentStatus] || 'bg-slate-100 text-slate-800'
-                            }`}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[req.statusId as PaymentStatus] || 'bg-slate-100 text-slate-800'
+                              }`}
                           >
                             {STATUS_LABELS_EN[req.statusId as PaymentStatus]}
                           </span>
