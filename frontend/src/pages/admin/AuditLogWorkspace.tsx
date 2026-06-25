@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, Search } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { SearchFilterBar, type FilterField } from '../../components/shared/SearchFilterBar';
 import { apiClient } from '../../services/api-client';
