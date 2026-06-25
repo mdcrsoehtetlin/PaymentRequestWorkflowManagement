@@ -73,6 +73,10 @@ describe('ApplicantService', () => {
           useValue: { create: jest.fn(), save: jest.fn() },
         },
         {
+          provide: getRepositoryToken(User),
+          useValue: { find: jest.fn() },
+        },
+        {
           provide: CACHE_MANAGER,
           useValue: mockCacheManager,
         },

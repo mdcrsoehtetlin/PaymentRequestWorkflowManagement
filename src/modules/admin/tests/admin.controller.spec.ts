@@ -142,6 +142,7 @@ describe('AdminController', () => {
         roleId: 5,
         branch: 'Yangon',
         employeeNumber: 'ADM-001',
+        department: 'IT',
         fullName: 'Admin',
         iat: 0,
         exp: 9999999999,

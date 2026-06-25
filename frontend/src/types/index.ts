@@ -281,6 +281,7 @@ export interface JwtPayload {
   /** Numeric role_id e.g. 1 */
   roleId: number;
   branch: string;
+  department: string;
   employeeNumber: string;
   fullName: string;
   /** Issued at (Unix timestamp) — set by JWT library at signing time */

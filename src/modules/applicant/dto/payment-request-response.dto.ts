@@ -20,10 +20,10 @@ export class PaginatedPaymentRequestResponseDto {
 }
 
 export class DashboardKpiDto {
-  total_draft!: number;
-  total_submitted!: number;
-  total_rejected!: number;
-  total_approved!: number;
+  total_requests!: number;
+  pending_review!: number;
+  approved!: number;
+  rejected!: number;
 }
 
 export class DashboardResponseDto {

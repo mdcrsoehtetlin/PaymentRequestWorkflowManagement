@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileEdit, Send, XCircle, CheckCircle, Plus, FileText, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { useWebSocket } from './hooks/use-websocket';
+import { useWebSocket } from '../../hooks/useWebSocket';
+import type { StatusUpdatePayload } from '../../hooks/useWebSocket';
 import { usePaymentRequests } from './hooks/use-payment-requests';
 import { StatusBadge } from '../../components/shared';
 
@@ -15,7 +16,8 @@ const ApplicantDashboard: React.FC = () => {
   const navigate = useNavigate();
   const limit = 10;
   
-  const { lastUpdate, clearLastUpdate } = useWebSocket('1');
+  const { notifications } = useWebSocket();
+  const lastUpdate = notifications[0] as StatusUpdatePayload | undefined;
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const {
@@ -31,20 +33,19 @@ const ApplicantDashboard: React.FC = () => {
   useEffect(() => {
     if (lastUpdate) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setToastMessage(`Request ${lastUpdate.requestNumber} status updated!`);
+      setToastMessage(`Request ${lastUpdate.requestNumber || lastUpdate.paymentRequestId} status updated!`);
       const timer = setTimeout(() => {
         setToastMessage(null);
-        clearLastUpdate();
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [lastUpdate, clearLastUpdate]);
+  }, [lastUpdate]);
 
   const kpis = data?.kpis || {
-    total_draft: 0,
-    total_submitted: 0,
-    total_rejected: 0,
-    total_approved: 0,
+    total_requests: 0,
+    pending_review: 0,
+    approved: 0,
+    rejected: 0,
   };
 
   return (
@@ -72,7 +73,7 @@ const ApplicantDashboard: React.FC = () => {
           </div>
           <button 
             onClick={() => navigate('/applicant/form')}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-all shadow-blue-600/20 hover:shadow-blue-600/40 active:scale-[0.98]">
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-900 hover:bg-blue-800 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-white font-medium rounded-lg shadow-sm transition-all shadow-blue-900/20 hover:shadow-blue-900/40 active:scale-[0.98]">
             <Plus className="w-5 h-5" />
             New Request
           </button>
@@ -85,8 +86,8 @@ const ApplicantDashboard: React.FC = () => {
               <FileEdit className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Drafts</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.total_draft}</h3>
+              <p className="text-sm font-medium text-slate-500">Total Requests</p>
+              <h3 className="text-2xl font-bold text-slate-900">{kpis.total_requests}</h3>
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
@@ -94,17 +95,8 @@ const ApplicantDashboard: React.FC = () => {
               <Send className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Submitted</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.total_submitted}</h3>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-red-50 rounded-xl text-red-600">
-              <XCircle className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Rejected</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.total_rejected}</h3>
+              <p className="text-sm font-medium text-slate-500">Pending Review</p>
+              <h3 className="text-2xl font-bold text-slate-900">{kpis.pending_review}</h3>
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
@@ -113,7 +105,16 @@ const ApplicantDashboard: React.FC = () => {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500">Approved</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.total_approved}</h3>
+              <h3 className="text-2xl font-bold text-slate-900">{kpis.approved}</h3>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="p-3 bg-red-50 rounded-xl text-red-600">
+              <XCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Rejected</p>
+              <h3 className="text-2xl font-bold text-slate-900">{kpis.rejected}</h3>
             </div>
           </div>
         </div>
@@ -140,7 +141,8 @@ const ApplicantDashboard: React.FC = () => {
                 <thead>
                   <tr className="bg-slate-50/50">
                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Request No.</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">App Date</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Created Date</th>
                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
@@ -156,6 +158,9 @@ const ApplicantDashboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-slate-600">
                         {new Date(item.application_date).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                        {new Date(item.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-700">
                         {formatCurrency(item.total_amount, item.currency_id)}
@@ -228,7 +233,7 @@ const ApplicantDashboard: React.FC = () => {
               </button>
               <button 
                 onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-sm transition-colors"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-white font-medium rounded-lg shadow-sm transition-colors"
               >
                 Delete
               </button>

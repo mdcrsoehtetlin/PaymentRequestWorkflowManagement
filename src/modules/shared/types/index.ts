@@ -202,6 +202,7 @@ export interface JwtPayload {
   roleId: number;
   /** User's branch name — critical for Mandalay alert business logic */
   branch: string;
+  department: string | null;
   employeeNumber: string;
   fullName: string;
   /** Issued at (Unix timestamp) — set by JWT library at signing time */
