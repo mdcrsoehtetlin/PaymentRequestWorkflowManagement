@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Plus, Edit2, RefreshCw, Search } from 'lucide-react';
+import { Plus, Edit2, RefreshCw } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
+import { SearchFilterBar, type FilterField } from '../../components/shared/SearchFilterBar';
 import { apiClient } from '../../services/api-client';
 import { UserFormModal } from './components/UserFormModal';
 
@@ -25,6 +26,7 @@ interface UsersResponse {
 }
 
 interface Filters {
+  [key: string]: string;
   keyword: string;
   roleId: string;
   isActive: string;
@@ -56,6 +58,41 @@ export function UserManagementWorkspace() {
     sortBy: '',
     sortOrder: 'ASC',
   });
+
+  const filterFields: FilterField[] = useMemo(
+    () => [
+      { key: 'keyword', label: 'キーワード', type: 'text', placeholder: '社員番号または氏名で検索' },
+      {
+        key: 'roleId',
+        label: '役割',
+        type: 'select',
+        options: [
+          { value: '', label: 'すべて' },
+          { value: '1', label: '申請者' },
+          { value: '2', label: 'マネージャー' },
+          { value: '3', label: '承認者' },
+          { value: '4', label: '経理' },
+          { value: '5', label: '管理者' },
+        ],
+      },
+      {
+        key: 'isActive',
+        label: 'ステータス',
+        type: 'select',
+        options: [
+          { value: '', label: 'すべて' },
+          { value: 'true', label: '有効' },
+          { value: 'false', label: '無効' },
+        ],
+      },
+    ],
+    [],
+  );
+
+  const hasActiveFilters = useMemo(
+    () => filters.keyword !== '' || filters.roleId !== '' || filters.isActive !== '',
+    [filters],
+  );
 
   const handleSortChange = (key: string) => {
     setSorting((prev) => {
@@ -108,6 +145,18 @@ export function UserManagementWorkspace() {
 
   const handleSearch = useCallback(() => {
     fetchUsers();
+  }, [fetchUsers]);
+
+  const handleFilterChange = useCallback((key: string, value: string | number) => {
+    setFilters((prev) => ({ ...prev, [key]: String(value) }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({ keyword: '', roleId: '', isActive: '' });
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    // fetchUsers will be called after state updates via ref
+    setTimeout(() => fetchUsers(), 0);
   }, [fetchUsers]);
 
   const isInitialLoad = useRef(true);
@@ -250,74 +299,16 @@ export function UserManagementWorkspace() {
       </div>
 
       {/* Search Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-        <div className="flex items-end gap-4">
-          <div className="w-60">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              キーワード
-            </label>
-            <input
-              type="text"
-              value={filters.keyword}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, keyword: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                }
-              }}
-              placeholder="社員番号または氏名で検索"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-          <div className="w-40">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              役割
-            </label>
-            <select
-              value={filters.roleId}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, roleId: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="">すべて</option>
-              <option value="1">申請者</option>
-              <option value="2">マネージャー</option>
-              <option value="3">承認者</option>
-              <option value="4">経理</option>
-              <option value="5">管理者</option>
-            </select>
-          </div>
-          <div className="w-32">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              ステータス
-            </label>
-            <select
-              value={filters.isActive}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, isActive: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="">すべて</option>
-              <option value="true">有効</option>
-              <option value="false">無効</option>
-            </select>
-          </div>
-          <button
-            onClick={handleSearch}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Search className="w-4 h-4" />
-            検索
-          </button>
-        </div>
+      <div className="mb-6">
+        <SearchFilterBar
+          fields={filterFields}
+          values={filters}
+          onChange={handleFilterChange}
+          onSubmit={handleSearch}
+          onClear={handleClearFilters}
+          disabled={isLoading}
+          clearDisabled={!hasActiveFilters}
+        />
       </div>
 
       {/* Users Grid */}

@@ -16,14 +16,16 @@ jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashed_password'),
 }));
 
+const mockRedisClient = {
+  connect: jest.fn().mockResolvedValue(undefined),
+  keys: jest.fn().mockResolvedValue([]),
+  get: jest.fn().mockResolvedValue(null),
+  del: jest.fn().mockResolvedValue(1),
+  disconnect: jest.fn().mockResolvedValue(undefined),
+};
+
 jest.mock('redis', () => ({
-  createClient: jest.fn().mockReturnValue({
-    connect: jest.fn().mockResolvedValue(undefined),
-    keys: jest.fn().mockResolvedValue([]),
-    get: jest.fn().mockResolvedValue(null),
-    del: jest.fn().mockResolvedValue(1),
-    disconnect: jest.fn().mockResolvedValue(undefined),
-  }),
+  createClient: jest.fn().mockReturnValue(mockRedisClient),
 }));
 
 function createMockQueryBuilder() {
@@ -149,6 +151,21 @@ describe('AdminService', () => {
       expect(result.temporaryPassword.length).toBeGreaterThan(0);
     });
 
+    it('should default isActive to true when not provided', async () => {
+      mockUserRepo.findOne.mockResolvedValue(null);
+      mockUserRepo.create.mockReturnValue(baseUser);
+      mockUserRepo.save.mockResolvedValue(baseUser);
+
+      const dtoWithoutActive = { ...createDto, isActive: undefined };
+      await service.createUser(dtoWithoutActive);
+
+      expect(mockUserRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          isActive: true,
+        }),
+      );
+    });
+
     it('should throw ConflictException when email already exists', async () => {
       mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
 
@@ -190,6 +207,24 @@ describe('AdminService', () => {
       expect(mockUserRepo.update).toHaveBeenCalled();
     });
 
+    it('should use existing user values when dto fields are undefined', async () => {
+      mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
+      mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
+
+      const emptyDto: UpdateUserDto = {};
+      const result = await service.updateUser(1, emptyDto);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith(1, {
+        fullName: baseUser.fullName,
+        department: baseUser.department,
+        branch: baseUser.branch,
+        roleId: baseUser.roleId,
+        isActive: baseUser.isActive,
+      });
+      expect(result.fullName).toBe(baseUser.fullName);
+    });
+
     it('should throw NotFoundException when user does not exist', async () => {
       mockUserRepo.findOne.mockResolvedValueOnce(null);
 
@@ -203,12 +238,75 @@ describe('AdminService', () => {
     it('should deactivate a user and return success', async () => {
       mockUserRepo.findOne.mockResolvedValue(baseUser);
       mockUserRepo.update.mockResolvedValue({ affected: 1 });
+      mockRedisClient.keys.mockResolvedValue([]);
+      mockRedisClient.connect.mockResolvedValue(undefined);
+      mockRedisClient.disconnect.mockResolvedValue(undefined);
 
       const result = await service.toggleUserActive(2, false, 1);
 
       expect(result.success).toBe(true);
       expect(result.isActive).toBe(false);
       expect(mockUserRepo.update).toHaveBeenCalledWith(2, { isActive: false });
+    });
+
+    it('should evict sessions when deactivating a user', async () => {
+      mockUserRepo.findOne.mockResolvedValue(baseUser);
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
+      mockRedisClient.keys.mockResolvedValue(['session:abc', 'session:def']);
+      mockRedisClient.get
+        .mockResolvedValueOnce(JSON.stringify({ userId: 2, sub: 2 }))
+        .mockResolvedValueOnce(JSON.stringify({ userId: 99, sub: 99 }));
+      mockRedisClient.del.mockResolvedValue(1);
+      mockRedisClient.connect.mockResolvedValue(undefined);
+      mockRedisClient.disconnect.mockResolvedValue(undefined);
+
+      const result = await service.toggleUserActive(2, false, 1);
+
+      expect(result.success).toBe(true);
+      expect(mockRedisClient.connect).toHaveBeenCalled();
+      expect(mockRedisClient.keys).toHaveBeenCalledWith('session:*');
+      expect(mockRedisClient.get).toHaveBeenCalledTimes(2);
+      expect(mockRedisClient.del).toHaveBeenCalledTimes(1);
+      expect(mockRedisClient.disconnect).toHaveBeenCalled();
+    });
+
+    it('should evict sessions matching sub field', async () => {
+      mockUserRepo.findOne.mockResolvedValue(baseUser);
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
+      mockRedisClient.keys.mockResolvedValue(['session:xyz']);
+      mockRedisClient.get.mockResolvedValue(
+        JSON.stringify({ userId: 99, sub: 2 }),
+      );
+      mockRedisClient.del.mockResolvedValue(1);
+      mockRedisClient.connect.mockResolvedValue(undefined);
+      mockRedisClient.disconnect.mockResolvedValue(undefined);
+
+      const result = await service.toggleUserActive(2, false, 1);
+
+      expect(result.success).toBe(true);
+      expect(mockRedisClient.del).toHaveBeenCalledWith('session:xyz');
+    });
+
+    it('should handle Redis connection error gracefully', async () => {
+      mockUserRepo.findOne.mockResolvedValue(baseUser);
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
+      mockRedisClient.connect.mockRejectedValue(new Error('Redis down'));
+
+      const result = await service.toggleUserActive(2, false, 1);
+
+      expect(result.success).toBe(true);
+      expect(result.isActive).toBe(false);
+    });
+
+    it('should not evict sessions when activating a user', async () => {
+      mockUserRepo.findOne.mockResolvedValue(baseUser);
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
+
+      const result = await service.toggleUserActive(2, true, 1);
+
+      expect(result.success).toBe(true);
+      expect(result.isActive).toBe(true);
+      expect(mockRedisClient.connect).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when admin deactivates own account', async () => {
@@ -331,11 +429,41 @@ describe('AdminService', () => {
     it('should reset password and return temporary password', async () => {
       mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
       mockUserRepo.update.mockResolvedValue({ affected: 1 });
+      mockRedisClient.keys.mockResolvedValue([]);
+      mockRedisClient.connect.mockResolvedValue(undefined);
+      mockRedisClient.disconnect.mockResolvedValue(undefined);
 
       const result = await service.resetPassword(1);
 
       expect(result.temporaryPassword).toBeDefined();
       expect(result.temporaryPassword.length).toBeGreaterThan(0);
+    });
+
+    it('should evict sessions on password reset', async () => {
+      mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
+      mockRedisClient.keys.mockResolvedValue(['session:tok1']);
+      mockRedisClient.get.mockResolvedValue(
+        JSON.stringify({ userId: 1, sub: 1 }),
+      );
+      mockRedisClient.del.mockResolvedValue(1);
+      mockRedisClient.connect.mockResolvedValue(undefined);
+      mockRedisClient.disconnect.mockResolvedValue(undefined);
+
+      const result = await service.resetPassword(1);
+
+      expect(result.temporaryPassword).toBeDefined();
+      expect(mockRedisClient.del).toHaveBeenCalledWith('session:tok1');
+    });
+
+    it('should handle Redis error during password reset gracefully', async () => {
+      mockUserRepo.findOne.mockResolvedValueOnce(baseUser);
+      mockUserRepo.update.mockResolvedValue({ affected: 1 });
+      mockRedisClient.connect.mockRejectedValue(new Error('Redis unavailable'));
+
+      const result = await service.resetPassword(1);
+
+      expect(result.temporaryPassword).toBeDefined();
     });
 
     it('should throw NotFoundException when user does not exist', async () => {

@@ -13,6 +13,8 @@ export interface FilterField {
   placeholder?: string;
   options?: { value: string | number; label: string }[];
   colSpan?: number;
+  /** Static prefix rendered before text input (e.g. "PRF-") */
+  prefix?: string;
 }
 
 export interface SearchFilterBarProps {
@@ -36,6 +38,8 @@ export function SearchFilterBar({
   onClear,
   showSearchButton = true,
   showClearButton,
+  disabled = false,
+  clearDisabled = false,
   actions,
 }: SearchFilterBarProps) {
   const shouldShowClear = showClearButton ?? !!onClear;
