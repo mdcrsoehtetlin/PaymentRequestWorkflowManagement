@@ -6,6 +6,25 @@ import {
 
 export type KpiFilter = 'total' | 'pending' | 'mandalay' | 'desiredDate';
 
+const STORAGE_KEY = 'accounting_kpi_filter';
+
+const readStoredFilter = (): KpiFilter | null => {
+  try {
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (
+      stored === 'total' ||
+      stored === 'pending' ||
+      stored === 'mandalay' ||
+      stored === 'desiredDate'
+    ) {
+      return stored;
+    }
+  } catch {
+    /* ignore */
+  }
+  return 'pending';
+};
+
 export const useAccountingQueue = () => {
   const [data, setData] = useState<PaymentRequest[]>([]);
   const [total, setTotal] = useState(0);
@@ -19,10 +38,25 @@ export const useAccountingQueue = () => {
   const [appliedSearch, setAppliedSearch] = useState('');
   const [appliedBranch, setAppliedBranch] = useState('');
   const [appliedDesiredDate, setAppliedDesiredDate] = useState('');
-  const [kpiFilter, setKpiFilter] = useState<KpiFilter | null>('pending');
+  const [kpiFilter, setKpiFilter] = useState<KpiFilter | null>(
+    readStoredFilter,
+  );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Persist kpiFilter to sessionStorage whenever it changes
+  useEffect(() => {
+    try {
+      if (kpiFilter) {
+        sessionStorage.setItem(STORAGE_KEY, kpiFilter);
+      } else {
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [kpiFilter]);
 
   const fetchQueue = useCallback(async () => {
     setLoading(true);
