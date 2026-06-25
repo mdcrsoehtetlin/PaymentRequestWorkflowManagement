@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, CheckCircle, Clock, FileWarning, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, CalendarClock, CheckCircle, Clock, RefreshCw, Search } from 'lucide-react';
 
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { KpiCard } from '../../components/shared/KpiCard';
 import { useAuth } from '../../hooks/useAuth';
 
 import { AccountingQueueTable } from './components/AccountingQueueTable';
-import { useAccountingQueue } from './hooks/useAccountingQueue';
+import { useAccountingQueue, type KpiFilter } from './hooks/useAccountingQueue';
 import { useAccountingWebSockets } from './hooks/useAccountingWebSockets';
 import { getSummaryCounts, type SummaryCounts } from './services/accounting.service';
 
@@ -23,22 +23,22 @@ export function AccountingDashboard() {
     pageSize,
     searchInput,
     branchInput,
-    dateFromInput,
-    dateToInput,
+    desiredDateInput,
+    kpiFilter,
     loading,
     error,
     setPage,
     setPageSize,
     setSearchInput,
     setBranchInput,
-    setDateFromInput,
-    setDateToInput,
+    setDesiredDateInput,
+    setKpiFilter,
     submitSearch,
     clearFilters,
     refreshQueue,
   } = useAccountingQueue();
 
-  const { isConnected } = useAccountingWebSockets(
+  useAccountingWebSockets(
     user?.sub,
     user?.role,
     refreshQueue,
@@ -65,6 +65,53 @@ export function AccountingDashboard() {
   }, [data]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  const handleKpiClick = (filter: KpiFilter) => {
+    setKpiFilter((prev) => (prev === filter ? null : filter));
+    setPage(1);
+  };
+
+  const kpiCards: Array<{
+    filter: KpiFilter;
+    label: string;
+    count: number;
+    icon: React.ReactNode;
+    activeColor: string;
+    inactiveColor: string;
+  }> = [
+    {
+      filter: 'total',
+      label: 'Total',
+      count: summary?.total ?? 0,
+      icon: <CheckCircle />,
+      activeColor: 'bg-emerald-200 text-emerald-950 border-2 border-emerald-600 ring-2 ring-emerald-400 shadow-md',
+      inactiveColor: 'bg-emerald-50 text-emerald-900 border border-emerald-200',
+    },
+    {
+      filter: 'pending',
+      label: 'Pending',
+      count: summary?.pending ?? 0,
+      icon: <Clock />,
+      activeColor: 'bg-blue-200 text-blue-950 border-2 border-blue-600 ring-2 ring-blue-400 shadow-md',
+      inactiveColor: 'bg-blue-50 text-blue-900 border border-blue-200',
+    },
+    {
+      filter: 'mandalay',
+      label: 'Mandalay Alerts',
+      count: summary?.mandalayAlerts ?? 0,
+      icon: <AlertTriangle />,
+      activeColor: 'bg-amber-200 text-amber-950 border-2 border-amber-600 ring-2 ring-amber-400 shadow-md',
+      inactiveColor: 'bg-amber-50 text-amber-900 border border-amber-200',
+    },
+    {
+      filter: 'desiredDate',
+      label: 'Desired Date Alerts',
+      count: summary?.desiredDateAlerts ?? 0,
+      icon: <CalendarClock />,
+      activeColor: 'bg-rose-200 text-rose-950 border-2 border-rose-600 ring-2 ring-rose-400 shadow-md',
+      inactiveColor: 'bg-rose-50 text-rose-900 border border-rose-200',
+    },
+  ];
+
   return (
     <DashboardLayout>
       <div className="mb-6 flex items-center justify-between">
@@ -73,12 +120,6 @@ export function AccountingDashboard() {
           <p className="mt-2 text-sm text-slate-500">{t('dashboard.accounting.welcome_message')}</p>
         </h1>
         <div className="flex items-center gap-3">
-          {!isConnected && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 border border-red-200">
-              <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-              Real-time updates disconnected
-            </span>
-          )}
           <button
             onClick={() => { refreshQueue(); fetchSummary(); }}
             disabled={loading}
@@ -92,30 +133,16 @@ export function AccountingDashboard() {
 
       {summary && (
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard
-            label="Total Approved"
-            count={summary.totalApproved}
-            icon={<CheckCircle />}
-            colorClasses="bg-emerald-50 text-emerald-900 border border-emerald-200"
-          />
-          <KpiCard
-            label="Pending Today"
-            count={summary.pendingToday}
-            icon={<Clock />}
-            colorClasses="bg-blue-50 text-blue-900 border border-blue-200"
-          />
-          <KpiCard
-            label="Mandalay Alerts"
-            count={summary.mandalayAlerts}
-            icon={<AlertTriangle />}
-            colorClasses="bg-amber-50 text-amber-900 border border-amber-200"
-          />
-          <KpiCard
-            label="Missing Receipts"
-            count={summary.missingReceipts}
-            icon={<FileWarning />}
-            colorClasses="bg-red-50 text-red-900 border border-red-200"
-          />
+          {kpiCards.map((card) => (
+            <KpiCard
+              key={card.filter}
+              label={card.label}
+              count={card.count}
+              icon={card.icon}
+              colorClasses={kpiFilter === card.filter ? card.activeColor : card.inactiveColor}
+              onClick={() => handleKpiClick(card.filter)}
+            />
+          ))}
         </div>
       )}
 
@@ -145,21 +172,12 @@ export function AccountingDashboard() {
             </select>
           </div>
           <div className="min-w-[130px]">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Date From</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Desired Date</label>
             <input
               type="date"
               className="w-full rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              value={dateFromInput}
-              onChange={(e) => setDateFromInput(e.target.value)}
-            />
-          </div>
-          <div className="min-w-[130px]">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Date To</label>
-            <input
-              type="date"
-              className="w-full rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              value={dateToInput}
-              onChange={(e) => setDateToInput(e.target.value)}
+              value={desiredDateInput}
+              onChange={(e) => setDesiredDateInput(e.target.value)}
             />
           </div>
           <button

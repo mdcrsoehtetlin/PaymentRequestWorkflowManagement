@@ -52,15 +52,21 @@ export class AuditLogService {
     manager: EntityManager,
     dto: CreateApprovalLogDto,
   ): Promise<ApprovalLog> {
+    if (!dto.paymentRequestId || dto.paymentRequestId <= 0) {
+      throw new Error(
+        `AuditLog createLog: paymentRequestId is required but received "${dto.paymentRequestId}"`,
+      );
+    }
+
     const log = manager.create(ApprovalLog, {
-      payment_request_id: dto.paymentRequestId,
-      action_taken_by_user_id: dto.actionTakenByUserId,
-      action_type_id: dto.actionTypeId,
-      previous_status_id: dto.previousStatusId ?? undefined,
-      new_status_id: dto.newStatusId ?? undefined,
+      paymentRequestId: dto.paymentRequestId,
+      actionTakenByUserId: dto.actionTakenByUserId,
+      actionTypeId: dto.actionTypeId,
+      previousStatusId: dto.previousStatusId ?? undefined,
+      newStatusId: dto.newStatusId ?? undefined,
       comment: dto.comment ?? undefined,
-      ip_address: dto.ipAddress,
-      user_agent: dto.userAgent,
+      ipAddress: dto.ipAddress,
+      userAgent: dto.userAgent,
     });
 
     const saved = await manager.save(ApprovalLog, log);

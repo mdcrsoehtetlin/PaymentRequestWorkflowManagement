@@ -1,7 +1,17 @@
 import { DataTable } from '../../../components/shared/DataTable';
 import { ApproverStatusBadge } from './ApproverStatusBadge';
-import { formatCurrency, formatDate } from '../../../utils/format';
+import { formatDate } from '../../../utils/format';
 import type { ApproverRequestListItem } from '../types';
+
+function approverCurrency(amount: string | number, currencyCode = 'MMK'): string {
+  const num = Number(amount);
+  if (isNaN(num)) return `0 ${currencyCode}`;
+  const formatted = num.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+  return `${formatted} ${currencyCode}`;
+}
 
 interface ApproverRequestTableProps {
   data: ApproverRequestListItem[];
@@ -36,7 +46,7 @@ export function ApproverRequestTable({
     {
       key: 'requestNumber',
       header: 'Request No.',
-      sortable: true,
+      sortable: false,
       width: '13%',
       render: (value: unknown) => (
         <span className="text-blue-700 font-medium hover:text-blue-900 hover:underline cursor-pointer">
@@ -68,7 +78,7 @@ export function ApproverRequestTable({
       sortable: true,
       width: '14%',
       render: (_value: unknown, row: ApproverRequestListItem) => (
-        <span className="font-medium text-slate-900">{formatCurrency(row.totalAmount, row.currencyCode)}</span>
+        <span className="font-medium text-slate-900">{approverCurrency(row.totalAmount, row.currencyCode)}</span>
       ),
     },
     { key: 'statusId', header: 'Status', sortable: true, width: '12%', render: (value: unknown) => <ApproverStatusBadge statusId={value as number} size="sm" /> },

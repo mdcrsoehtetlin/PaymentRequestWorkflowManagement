@@ -1,9 +1,19 @@
 import { Download, ExternalLink, FileText } from 'lucide-react';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatDate } from '../../utils/format';
 import type { ApproverRequestDetailView, PaymentBreakdownItem } from './types';
 import { ApproverActionPanel } from './components/ApproverActionPanel';
 import { ApproverApprovalTimeline } from './components/ApproverApprovalTimeline';
 import { ApproverStatusBadge } from './components/ApproverStatusBadge';
+
+function approverCurrency(amount: string | number, currencyCode = 'MMK'): string {
+  const num = Number(amount);
+  if (isNaN(num)) return `0 ${currencyCode}`;
+  const formatted = num.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+  return `${formatted} ${currencyCode}`;
+}
 
 interface ApproverRequestDetailProps {
   request: ApproverRequestDetailView | null;
@@ -48,29 +58,40 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
         </div>
 
         <div className="grid gap-4 mt-6 sm:grid-cols-2">
-          <div className="rounded-xl bg-slate-50 p-4">
+          <div>
             <p className="text-sm text-slate-500">Applicant</p>
-            <p className="mt-2 text-slate-900">{request.applicant?.fullName ?? '—'}</p>
-            <p className="text-sm text-slate-500">{request.applicant?.branch ?? '—'}</p>
+            <p className="mt-1 text-slate-900">{request.applicant?.fullName ?? '—'}</p>
           </div>
-          <div className="rounded-xl bg-slate-50 p-4">
-            <p className="text-sm text-slate-500">Final Approver</p>
-            <p className="mt-2 text-slate-900">{request.finalApprover?.fullName ?? 'Unassigned'}</p>
-            <p className="text-sm text-slate-500">{request.finalApprover?.branch ?? '―'}</p>
+          <div>
+            <p className="text-sm text-slate-500">Employee Number</p>
+            <p className="mt-1 text-slate-900 font-semibold">{request.applicant?.employeeNumber ?? '—'}</p>
           </div>
         </div>
 
-        <div className="grid gap-4 mt-6 sm:grid-cols-2">
-          <div className="rounded-xl bg-slate-50 p-4">
-            <p className="text-sm text-slate-500">Purpose</p>
-            <p className="mt-2 text-slate-900 whitespace-pre-wrap">{request.purpose}</p>
+        <div className="grid gap-4 mt-4 sm:grid-cols-2">
+          <div>
+            <p className="text-sm text-slate-500">Department</p>
+            <p className="mt-1 text-slate-900">{request.applicant?.department ?? '—'}</p>
           </div>
-          <div className="rounded-xl bg-slate-50 p-4">
-            <p className="text-sm text-slate-500">Total Amount</p>
-            <p className="mt-2 text-slate-900">{formatCurrency(request.totalAmount, request.currencyCode)}</p>
-            <p className="text-sm text-slate-500">Desired Payment Date: {formatDate(request.desiredPaymentDate)}</p>
+          <div>
+            <p className="text-sm text-slate-500">Branch</p>
+            <p className="mt-1 text-slate-900">{request.applicant?.branch ?? '—'}</p>
           </div>
         </div>
+
+        <div className="grid gap-4 mt-4 sm:grid-cols-2">
+          <div>
+            <p className="text-sm text-slate-500">Email</p>
+            <p className="mt-1 text-slate-900">{request.applicant?.email ?? '—'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-slate-500">Desired Payment Date</p>
+            <p className="mt-1 text-slate-900">{formatDate(request.desiredPaymentDate)}</p>
+          </div>
+        </div>
+
+        <p className="text-sm text-slate-500 mt-4">Purpose</p>
+        <p className="mt-2 text-slate-900 whitespace-pre-wrap">{request.purpose}</p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
@@ -97,15 +118,15 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
                         <td className="py-2 text-slate-700">{formatDate(item.itemDate)}</td>
                         <td className="py-2 text-slate-700">{item.description}</td>
                         <td className="py-2 text-right text-slate-700">{item.quantity ?? '—'}</td>
-                        <td className="py-2 text-right text-slate-700">{item.unitPrice ? formatCurrency(item.unitPrice, request.currencyCode) : '—'}</td>
-                        <td className="py-2 text-right font-medium text-slate-900">{formatCurrency(item.amount, request.currencyCode)}</td>
+                        <td className="py-2 text-right text-slate-700">{item.unitPrice ? approverCurrency(item.unitPrice, request.currencyCode) : '—'}</td>
+                        <td className="py-2 text-right font-medium text-slate-900">{approverCurrency(item.amount, request.currencyCode)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-slate-300 font-semibold">
                       <td colSpan={5} className="py-2 text-right text-slate-900">Total</td>
-                      <td className="py-2 text-right text-slate-900">{formatCurrency(request.totalAmount, request.currencyCode)}</td>
+                      <td className="py-2 text-right text-slate-900">{approverCurrency(request.totalAmount, request.currencyCode)}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -165,35 +186,6 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Approval History</h3>
             <ApproverApprovalTimeline logs={request.approvalLogs} />
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Details</h3>
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-sm text-slate-500">Payment Type</dt>
-                <dd className="mt-1 text-slate-900">{request.paymentTypeName ?? '—'}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-500">Payment Method</dt>
-                <dd className="mt-1 text-slate-900">{request.paymentMethodName ?? '—'}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-500">Submitted to Approver</dt>
-                <dd className="mt-1 text-slate-900">{formatDate(request.submittedToApproverDate)}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-500">Approval Date</dt>
-                <dd className="mt-1 text-slate-900">{formatDate(request.approvalDate)}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-500">Latest Manager Comment</dt>
-                <dd className="mt-1 text-slate-900">{request.latestManagerComment ?? 'None'}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-500">Applicant Comment</dt>
-                <dd className="mt-1 text-slate-900">{request.latestApplicantSubmissionComment ?? 'None'}</dd>
-              </div>
-            </dl>
           </div>
         </div>
 
