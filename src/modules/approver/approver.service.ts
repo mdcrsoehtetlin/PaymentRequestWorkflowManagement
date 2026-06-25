@@ -137,26 +137,7 @@ export class ApproverService {
     }
 
     if (!desiredDateAlert) {
-      qb.andWhere(
-        new Brackets((innerQb) => {
-          innerQb
-            .where('request.status_id = :submittedStatus', {
-              submittedStatus: PaymentStatus.SUBMITTED_APPROVER,
-            })
-            .orWhere(
-              'request.status_id IN (:...assignedStatuses) AND request.final_approver_user_id = :approverUserId',
-              {
-                assignedStatuses: [
-                  PaymentStatus.APPROVER_REVIEWING,
-                  PaymentStatus.APPROVED,
-                  PaymentStatus.REJECTED_APPROVER,
-                  PaymentStatus.PAID,
-                ],
-                approverUserId,
-              },
-            );
-        }),
-      );
+      qb.andWhere(this.approverAccessBrackets(approverUserId));
     }
 
     if (branch) {
@@ -178,18 +159,7 @@ export class ApproverService {
     }
 
     if (search) {
-      qb.andWhere(
-        new Brackets((searchQb) => {
-          searchQb
-            .where('request.request_number LIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('applicant.full_name LIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('request.purpose LIKE :search', { search: `%${search}%` });
-        }),
-      );
+      qb.andWhere(this.searchBrackets(search));
     }
 
     const orderDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
@@ -220,6 +190,8 @@ export class ApproverService {
         fullName: req.applicant?.fullName ?? '',
         employeeNumber: req.applicant?.employeeNumber ?? '',
         branch: req.applicant?.branch ?? '',
+        department: req.applicant?.department ?? '',
+        email: req.applicant?.email ?? '',
       },
       manager: req.manager
         ? {
@@ -227,6 +199,8 @@ export class ApproverService {
             fullName: req.manager.fullName,
             employeeNumber: req.manager.employeeNumber,
             branch: req.manager.branch,
+            department: req.manager.department ?? '',
+            email: req.manager.email ?? '',
           }
         : null,
       applicationDate: req.applicationDate,
@@ -257,26 +231,7 @@ export class ApproverService {
     const baseQb = this.paymentRequestRepository
       .createQueryBuilder('request')
       .where('request.is_deleted = false')
-      .andWhere(
-        new Brackets((innerQb) => {
-          innerQb
-            .where('request.status_id = :submittedStatus', {
-              submittedStatus: PaymentStatus.SUBMITTED_APPROVER,
-            })
-            .orWhere(
-              'request.status_id IN (:...assignedStatuses) AND request.final_approver_user_id = :approverUserId',
-              {
-                assignedStatuses: [
-                  PaymentStatus.APPROVER_REVIEWING,
-                  PaymentStatus.APPROVED,
-                  PaymentStatus.REJECTED_APPROVER,
-                  PaymentStatus.PAID,
-                ],
-                approverUserId,
-              },
-            );
-        }),
-      );
+      .andWhere(this.approverAccessBrackets(approverUserId));
 
     const pendingCount = await baseQb
       .clone()
@@ -509,6 +464,8 @@ export class ApproverService {
           fullName: request.finalApprover.fullName,
           employeeNumber: request.finalApprover.employeeNumber,
           branch: request.finalApprover.branch,
+          department: request.finalApprover.department ?? '',
+          email: request.finalApprover.email ?? '',
         }
       : null;
 
@@ -547,6 +504,8 @@ export class ApproverService {
         fullName: request.applicant?.fullName ?? '',
         employeeNumber: request.applicant?.employeeNumber ?? '',
         branch: request.applicant?.branch ?? '',
+        department: request.applicant?.department ?? '',
+        email: request.applicant?.email ?? '',
       },
       manager: request.manager
         ? {
@@ -554,6 +513,8 @@ export class ApproverService {
             fullName: request.manager.fullName,
             employeeNumber: request.manager.employeeNumber,
             branch: request.manager.branch,
+            department: request.manager.department ?? '',
+            email: request.manager.email ?? '',
           }
         : null,
       finalApprover: finalApproverUser,
@@ -611,8 +572,17 @@ export class ApproverService {
               fullName: log.action_taken_by_user.fullName,
               employeeNumber: log.action_taken_by_user.employeeNumber,
               branch: log.action_taken_by_user.branch,
+              department: log.action_taken_by_user.department ?? '',
+              email: log.action_taken_by_user.email ?? '',
             }
-          : { userId: 0, fullName: 'Unknown', employeeNumber: '', branch: '' },
+          : {
+              userId: 0,
+              fullName: 'Unknown',
+              employeeNumber: '',
+              branch: '',
+              department: '',
+              email: '',
+            },
       })),
       canApprove,
       canReject,
@@ -843,5 +813,40 @@ export class ApproverService {
       this.logger.error(`Failed to reject request ${id}`, error);
       throw error;
     }
+  }
+
+  private approverAccessBrackets(approverUserId: number): Brackets {
+    return new Brackets(this.buildApproverAccessCondition(approverUserId));
+  }
+
+  private buildApproverAccessCondition(approverUserId: number) {
+    return (qb: import('typeorm').WhereExpressionBuilder) => {
+      qb.where('request.status_id = :submittedStatus', {
+        submittedStatus: PaymentStatus.SUBMITTED_APPROVER,
+      }).orWhere(
+        'request.status_id IN (:...assignedStatuses) AND request.final_approver_user_id = :approverUserId',
+        {
+          assignedStatuses: [
+            PaymentStatus.APPROVER_REVIEWING,
+            PaymentStatus.APPROVED,
+            PaymentStatus.REJECTED_APPROVER,
+            PaymentStatus.PAID,
+          ],
+          approverUserId,
+        },
+      );
+    };
+  }
+
+  private searchBrackets(search: string): Brackets {
+    return new Brackets(this.buildSearchCondition(search));
+  }
+
+  private buildSearchCondition(search: string) {
+    return (qb: import('typeorm').WhereExpressionBuilder) => {
+      qb.where('request.request_number LIKE :search', { search: `%${search}%` })
+        .orWhere('applicant.full_name LIKE :search', { search: `%${search}%` })
+        .orWhere('request.purpose LIKE :search', { search: `%${search}%` });
+    };
   }
 }

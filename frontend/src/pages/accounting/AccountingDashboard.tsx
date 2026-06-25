@@ -83,7 +83,7 @@ export function AccountingDashboard() {
       label: 'Total',
       count: summary?.total ?? 0,
       icon: <CheckCircle />,
-      activeColor: 'bg-emerald-100 text-emerald-900 border-2 border-emerald-500 ring-2 ring-emerald-200',
+      activeColor: 'bg-emerald-200 text-emerald-950 border-2 border-emerald-600 ring-2 ring-emerald-400 shadow-md',
       inactiveColor: 'bg-emerald-50 text-emerald-900 border border-emerald-200',
     },
     {
@@ -91,7 +91,7 @@ export function AccountingDashboard() {
       label: 'Pending',
       count: summary?.pending ?? 0,
       icon: <Clock />,
-      activeColor: 'bg-blue-100 text-blue-900 border-2 border-blue-500 ring-2 ring-blue-200',
+      activeColor: 'bg-blue-200 text-blue-950 border-2 border-blue-600 ring-2 ring-blue-400 shadow-md',
       inactiveColor: 'bg-blue-50 text-blue-900 border border-blue-200',
     },
     {
@@ -99,7 +99,7 @@ export function AccountingDashboard() {
       label: 'Mandalay Alerts',
       count: summary?.mandalayAlerts ?? 0,
       icon: <AlertTriangle />,
-      activeColor: 'bg-amber-100 text-amber-900 border-2 border-amber-500 ring-2 ring-amber-200',
+      activeColor: 'bg-amber-200 text-amber-950 border-2 border-amber-600 ring-2 ring-amber-400 shadow-md',
       inactiveColor: 'bg-amber-50 text-amber-900 border border-amber-200',
     },
     {
@@ -107,7 +107,7 @@ export function AccountingDashboard() {
       label: 'Desired Date Alerts',
       count: summary?.desiredDateAlerts ?? 0,
       icon: <CalendarClock />,
-      activeColor: 'bg-rose-100 text-rose-900 border-2 border-rose-500 ring-2 ring-rose-200',
+      activeColor: 'bg-rose-200 text-rose-950 border-2 border-rose-600 ring-2 ring-rose-400 shadow-md',
       inactiveColor: 'bg-rose-50 text-rose-900 border border-rose-200',
     },
   ];

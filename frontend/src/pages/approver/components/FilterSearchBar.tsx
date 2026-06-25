@@ -45,10 +45,7 @@ export function FilterSearchBar({
 }: FilterSearchBarProps) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-      <div
-        className="grid gap-4 items-end"
-        style={{ gridTemplateColumns: '1.5fr 1fr 1fr 1fr auto' }}
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr_auto] gap-4 items-end">
         <label className="space-y-2 text-sm text-slate-700">
           <span>Search</span>
           <input
