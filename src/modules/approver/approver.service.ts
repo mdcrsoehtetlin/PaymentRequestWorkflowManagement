@@ -82,8 +82,8 @@ export class ApproverService {
       statusId,
       search,
       branch,
-      dateFrom,
-      dateTo,
+      desiredDate,
+      desiredDateAlert,
       showAll,
       page = 1,
       pageSize = 10,
@@ -106,9 +106,17 @@ export class ApproverService {
       PaymentStatus.APPROVER_REVIEWING,
       PaymentStatus.APPROVED,
       PaymentStatus.REJECTED_APPROVER,
+      PaymentStatus.PAID,
     ];
 
-    if (statusId) {
+    if (desiredDateAlert) {
+      qb.andWhere('request.status_id IN (:...alertStatuses)', {
+        alertStatuses: [
+          PaymentStatus.SUBMITTED_APPROVER,
+          PaymentStatus.APPROVER_REVIEWING,
+        ],
+      });
+    } else if (statusId) {
       if (!allowedStatuses.includes(statusId)) {
         throw new BadRequestException(
           'Invalid status query for approver queue.',
@@ -128,25 +136,9 @@ export class ApproverService {
       });
     }
 
-    qb.andWhere(
-      new Brackets((innerQb) => {
-        innerQb
-          .where('request.status_id = :submittedStatus', {
-            submittedStatus: PaymentStatus.SUBMITTED_APPROVER,
-          })
-          .orWhere(
-            'request.status_id IN (:...assignedStatuses) AND request.final_approver_user_id = :approverUserId',
-            {
-              assignedStatuses: [
-                PaymentStatus.APPROVER_REVIEWING,
-                PaymentStatus.APPROVED,
-                PaymentStatus.REJECTED_APPROVER,
-              ],
-              approverUserId,
-            },
-          );
-      }),
-    );
+    if (!desiredDateAlert) {
+      qb.andWhere(this.approverAccessBrackets(approverUserId));
+    }
 
     if (branch) {
       qb.andWhere('LOWER(applicant.branch) LIKE LOWER(:branch)', {
@@ -154,30 +146,20 @@ export class ApproverService {
       });
     }
 
-    if (dateFrom) {
-      qb.andWhere('request.submitted_to_approver_date >= :dateFrom', {
-        dateFrom,
-      });
-    }
-    if (dateTo) {
-      qb.andWhere('request.submitted_to_approver_date < :dateToNext', {
-        dateToNext: `${dateTo}T23:59:59.999Z`,
+    if (desiredDate) {
+      qb.andWhere('request.desired_payment_date = :desiredDate', {
+        desiredDate,
       });
     }
 
-    if (search) {
+    if (desiredDateAlert) {
       qb.andWhere(
-        new Brackets((searchQb) => {
-          searchQb
-            .where('request.request_number LIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('applicant.full_name LIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('request.purpose LIKE :search', { search: `%${search}%` });
-        }),
+        `request.desired_payment_date <= CURRENT_DATE + interval '3 days'`,
       );
+    }
+
+    if (search) {
+      qb.andWhere(this.searchBrackets(search));
     }
 
     const orderDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
@@ -208,6 +190,8 @@ export class ApproverService {
         fullName: req.applicant?.fullName ?? '',
         employeeNumber: req.applicant?.employeeNumber ?? '',
         branch: req.applicant?.branch ?? '',
+        department: req.applicant?.department ?? '',
+        email: req.applicant?.email ?? '',
       },
       manager: req.manager
         ? {
@@ -215,6 +199,8 @@ export class ApproverService {
             fullName: req.manager.fullName,
             employeeNumber: req.manager.employeeNumber,
             branch: req.manager.branch,
+            department: req.manager.department ?? '',
+            email: req.manager.email ?? '',
           }
         : null,
       applicationDate: req.applicationDate,
@@ -242,56 +228,70 @@ export class ApproverService {
   async getSummary(approverUserId: number) {
     this.logger.log(`Fetching summary for final approver: ${approverUserId}`);
 
-    const pendingCount = await this.paymentRequestRepository
+    const baseQb = this.paymentRequestRepository
       .createQueryBuilder('request')
       .where('request.is_deleted = false')
+      .andWhere(this.approverAccessBrackets(approverUserId));
+
+    const pendingCount = await baseQb
+      .clone()
       .andWhere('request.status_id = :statusId', {
         statusId: PaymentStatus.SUBMITTED_APPROVER,
       })
       .getCount();
 
-    const reviewingCount = await this.paymentRequestRepository
-      .createQueryBuilder('request')
-      .where('request.is_deleted = false')
+    const reviewingCount = await baseQb
+      .clone()
       .andWhere('request.status_id = :statusId', {
         statusId: PaymentStatus.APPROVER_REVIEWING,
       })
-      .andWhere('request.final_approver_user_id = :approverUserId', {
-        approverUserId,
-      })
       .getCount();
 
-    const approvedCount = await this.paymentRequestRepository
-      .createQueryBuilder('request')
-      .where('request.is_deleted = false')
+    const approvedCount = await baseQb
+      .clone()
       .andWhere('request.status_id = :statusId', {
         statusId: PaymentStatus.APPROVED,
       })
-      .andWhere('request.final_approver_user_id = :approverUserId', {
-        approverUserId,
-      })
       .getCount();
 
-    const rejectedCount = await this.paymentRequestRepository
-      .createQueryBuilder('request')
-      .where('request.is_deleted = false')
+    const rejectedCount = await baseQb
+      .clone()
       .andWhere('request.status_id = :statusId', {
         statusId: PaymentStatus.REJECTED_APPROVER,
       })
-      .andWhere('request.final_approver_user_id = :approverUserId', {
-        approverUserId,
+      .getCount();
+
+    const paidCount = await baseQb
+      .clone()
+      .andWhere('request.status_id = :statusId', {
+        statusId: PaymentStatus.PAID,
       })
       .getCount();
 
-    const totalAll =
-      pendingCount + reviewingCount + approvedCount + rejectedCount;
+    const totalQueue = await baseQb.clone().getCount();
+
+    const desiredDateAlertCount = await this.paymentRequestRepository
+      .createQueryBuilder('request')
+      .where('request.is_deleted = false')
+      .andWhere('request.status_id IN (:...alertStatuses)', {
+        alertStatuses: [
+          PaymentStatus.SUBMITTED_APPROVER,
+          PaymentStatus.APPROVER_REVIEWING,
+        ],
+      })
+      .andWhere(
+        `request.desired_payment_date <= CURRENT_DATE + interval '3 days'`,
+      )
+      .getCount();
 
     return {
       pendingCount,
       reviewingCount,
       approvedCount,
       rejectedCount,
-      totalQueue: totalAll,
+      paidCount,
+      totalQueue,
+      desiredDateAlertCount,
     };
   }
 
@@ -464,6 +464,8 @@ export class ApproverService {
           fullName: request.finalApprover.fullName,
           employeeNumber: request.finalApprover.employeeNumber,
           branch: request.finalApprover.branch,
+          department: request.finalApprover.department ?? '',
+          email: request.finalApprover.email ?? '',
         }
       : null;
 
@@ -502,6 +504,8 @@ export class ApproverService {
         fullName: request.applicant?.fullName ?? '',
         employeeNumber: request.applicant?.employeeNumber ?? '',
         branch: request.applicant?.branch ?? '',
+        department: request.applicant?.department ?? '',
+        email: request.applicant?.email ?? '',
       },
       manager: request.manager
         ? {
@@ -509,6 +513,8 @@ export class ApproverService {
             fullName: request.manager.fullName,
             employeeNumber: request.manager.employeeNumber,
             branch: request.manager.branch,
+            department: request.manager.department ?? '',
+            email: request.manager.email ?? '',
           }
         : null,
       finalApprover: finalApproverUser,
@@ -566,8 +572,17 @@ export class ApproverService {
               fullName: log.action_taken_by_user.fullName,
               employeeNumber: log.action_taken_by_user.employeeNumber,
               branch: log.action_taken_by_user.branch,
+              department: log.action_taken_by_user.department ?? '',
+              email: log.action_taken_by_user.email ?? '',
             }
-          : { userId: 0, fullName: 'Unknown', employeeNumber: '', branch: '' },
+          : {
+              userId: 0,
+              fullName: 'Unknown',
+              employeeNumber: '',
+              branch: '',
+              department: '',
+              email: '',
+            },
       })),
       canApprove,
       canReject,
@@ -798,5 +813,40 @@ export class ApproverService {
       this.logger.error(`Failed to reject request ${id}`, error);
       throw error;
     }
+  }
+
+  private approverAccessBrackets(approverUserId: number): Brackets {
+    return new Brackets(this.buildApproverAccessCondition(approverUserId));
+  }
+
+  private buildApproverAccessCondition(approverUserId: number) {
+    return (qb: import('typeorm').WhereExpressionBuilder) => {
+      qb.where('request.status_id = :submittedStatus', {
+        submittedStatus: PaymentStatus.SUBMITTED_APPROVER,
+      }).orWhere(
+        'request.status_id IN (:...assignedStatuses) AND request.final_approver_user_id = :approverUserId',
+        {
+          assignedStatuses: [
+            PaymentStatus.APPROVER_REVIEWING,
+            PaymentStatus.APPROVED,
+            PaymentStatus.REJECTED_APPROVER,
+            PaymentStatus.PAID,
+          ],
+          approverUserId,
+        },
+      );
+    };
+  }
+
+  private searchBrackets(search: string): Brackets {
+    return new Brackets(this.buildSearchCondition(search));
+  }
+
+  private buildSearchCondition(search: string) {
+    return (qb: import('typeorm').WhereExpressionBuilder) => {
+      qb.where('request.request_number LIKE :search', { search: `%${search}%` })
+        .orWhere('applicant.full_name LIKE :search', { search: `%${search}%` })
+        .orWhere('request.purpose LIKE :search', { search: `%${search}%` });
+    };
   }
 }

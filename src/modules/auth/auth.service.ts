@@ -44,6 +44,7 @@ export class AuthService {
       role: this.getRoleCode(user.roleId),
       roleId: user.roleId,
       branch: user.branch,
+      department: user.department,
       employeeNumber: user.employeeNumber,
       fullName: user.fullName,
     };

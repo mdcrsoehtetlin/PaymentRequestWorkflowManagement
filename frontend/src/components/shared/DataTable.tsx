@@ -55,15 +55,15 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="flex flex-col w-full overflow-hidden bg-white rounded-lg shadow-sm border border-slate-200">
+    <div className="flex flex-col w-full overflow-hidden bg-white rounded-xl shadow-sm border border-slate-200">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse whitespace-nowrap">
+        <table className="min-w-full divide-y divide-slate-200 whitespace-nowrap">
           <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
+            <tr className="bg-slate-50">
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider ${
+                  className={`px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider ${
                     col.sortable && sorting ? 'cursor-pointer hover:bg-slate-100' : ''
                   }`}
                   style={{ width: col.width }}
@@ -84,10 +84,10 @@ export function DataTable<T>({
               <tr
                 key={i}
                 onClick={() => onRowClick && onRowClick(row)}
-                className={`${onRowClick ? 'cursor-pointer hover:bg-slate-50 transition-colors' : ''}`}
+                className={`${onRowClick ? 'cursor-pointer hover:bg-slate-50 transition-colors duration-150' : 'transition-colors duration-150'}`}
               >
                 {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3 text-sm text-slate-700">
+                  <td key={col.key} className="px-4 py-3 text-sm text-slate-900">
                     {col.render ? col.render((row as Record<string, unknown>)[col.key], row) : ((row as Record<string, unknown>)[col.key] as React.ReactNode)}
                   </td>
                 ))}
@@ -105,7 +105,7 @@ export function DataTable<T>({
               onChange={(e) => pagination.onPageSizeChange(Number(e.target.value))}
               className="mr-2 border-slate-300 rounded text-sm bg-white"
             >
-              {[10, 20, 50].map((size) => (
+              {[10, 20, 50, 100].map((size) => (
                 <option key={size} value={size}>
                   {size} rows
                 </option>
@@ -126,7 +126,7 @@ export function DataTable<T>({
             <button
               onClick={() => pagination.onPageChange(pagination.page - 1)}
               disabled={pagination.page <= 1}
-              className="px-3 py-1 border border-slate-300 rounded bg-white text-slate-600 disabled:opacity-50 hover:bg-slate-50 text-sm font-medium"
+              className="px-3 py-1 border border-slate-300 rounded bg-white text-slate-600 disabled:opacity-50 hover:bg-slate-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Previous
             </button>
@@ -136,7 +136,7 @@ export function DataTable<T>({
             <button
               onClick={() => pagination.onPageChange(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages}
-              className="px-3 py-1 border border-slate-300 rounded bg-white text-slate-600 disabled:opacity-50 hover:bg-slate-50 text-sm font-medium"
+              className="px-3 py-1 border border-slate-300 rounded bg-white text-slate-600 disabled:opacity-50 hover:bg-slate-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Next
             </button>

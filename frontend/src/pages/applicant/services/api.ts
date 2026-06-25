@@ -24,10 +24,10 @@ export interface PaginatedPaymentRequestResponseDto {
 }
 
 export interface DashboardKpiDto {
-  total_draft: number;
-  total_submitted: number;
-  total_rejected: number;
-  total_approved: number;
+  total_requests: number;
+  pending_review: number;
+  approved: number;
+  rejected: number;
 }
 
 export interface DashboardResponseDto {
@@ -35,12 +35,25 @@ export interface DashboardResponseDto {
   requests: PaginatedPaymentRequestResponseDto;
 }
 
+export interface FetchPaymentRequestsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: number;
+  startDate?: string;
+  endDate?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  branch?: string;
+  desiredDate?: string;
+}
+
 export const fetchPaymentRequests = async (
-  page: number = 1,
-  limit: number = 10,
+  params: FetchPaymentRequestsParams = {},
 ): Promise<DashboardResponseDto> => {
+  const { page = 1, limit = 10, ...filters } = params;
   const response = await apiClient.get<DashboardResponseDto>(API_BASE_URL, {
-    params: { page, limit },
+    params: { page, limit, ...filters },
   });
   return response.data;
 };
@@ -97,4 +110,32 @@ export const updatePaymentRequest = async (
 
 export const deleteDraft = async (id: string): Promise<void> => {
   await apiClient.delete(`${API_BASE_URL}/${id}`);
+};
+
+export const deleteReceipt = async (
+  requestId: string,
+  receiptId: string,
+): Promise<void> => {
+  await apiClient.delete(`${API_BASE_URL}/${requestId}/receipts/${receiptId}`);
+};
+
+export const downloadReceipt = async (
+  requestId: string,
+  receiptId: string,
+  fileName: string,
+): Promise<void> => {
+  const response = await apiClient.get(
+    `${API_BASE_URL}/${requestId}/receipts/${receiptId}/download`,
+    {
+      responseType: 'blob',
+    },
+  );
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', fileName);
+  document.body.appendChild(link);
+  link.click();
+  link.parentNode?.removeChild(link);
+  window.URL.revokeObjectURL(url);
 };

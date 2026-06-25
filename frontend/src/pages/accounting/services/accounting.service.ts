@@ -88,8 +88,8 @@ export const getApprovedRequests = async (
   pageSize: number = 10,
   search?: string,
   branch?: string,
-  dateFrom?: string,
-  dateTo?: string,
+  desiredDate?: string,
+  filter?: string,
 ): Promise<PaginatedResponse<PaymentRequest>> => {
   const params: Record<string, string> = {
     page: page.toString(),
@@ -97,32 +97,44 @@ export const getApprovedRequests = async (
   };
   if (search) params.search = search;
   if (branch) params.branch = branch;
-  if (dateFrom) params.dateFrom = dateFrom;
-  if (dateTo) params.dateTo = dateTo;
+  if (desiredDate) params.desiredDate = desiredDate;
+  if (filter) params.filter = filter;
 
-  const response = await apiClient.get<PaginatedResponse<PaymentRequest>>('/accounting/payment-requests', { params });
+  const response = await apiClient.get<PaginatedResponse<PaymentRequest>>(
+    '/accounting/payment-requests',
+    { params },
+  );
   return response.data;
 };
 
 export interface SummaryCounts {
-  totalApproved: number;
-  pendingToday: number;
+  total: number;
+  pending: number;
   mandalayAlerts: number;
-  missingReceipts: number;
+  desiredDateAlerts: number;
 }
 
 export const getSummaryCounts = async (): Promise<SummaryCounts> => {
-  const response = await apiClient.get<SummaryCounts>('/accounting/payment-requests/summary');
+  const response = await apiClient.get<SummaryCounts>(
+    '/accounting/payment-requests/summary',
+  );
   return response.data;
 };
 
-export const completePayment = async (id: number, comment?: string): Promise<void> => {
-  await apiClient.post(`/accounting/payment-requests/${id}/complete-payment`, { comment });
+export const completePayment = async (
+  id: number,
+  comment?: string,
+): Promise<void> => {
+  await apiClient.post(`/accounting/payment-requests/${id}/complete-payment`, {
+    comment,
+  });
 };
 
 export const getPaymentRequestDetails = async (
   id: number,
 ): Promise<AccountingPaymentDetail> => {
-  const response = await apiClient.get<AccountingPaymentDetail>(`/accounting/payment-requests/${id}`);
+  const response = await apiClient.get<AccountingPaymentDetail>(
+    `/accounting/payment-requests/${id}`,
+  );
   return response.data;
 };

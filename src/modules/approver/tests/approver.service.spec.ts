@@ -246,12 +246,11 @@ describe('ApproverService', () => {
       );
     });
 
-    it('should apply date range filters when provided', async () => {
+    it('should apply desired date filter when provided', async () => {
       const query: QueryApproverRequestsDto = {
         page: 1,
         pageSize: 10,
-        dateFrom: '2026-06-01',
-        dateTo: '2026-06-30',
+        desiredDate: '2026-06-01',
       };
 
       const qb = paymentRequestRepo.createQueryBuilder();
@@ -260,15 +259,9 @@ describe('ApproverService', () => {
       await service.findAssignedRequests(mockApproverUserId, query);
 
       expect(qb['andWhere']).toHaveBeenCalledWith(
-        'request.submitted_to_approver_date >= :dateFrom',
+        'request.desired_payment_date = :desiredDate',
         {
-          dateFrom: '2026-06-01',
-        },
-      );
-      expect(qb['andWhere']).toHaveBeenCalledWith(
-        'request.submitted_to_approver_date < :dateToNext',
-        {
-          dateToNext: '2026-06-30T23:59:59.999Z',
+          desiredDate: '2026-06-01',
         },
       );
     });
@@ -350,6 +343,19 @@ describe('ApproverService', () => {
       await expect(
         service.findOneForReview(100, mockApproverUserId, mockAuditContext),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException when approver user not found in findOneForReview', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.SUBMITTED_APPROVER,
+        finalApproverUserId: undefined,
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+      userRepo.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.findOneForReview(100, mockApproverUserId, mockAuditContext),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should auto-transition SUBMITTED_APPROVER to APPROVER_REVIEWING', async () => {
@@ -722,6 +728,756 @@ describe('ApproverService', () => {
           mockAuditContext,
         ),
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('getSummary', () => {
+    it('should return summary counts for approver', async () => {
+      const mockQb = {
+        clone: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getCount: jest
+          .fn()
+          .mockResolvedValueOnce(5) // pendingCount
+          .mockResolvedValueOnce(2) // reviewingCount
+          .mockResolvedValueOnce(3) // approvedCount
+          .mockResolvedValueOnce(1) // rejectedCount
+          .mockResolvedValueOnce(4) // paidCount
+          .mockResolvedValueOnce(15) // totalQueue
+          .mockResolvedValueOnce(2), // desiredDateAlertCount
+      };
+
+      paymentRequestRepo.createQueryBuilder = jest.fn().mockReturnValue(mockQb);
+
+      const result = await service.getSummary(mockApproverUserId);
+
+      expect(result).toEqual({
+        pendingCount: 5,
+        reviewingCount: 2,
+        approvedCount: 3,
+        rejectedCount: 1,
+        paidCount: 4,
+        totalQueue: 15,
+        desiredDateAlertCount: 2,
+      });
+    });
+  });
+
+  describe('findOneForReview with relations', () => {
+    it('should return detail view with breakdown items, receipt files, and approval logs', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+        approvalLogs: [],
+        receipts: [],
+        finalApprover: {
+          userId: mockApproverUserId,
+          fullName: 'Test Approver',
+          employeeNumber: 'EMP-010',
+          branch: 'Tokyo HQ',
+          email: 'approver@test.com',
+          passwordHash: 'hash',
+          department: 'Finance',
+          roleId: 3,
+        } as User,
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      dataSource.query.mockResolvedValueOnce([
+        {
+          payment_breakdown_item_id: 1,
+          payment_request_id: 100,
+          line_number: 1,
+          item_date: '2026-06-01',
+          description: 'Office supplies',
+          amount: 50000,
+          quantity: 1,
+          unit_price: 50000,
+          created_date: '2026-06-01',
+          modified_date: '2026-06-01',
+        },
+      ]);
+
+      const result = await service.findOneForReview(
+        100,
+        mockApproverUserId,
+        mockAuditContext,
+      );
+
+      expect(result.breakdownItems).toHaveLength(1);
+      expect(result.breakdownItems[0].description).toBe('Office supplies');
+    });
+
+    it('should sort approval logs by timestamp and extract comments', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+        approvalLogs: [
+          {
+            approvalLogId: 1,
+            paymentRequestId: 100,
+            actionTakenByUserId: 5,
+            actionTypeId: 5,
+            previousStatusId: 4,
+            newStatusId: 6,
+            comment: 'Manager verified',
+            ipAddress: '127.0.0.1',
+            userAgent: 'test',
+            timestamp: new Date('2026-06-10T10:00:00Z'),
+            action_taken_by_user: mockManagerUser,
+          } as any,
+          {
+            approvalLogId: 2,
+            paymentRequestId: 100,
+            actionTakenByUserId: 1,
+            actionTypeId: 3,
+            previousStatusId: 4,
+            newStatusId: 6,
+            comment: 'Submitted to approver',
+            ipAddress: '127.0.0.1',
+            userAgent: 'test',
+            timestamp: new Date('2026-06-09T09:00:00Z'),
+            action_taken_by_user: mockApplicantUser,
+          } as any,
+        ],
+        receipts: [],
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      dataSource.query.mockResolvedValueOnce([]);
+
+      const result = await service.findOneForReview(
+        100,
+        mockApproverUserId,
+        mockAuditContext,
+      );
+
+      expect(result.approvalLogs).toHaveLength(2);
+      expect(result.latestManagerComment).toBe('Manager verified');
+      expect(result.latestApplicantSubmissionComment).toBe(
+        'Submitted to approver',
+      );
+    });
+
+    it('should map receipt files correctly', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+        approvalLogs: [],
+        receipts: [
+          {
+            id: 1,
+            paymentRequestId: 100,
+            originalFileName: 'receipt.pdf',
+            storedFileName: 'stored-receipt.pdf',
+            storage_key: '/uploads/receipt.pdf',
+            file_size: 1024,
+            mime_type: 'application/pdf',
+            uploadedByUserId: 1,
+            uploadedDate: new Date('2026-06-01'),
+            isDeleted: false,
+          } as any,
+        ],
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      dataSource.query.mockResolvedValueOnce([]);
+
+      const result = await service.findOneForReview(
+        100,
+        mockApproverUserId,
+        mockAuditContext,
+      );
+
+      expect(result.receiptFiles).toHaveLength(1);
+      expect(result.receiptFiles[0].originalFileName).toBe('receipt.pdf');
+    });
+
+    it('should handle WebSocket failure during auto-transition', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.SUBMITTED_APPROVER,
+        finalApproverUserId: undefined,
+        approvalLogs: [],
+        receipts: [],
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      const freshRequest = {
+        ...mockRequest,
+        status_id: PaymentStatus.SUBMITTED_APPROVER,
+      };
+      dataSource.transaction.mockImplementation((cb) => {
+        const mockManager = {
+          findOne: jest.fn().mockResolvedValue(freshRequest),
+          save: jest.fn(),
+          query: jest.fn().mockResolvedValue([]),
+        } as unknown as EntityManager;
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
+      });
+
+      dataSource.getRepository = jest.fn().mockReturnValue({
+        find: jest.fn().mockResolvedValue([]),
+      });
+
+      websocketGateway.sendPersonalNotification.mockImplementation(() => {
+        throw new Error('WebSocket error');
+      });
+
+      const result = await service.findOneForReview(
+        100,
+        mockApproverUserId,
+        mockAuditContext,
+      );
+
+      expect(result.statusId).toBe(PaymentStatus.APPROVER_REVIEWING);
+    });
+  });
+
+  describe('approve - approver user not found', () => {
+    it('should throw NotFoundException when approver user not found', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+      userRepo.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.approve(100, mockApproverUserId, {}, mockAuditContext),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('reject - approver user not found', () => {
+    it('should throw NotFoundException when approver user not found', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+      userRepo.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.reject(
+          100,
+          mockApproverUserId,
+          { comment: 'Test rejection' },
+          mockAuditContext,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('approve - WebSocket failure', () => {
+    it('should still approve even if WebSocket notification fails', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      dataSource.transaction.mockImplementation((cb) => {
+        const mockManager = {
+          findOne: jest.fn().mockResolvedValue({ ...mockRequest }),
+          save: jest.fn(),
+          query: jest.fn().mockResolvedValue([]),
+        } as unknown as EntityManager;
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
+      });
+
+      websocketGateway.sendPersonalNotification.mockImplementation(() => {
+        throw new Error('WebSocket error');
+      });
+
+      const result = await service.approve(
+        100,
+        mockApproverUserId,
+        {},
+        mockAuditContext,
+      );
+
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('reject - WebSocket failure', () => {
+    it('should still reject even if WebSocket notification fails', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      dataSource.transaction.mockImplementation((cb) => {
+        const mockManager = {
+          findOne: jest.fn().mockResolvedValue({ ...mockRequest }),
+          save: jest.fn(),
+          query: jest.fn().mockResolvedValue([]),
+        } as unknown as EntityManager;
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
+      });
+
+      websocketGateway.sendPersonalNotification.mockImplementation(() => {
+        throw new Error('WebSocket error');
+      });
+
+      const result = await service.reject(
+        100,
+        mockApproverUserId,
+        { comment: 'Test rejection' },
+        mockAuditContext,
+      );
+
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('findAssignedRequests - additional filters', () => {
+    it('should apply showAll filter when provided', async () => {
+      const query: QueryApproverRequestsDto = {
+        page: 1,
+        pageSize: 10,
+        showAll: true,
+      };
+
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
+
+      await service.findAssignedRequests(mockApproverUserId, query);
+
+      expect(qb['andWhere']).toHaveBeenCalledWith(
+        'request.status_id IN (:...statuses)',
+        {
+          statuses: [
+            PaymentStatus.SUBMITTED_APPROVER,
+            PaymentStatus.APPROVER_REVIEWING,
+            PaymentStatus.APPROVED,
+            PaymentStatus.REJECTED_APPROVER,
+            PaymentStatus.PAID,
+          ],
+        },
+      );
+    });
+
+    it('should apply desiredDateAlert filter when provided', async () => {
+      const query: QueryApproverRequestsDto = {
+        page: 1,
+        pageSize: 10,
+        desiredDateAlert: true,
+      };
+
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
+
+      await service.findAssignedRequests(mockApproverUserId, query);
+
+      expect(qb['andWhere']).toHaveBeenCalledWith(
+        'request.status_id IN (:...alertStatuses)',
+        {
+          alertStatuses: [
+            PaymentStatus.SUBMITTED_APPROVER,
+            PaymentStatus.APPROVER_REVIEWING,
+          ],
+        },
+      );
+      expect(qb['andWhere']).toHaveBeenCalledWith(
+        `request.desired_payment_date <= CURRENT_DATE + interval '3 days'`,
+      );
+    });
+
+    it('should sort by statusId when sortBy is statusId', async () => {
+      const query: QueryApproverRequestsDto = {
+        page: 1,
+        pageSize: 10,
+        sortBy: ApproverRequestSortFields.STATUS,
+        sortOrder: 'ASC',
+      };
+
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
+
+      await service.findAssignedRequests(mockApproverUserId, query);
+
+      expect(qb['orderBy']).toHaveBeenCalledWith('request.statusId', 'ASC');
+    });
+
+    it('should sort by applicationDate when sortBy is applicationDate', async () => {
+      const query: QueryApproverRequestsDto = {
+        page: 1,
+        pageSize: 10,
+        sortBy: ApproverRequestSortFields.APPLICATION_DATE,
+        sortOrder: 'ASC',
+      };
+
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
+
+      await service.findAssignedRequests(mockApproverUserId, query);
+
+      expect(qb['orderBy']).toHaveBeenCalledWith(
+        'request.applicationDate',
+        'ASC',
+      );
+    });
+
+    it('should sort by desiredPaymentDate when sortBy is desiredPaymentDate', async () => {
+      const query: QueryApproverRequestsDto = {
+        page: 1,
+        pageSize: 10,
+        sortBy: ApproverRequestSortFields.DESIRED_PAYMENT_DATE,
+        sortOrder: 'ASC',
+      };
+
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
+
+      await service.findAssignedRequests(mockApproverUserId, query);
+
+      expect(qb['orderBy']).toHaveBeenCalledWith(
+        'request.desiredPaymentDate',
+        'ASC',
+      );
+    });
+
+    it('should sort by createdDate when sortBy is createdDate', async () => {
+      const query: QueryApproverRequestsDto = {
+        page: 1,
+        pageSize: 10,
+        sortBy: ApproverRequestSortFields.CREATED_DATE,
+        sortOrder: 'ASC',
+      };
+
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
+
+      await service.findAssignedRequests(mockApproverUserId, query);
+
+      expect(qb['orderBy']).toHaveBeenCalledWith('request.createdDate', 'ASC');
+    });
+  });
+
+  describe('private Brackets condition builders', () => {
+    it('should build approver access condition with correct where clause', () => {
+      const mockQb = {
+        where: jest.fn().mockReturnThis(),
+        orWhere: jest.fn().mockReturnThis(),
+      };
+
+      const fn = service['buildApproverAccessCondition'](
+        mockApproverUserId,
+      ) as unknown as (qb: typeof mockQb) => void;
+      fn(mockQb);
+      expect(mockQb.where).toHaveBeenCalledWith(
+        'request.status_id = :submittedStatus',
+        { submittedStatus: PaymentStatus.SUBMITTED_APPROVER },
+      );
+      expect(mockQb.orWhere).toHaveBeenCalledWith(
+        expect.stringContaining('final_approver_user_id = :approverUserId'),
+        expect.objectContaining({
+          approverUserId: mockApproverUserId,
+        }),
+      );
+    });
+
+    it('should build search condition with correct where clauses', () => {
+      const mockQb = {
+        where: jest.fn().mockReturnThis(),
+        orWhere: jest.fn().mockReturnThis(),
+      };
+
+      const fn = service['buildSearchCondition']('test query') as unknown as (
+        qb: typeof mockQb,
+      ) => void;
+      fn(mockQb);
+      expect(mockQb.where).toHaveBeenCalledWith(
+        'request.request_number LIKE :search',
+        { search: '%test query%' },
+      );
+      expect(mockQb.orWhere).toHaveBeenCalledWith(
+        'applicant.full_name LIKE :search',
+        { search: '%test query%' },
+      );
+      expect(mockQb.orWhere).toHaveBeenCalledWith(
+        'request.purpose LIKE :search',
+        { search: '%test query%' },
+      );
+    });
+  });
+
+  describe('branch coverage — findAssignedRequests fallback paths', () => {
+    it('should use default page and pageSize when not provided', async () => {
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
+
+      const result = await service.findAssignedRequests(mockApproverUserId, {});
+
+      expect(result.meta.page).toBe(1);
+      expect(result.meta.pageSize).toBe(10);
+    });
+
+    it('should map request with null applicant using fallback values', async () => {
+      const mockRequest = Object.assign(
+        buildMockRequest({
+          applicant: null as never,
+        }),
+        { applicantUserId: 1 },
+      );
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([
+        [mockRequest],
+        1,
+      ]);
+
+      const result = await service.findAssignedRequests(mockApproverUserId, {
+        page: 1,
+        pageSize: 10,
+      });
+
+      expect(result.data[0].applicant.userId).toBe(1);
+      expect(result.data[0].applicant.fullName).toBe('');
+      expect(result.data[0].applicant.employeeNumber).toBe('');
+      expect(result.data[0].applicant.branch).toBe('');
+    });
+
+    it('should return null manager when manager is not assigned', async () => {
+      const mockRequest = buildMockRequest({ manager: null as never });
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([
+        [mockRequest],
+        1,
+      ]);
+
+      const result = await service.findAssignedRequests(mockApproverUserId, {
+        page: 1,
+        pageSize: 10,
+      });
+
+      expect(result.data[0].manager).toBeNull();
+    });
+
+    it('should return null dates when managerVerificationDate and submittedToApproverDate are null', async () => {
+      const mockRequest = Object.assign(buildMockRequest({}), {
+        managerVerificationDate: null,
+        submittedToApproverDate: null,
+      });
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([
+        [mockRequest],
+        1,
+      ]);
+
+      const result = await service.findAssignedRequests(mockApproverUserId, {
+        page: 1,
+        pageSize: 10,
+      });
+
+      expect(result.data[0].managerVerificationDate).toBeNull();
+      expect(result.data[0].submittedToApproverDate).toBeNull();
+    });
+
+    it('should format dates when managerVerificationDate and submittedToApproverDate exist', async () => {
+      const mockRequest = Object.assign(buildMockRequest({}), {
+        managerVerificationDate: new Date('2026-06-10'),
+        submittedToApproverDate: new Date('2026-06-11'),
+      });
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([
+        [mockRequest],
+        1,
+      ]);
+
+      const result = await service.findAssignedRequests(mockApproverUserId, {
+        page: 1,
+        pageSize: 10,
+      });
+
+      expect(result.data[0].managerVerificationDate).toBe(
+        '2026-06-10T00:00:00.000Z',
+      );
+      expect(result.data[0].submittedToApproverDate).toBe(
+        '2026-06-11T00:00:00.000Z',
+      );
+    });
+  });
+
+  describe('branch coverage — findOneForReview fallback paths', () => {
+    it('should use fallback values when applicant is null', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+        applicant: null as never,
+        approvalLogs: [],
+        receipts: [],
+      });
+      Object.assign(mockRequest, { applicantUserId: 1 });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      const result = await service.findOneForReview(
+        100,
+        mockApproverUserId,
+        mockAuditContext,
+      );
+
+      expect(result.applicant.userId).toBe(1);
+      expect(result.applicant.fullName).toBe('');
+      expect(result.applicant.employeeNumber).toBe('');
+      expect(result.applicant.branch).toBe('');
+    });
+
+    it('should return null manager when manager is not assigned', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+        manager: null as never,
+        approvalLogs: [],
+        receipts: [],
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      const result = await service.findOneForReview(
+        100,
+        mockApproverUserId,
+        mockAuditContext,
+      );
+
+      expect(result.manager).toBeNull();
+    });
+
+    it('should use fallback for finalApprover department and email when null', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+        approvalLogs: [],
+        receipts: [],
+      });
+      Object.assign(mockRequest, {
+        finalApprover: {
+          userId: mockApproverUserId,
+          fullName: 'Test Approver',
+          employeeNumber: 'EMP-010',
+          branch: 'Tokyo HQ',
+          department: undefined,
+          email: undefined,
+        },
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      const result = await service.findOneForReview(
+        100,
+        mockApproverUserId,
+        mockAuditContext,
+      );
+
+      expect(result.finalApprover?.department).toBe('');
+      expect(result.finalApprover?.email).toBe('');
+    });
+
+    it('should map breakdown items with null quantity and unitPrice', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+        approvalLogs: [],
+        receipts: [],
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      dataSource.query.mockResolvedValueOnce([
+        {
+          payment_breakdown_item_id: 1,
+          payment_request_id: 100,
+          line_number: 1,
+          item_date: '2026-06-01',
+          description: 'Office supplies',
+          amount: 50000,
+          quantity: null,
+          unit_price: null,
+          created_date: '2026-06-01',
+          modified_date: '2026-06-01',
+        },
+      ]);
+
+      const result = await service.findOneForReview(
+        100,
+        mockApproverUserId,
+        mockAuditContext,
+      );
+
+      expect(result.breakdownItems[0].quantity).toBeNull();
+      expect(result.breakdownItems[0].unitPrice).toBeNull();
+    });
+
+    it('should map receipt files with null optional fields', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+        approvalLogs: [],
+        receipts: [
+          {
+            id: 1,
+            paymentRequestId: 100,
+            originalFileName: null,
+            storedFileName: null,
+            storage_key: '/files/receipt.pdf',
+            file_size: 1024,
+            mime_type: 'application/pdf',
+            uploadedByUserId: null,
+            uploadedDate: new Date('2026-06-10'),
+            isDeleted: false,
+          } as any,
+        ],
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      const result = await service.findOneForReview(
+        100,
+        mockApproverUserId,
+        mockAuditContext,
+      );
+
+      expect(result.receiptFiles[0].originalFileName).toBe('');
+      expect(result.receiptFiles[0].storedFileName).toBe('');
+      expect(result.receiptFiles[0].uploadedByUserId).toBe(0);
+    });
+
+    it('should map approval logs with string timestamp and null user', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+        approvalLogs: [
+          {
+            approvalLogId: 1,
+            paymentRequestId: 100,
+            actionTakenByUserId: 5,
+            actionTypeId: 5,
+            previousStatusId: 4,
+            newStatusId: 6,
+            comment: 'Verified',
+            ipAddress: '127.0.0.1',
+            userAgent: 'test',
+            timestamp: '2026-06-10T10:00:00Z',
+            action_taken_by_user: null,
+          } as any,
+        ],
+        receipts: [],
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      const result = await service.findOneForReview(
+        100,
+        mockApproverUserId,
+        mockAuditContext,
+      );
+
+      expect(result.approvalLogs[0].timestamp).toBe('2026-06-10T10:00:00Z');
+      expect(result.approvalLogs[0].actionTakenByUser.userId).toBe(0);
+      expect(result.approvalLogs[0].actionTakenByUser.fullName).toBe('Unknown');
     });
   });
 });

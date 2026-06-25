@@ -17,11 +17,12 @@ import { UpdatePaymentRequestDto } from './dto/update-payment-request.dto';
 import { PaymentBreakdownItem } from '../shared/entities/payment-breakdown-item.entity';
 import { ApprovalLog } from '../shared/entities/approval-log.entity';
 import { ReceiptFile } from '../shared/entities/receipt-file.entity';
+import { User } from '../shared/entities/user.entity';
 import {
   FileUploadService,
   UploadedFile,
 } from '../shared/services/file-upload.service';
-import { ApplicantGateway } from './applicant.gateway';
+import { WebsocketGateway } from '../shared/websocket.gateway';
 
 /**
  * Service handling applicant payment request logic
@@ -33,20 +34,42 @@ export class ApplicantService {
     private readonly paymentRequestRepo: Repository<PaymentRequest>,
     @InjectRepository(ReceiptFile)
     private readonly receiptFileRepo: Repository<ReceiptFile>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
     private readonly dataSource: DataSource,
     private readonly requestNumberService: RequestNumberService,
     private readonly fileUploadService: FileUploadService,
-    private readonly applicantGateway: ApplicantGateway,
+    private readonly websocketGateway: WebsocketGateway,
   ) {}
+
+  async getActiveManagers(): Promise<
+    { userId: number; fullName: string; department: string }[]
+  > {
+    return this.userRepo.find({
+      select: ['userId', 'fullName', 'department'],
+      where: {
+        roleId: 2, // MANAGER
+        isActive: true,
+      },
+    });
+  }
 
   async getDashboardData(
     applicantId: number,
     page: number = 1,
     limit: number = 10,
+    search?: string,
+    statusId?: number,
+    startDate?: string,
+    endDate?: string,
+    minAmount?: number,
+    maxAmount?: number,
+    branch?: string,
+    desiredDate?: string,
   ): Promise<DashboardResponseDto> {
-    const cacheKey = `applicant_dashboard_${applicantId}_${page}_${limit}`;
+    const cacheKey = `applicant_dashboard_${applicantId}_${page}_${limit}_${search || ''}_${statusId || ''}_${startDate || ''}_${endDate || ''}_${minAmount || ''}_${maxAmount || ''}_${branch || ''}_${desiredDate || ''}`;
     const cached = await this.cacheManager.get<DashboardResponseDto>(cacheKey);
     if (cached) return cached;
 
@@ -55,8 +78,37 @@ export class ApplicantService {
       .select('pr.status_id', 'status_id')
       .addSelect('COUNT(pr.id)', 'count')
       .where('pr.applicant_user_id = :applicantId', { applicantId })
-      .andWhere('pr.is_deleted = false')
-      .groupBy('pr.status_id');
+      .andWhere('pr.is_deleted = false');
+
+    if (search) {
+      kpiQuery.andWhere('pr.request_number ILIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+    if (startDate) {
+      kpiQuery.andWhere('pr.application_date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      kpiQuery.andWhere('pr.application_date <= :endDate', { endDate });
+    }
+    if (minAmount !== undefined) {
+      kpiQuery.andWhere('pr.total_amount >= :minAmount', { minAmount });
+    }
+    if (maxAmount !== undefined) {
+      kpiQuery.andWhere('pr.total_amount <= :maxAmount', { maxAmount });
+    }
+    if (branch) {
+      kpiQuery
+        .innerJoin('pr.applicant', 'applicantUser')
+        .andWhere('applicantUser.branch = :branch', { branch });
+    }
+    if (desiredDate) {
+      kpiQuery.andWhere('pr.desired_payment_date = :desiredDate', {
+        desiredDate,
+      });
+    }
+
+    kpiQuery.groupBy('pr.status_id');
 
     const kpiRaw = await kpiQuery.getRawMany<{
       status_id: number;
@@ -64,27 +116,62 @@ export class ApplicantService {
     }>();
 
     const kpis = {
-      total_draft: 0,
-      total_submitted: 0,
-      total_rejected: 0,
-      total_approved: 0,
+      total_requests: 0,
+      pending_review: 0,
+      approved: 0,
+      rejected: 0,
     };
 
     for (const row of kpiRaw) {
-      const statusId = Number(row.status_id);
+      const rowStatusId = Number(row.status_id);
       const count = Number(row.count);
-      if (statusId === 1) kpis.total_draft += count;
-      else if (statusId === 2 || statusId === 3) kpis.total_submitted += count;
-      else if (statusId === 4) kpis.total_rejected += count;
-      else if (statusId === 5 || statusId === 6) kpis.total_approved += count;
+      kpis.total_requests += count;
+      if ([2, 3, 6, 7].includes(rowStatusId)) kpis.pending_review += count;
+      else if ([8, 10].includes(rowStatusId)) kpis.approved += count;
+      else if ([5, 9].includes(rowStatusId)) kpis.rejected += count;
     }
 
-    const [items, total] = await this.paymentRequestRepo.findAndCount({
-      where: { applicantUserId: applicantId, isDeleted: false },
-      order: { modifiedDate: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const query = this.paymentRequestRepo
+      .createQueryBuilder('pr')
+      .where('pr.applicant_user_id = :applicantId', { applicantId })
+      .andWhere('pr.is_deleted = false');
+
+    if (search) {
+      query.andWhere('pr.request_number ILIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+    if (statusId) {
+      query.andWhere('pr.status_id = :statusId', { statusId });
+    }
+    if (startDate) {
+      query.andWhere('pr.application_date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      query.andWhere('pr.application_date <= :endDate', { endDate });
+    }
+    if (minAmount !== undefined) {
+      query.andWhere('pr.total_amount >= :minAmount', { minAmount });
+    }
+    if (maxAmount !== undefined) {
+      query.andWhere('pr.total_amount <= :maxAmount', { maxAmount });
+    }
+
+    // Branch filter requires join if branch is on user.
+    if (branch) {
+      query
+        .innerJoin('pr.applicant', 'applicantUser')
+        .andWhere('applicantUser.branch = :branch', { branch });
+    }
+    if (desiredDate) {
+      query.andWhere('pr.desired_payment_date = :desiredDate', { desiredDate });
+    }
+
+    const [items, total] = await query
+      .orderBy('pr.modifiedDate', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     const mappedItems = items.map((item) => ({
       id: item.id,
@@ -287,15 +374,19 @@ export class ApplicantService {
 
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
-      this.applicantGateway.notifyStatusUpdate(String(applicantId), {
-        paymentRequestId: Number(savedRequest.id),
-        requestNumber: savedRequest.requestNumber,
-        previousStatusId: request.statusId,
-        newStatusId: 2,
-        actionByUserId: Number(applicantId),
-        actionByUserName: 'Applicant',
-        timestamp: log.timestamp.toISOString(),
-      });
+      this.websocketGateway.sendPersonalNotification(
+        applicantId,
+        'request:status-changed',
+        {
+          paymentRequestId: Number(savedRequest.id),
+          requestNumber: savedRequest.requestNumber,
+          previousStatusId: request.statusId,
+          newStatusId: 2,
+          actionByUserId: Number(applicantId),
+          actionByUserName: 'Applicant',
+          timestamp: log.timestamp.toISOString(),
+        },
+      );
 
       return savedRequest;
     });
@@ -336,7 +427,7 @@ export class ApplicantService {
 
     const receipt = this.receiptFileRepo.create({
       paymentRequestId: Number(requestId),
-      originalFileName: storedFileName,
+      originalFileName: file.originalname,
       storedFileName,
       file_size: file.size,
       mime_type: file.mimetype,
@@ -354,6 +445,61 @@ export class ApplicantService {
     await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
     return savedReceipt;
+  }
+
+  async downloadReceipt(
+    applicantId: number,
+    requestId: number,
+    receiptId: number,
+  ): Promise<ReceiptFile> {
+    const request = await this.paymentRequestRepo.findOne({
+      where: { id: requestId, applicantUserId: applicantId, isDeleted: false },
+    });
+    if (!request) throw new NotFoundException('Payment request not found');
+
+    const receipt = await this.receiptFileRepo.findOne({
+      where: { id: receiptId, paymentRequestId: requestId, isDeleted: false },
+    });
+    if (!receipt) throw new NotFoundException('Receipt not found');
+
+    return receipt;
+  }
+
+  async deleteReceipt(
+    applicantId: number,
+    requestId: number,
+    receiptId: number,
+  ): Promise<void> {
+    const request = await this.paymentRequestRepo.findOne({
+      where: { id: requestId, applicantUserId: applicantId, isDeleted: false },
+    });
+    if (!request) throw new NotFoundException('Payment request not found');
+
+    if (request.statusId !== 1 && request.statusId !== 4) {
+      throw new BadRequestException(
+        'Receipts can only be deleted for Draft or Rejected requests',
+      );
+    }
+
+    const receipt = await this.receiptFileRepo.findOne({
+      where: { id: receiptId, paymentRequestId: requestId, isDeleted: false },
+    });
+    if (!receipt) throw new NotFoundException('Receipt not found');
+
+    await this.receiptFileRepo.update({ id: receiptId }, { isDeleted: true });
+
+    // Check if there are any remaining receipts
+    const remaining = await this.receiptFileRepo.count({
+      where: { paymentRequestId: requestId, isDeleted: false },
+    });
+    if (remaining === 0) {
+      await this.paymentRequestRepo.update(
+        { id: requestId },
+        { hasReceipt: false },
+      );
+    }
+
+    await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
   }
 
   async submitToApprover(
@@ -397,15 +543,19 @@ export class ApplicantService {
 
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
-      this.applicantGateway.notifyStatusUpdate(String(applicantId), {
-        paymentRequestId: Number(savedRequest.id),
-        requestNumber: savedRequest.requestNumber,
-        previousStatusId: 4,
-        newStatusId: 6,
-        actionByUserId: Number(applicantId),
-        actionByUserName: 'Applicant',
-        timestamp: log.timestamp.toISOString(),
-      });
+      this.websocketGateway.sendPersonalNotification(
+        applicantId,
+        'request:status-changed',
+        {
+          paymentRequestId: Number(savedRequest.id),
+          requestNumber: savedRequest.requestNumber,
+          previousStatusId: 4,
+          newStatusId: 6,
+          actionByUserId: Number(applicantId),
+          actionByUserName: 'Applicant',
+          timestamp: log.timestamp.toISOString(),
+        },
+      );
 
       return savedRequest;
     });
@@ -440,14 +590,24 @@ export class ApplicantService {
         request.desiredPaymentDate = dto.desired_payment_date;
       if (dto.payment_method_id !== undefined)
         request.paymentMethodId = dto.payment_method_id;
+      if (dto.payment_type_id !== undefined)
+        request.paymentTypeId = dto.payment_type_id;
+      if (dto.target_manager_id !== undefined)
+        request.managerUserId = dto.target_manager_id;
+      if (dto.purpose !== undefined) request.purpose = dto.purpose;
+      if (dto.request_content !== undefined)
+        request.requestContent = dto.request_content;
+      if (dto.bank_account_info !== undefined)
+        request.bankAccountInfo = dto.bank_account_info;
+      if (dto.has_receipt !== undefined) request.hasReceipt = dto.has_receipt;
 
       if (dto.breakdowns) {
         await manager.delete(PaymentBreakdownItem, {
-          paymentRequestId: Number(requestId),
+          payment_request_id: Number(requestId),
         });
         const items = dto.breakdowns.map((b, index) =>
           manager.create(PaymentBreakdownItem, {
-            paymentRequestId: Number(requestId),
+            payment_request_id: Number(requestId),
             lineNumber: index + 1,
             itemDate:
               dto.application_date ||
@@ -457,7 +617,7 @@ export class ApplicantService {
             amount: b.amount,
           }),
         );
-        await manager.save(items);
+        request.breakdowns = items;
         request.totalAmount = dto.breakdowns
           .reduce((sum, item) => sum + item.amount, 0)
           .toString();

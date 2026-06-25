@@ -23,7 +23,7 @@ export class IsTodayOrBeforeConstraint implements ValidatorConstraintInterface {
   }
 
   defaultMessage() {
-    return 'VAL-APP-001: 申請日は本日以前の日付を入力してください';
+    return 'VAL-APP-001: Application date must be today or a past date';
   }
 }
 

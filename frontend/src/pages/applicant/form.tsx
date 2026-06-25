@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft, Send } from 'lucide-react';
 import apiClient from '../../services/api-client';
@@ -17,25 +17,13 @@ import {
   BANK_INFO_REQUIRED_METHODS,
 } from '../../types';
 
-/**
- * Dispatches a globalToast custom event used by the ToastContainer component.
- * Constitution V forbids browser alert()/confirm() dialogs.
- */
-const triggerToast = (
-  type: 'success' | 'error' | 'warning' | 'info',
-  message: string,
-): void => {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(
-      new CustomEvent('globalToast', { detail: { type, message } }),
-    );
-  }
-};
+import { useToast } from '../../hooks/useToast';
 
 const PaymentRequestForm: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const [loading, setLoading] = useState(false);
+  const { success, error, warning } = useToast();
   const today = new Date().toISOString().split('T')[0];
   
   const [formData, setFormData] = useState({
@@ -52,12 +40,35 @@ const PaymentRequestForm: React.FC = () => {
   });
 
   const [breakdowns, setBreakdowns] = useState<BreakdownItem[]>([
-    { department: '', projectName: '', description: '', amount: '' }
+    { description: '', amount: '' },
   ]);
 
   const [createdDraftId, setCreatedDraftId] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [managers, setManagers] = useState<{ userId: number; fullName: string; department: string }[]>([]);
+
+  useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        const response = await apiClient.get('/applicant/payment-requests/managers', {
+          withCredentials: true,
+        });
+        const fetchedManagers = response.data.data || [];
+        setManagers(fetchedManagers);
+        
+        // Auto-select the first manager if available and none selected
+        if (fetchedManagers.length > 0 && formData.target_manager_id === 1) {
+          setFormData(prev => ({ ...prev, target_manager_id: fetchedManagers[0].userId }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch managers:', error);
+        warning('Could not load active managers list');
+      }
+    };
+    fetchManagers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** Validates the form for draft save (relaxed) */
   const validateDraft = (): string[] => {
@@ -140,7 +151,7 @@ const PaymentRequestForm: React.FC = () => {
     const errors = validateDraft();
     if (errors.length > 0) {
       setValidationErrors(errors);
-      triggerToast('error', errors[0]);
+      error(errors[0]);
       return;
     }
     setValidationErrors([]);
@@ -152,8 +163,8 @@ const PaymentRequestForm: React.FC = () => {
         breakdowns: breakdowns
           .filter((b) => b.description.trim() !== '' || parseFloat(b.amount) > 0)
           .map((b) => ({
-            description: b.description,
-            amount: parseFloat(b.amount) || 0,
+            description: b.description.trim(),
+            amount: b.amount || '0',
           })),
       };
       
@@ -164,7 +175,7 @@ const PaymentRequestForm: React.FC = () => {
         if (formData.has_receipt && receiptFile) {
            await uploadReceipt(createdDraftId, receiptFile);
         }
-        triggerToast('success', 'Draft updated successfully.');
+        success('Draft updated successfully.');
       } else {
         const response = await apiClient.post('/applicant/payment-requests/draft', payload, {
           withCredentials: true,
@@ -176,12 +187,12 @@ const PaymentRequestForm: React.FC = () => {
            await uploadReceipt(newDraftId, receiptFile);
         }
 
-        triggerToast('success', 'Draft saved successfully.');
+        success('Draft saved successfully.');
       }
-    } catch (error: unknown) {
-      console.error('Failed to save draft', error);
-      const apiError = error as { response?: { data?: { message?: string } } };
-      triggerToast('error', apiError.response?.data?.message || 'Failed to save draft. Please try again.');
+    } catch (err: unknown) {
+      console.error('Failed to save draft', err);
+      const apiError = err as { response?: { data?: { message?: string } } };
+      error(apiError.response?.data?.message || 'Failed to save draft. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -189,14 +200,14 @@ const PaymentRequestForm: React.FC = () => {
 
   const handleSubmitManager = async (): Promise<void> => {
     if (!createdDraftId) {
-      triggerToast('warning', 'Please save as draft first before submitting.');
+      warning('Please save as draft first before submitting.');
       return;
     }
 
     const errors = validateSubmit();
     if (errors.length > 0) {
       setValidationErrors(errors);
-      triggerToast('error', errors[0]);
+      error(errors[0]);
       return;
     }
     setValidationErrors([]);
@@ -206,12 +217,12 @@ const PaymentRequestForm: React.FC = () => {
       await apiClient.post(`/applicant/payment-requests/${createdDraftId}/submit-to-manager`, {}, {
         withCredentials: true,
       });
-      triggerToast('success', 'Request submitted to Manager successfully.');
+      success('Request submitted to Manager successfully.');
       navigate('/applicant');
-    } catch (error: unknown) {
-      console.error('Failed to submit to manager', error);
-      const apiError = error as { response?: { data?: { message?: string } } };
-      triggerToast('error', apiError.response?.data?.message || 'Failed to submit. Please check all fields and try again.');
+    } catch (err: unknown) {
+      console.error('Failed to submit to manager', err);
+      const apiError = err as { response?: { data?: { message?: string } } };
+      error(apiError.response?.data?.message || 'Failed to submit. Please check all fields and try again.');
     } finally {
       setLoading(false);
     }
@@ -219,12 +230,12 @@ const PaymentRequestForm: React.FC = () => {
 
   const totalAmount = calculateTotal(breakdowns);
 
-  // Read employee info from auth context (fallback to placeholder for development)
+  // Read employee info from auth context
   const employeeInfo = {
-    number: user?.employeeNumber || 'EMP-90210',
-    name: user?.fullName || 'Jane Doe',
-    branch: user?.branch || 'Yangon Main',
-    department: 'Engineering', // department not in JWT; loaded from profile API
+    number: user?.employeeNumber || '-',
+    name: user?.fullName || '-',
+    branch: user?.branch || '-',
+    department: user?.department || '-',
   };
 
   const showBankAccountField = BANK_INFO_REQUIRED_METHODS.includes(
@@ -232,7 +243,7 @@ const PaymentRequestForm: React.FC = () => {
   );
 
   return (
-    <div className="p-6 md:p-8 min-h-screen bg-slate-50 font-sans">
+    <div className="min-h-screen font-sans">
       <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Header */}
@@ -313,8 +324,12 @@ const PaymentRequestForm: React.FC = () => {
                       onChange={(e) => setFormData({...formData, target_manager_id: Number(e.target.value)})}
                       aria-required="true"
                     >
-                      <option value={1}>John Smith (Engineering Dept)</option>
-                      <option value={2}>Sarah Connor (Operations)</option>
+                      {managers.length === 0 && <option value={0}>Loading managers...</option>}
+                      {managers.map(m => (
+                        <option key={m.userId} value={m.userId}>
+                          {m.fullName} {m.department ? `(${m.department})` : ''}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -513,7 +528,7 @@ const PaymentRequestForm: React.FC = () => {
               <button 
                 onClick={handleSaveDraft}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
+                className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
               >
                 <Save className="w-4 h-4" />
                 {loading ? 'Saving...' : 'Save Draft'}
@@ -522,9 +537,9 @@ const PaymentRequestForm: React.FC = () => {
               <button 
                 onClick={handleSubmitManager}
                 disabled={!createdDraftId || loading}
-                className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-lg transition-all ${
+                className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all ${
                   createdDraftId 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' 
+                    ? 'bg-blue-900 hover:bg-blue-800 text-white shadow-sm' 
                     : 'bg-blue-50 text-blue-400 cursor-not-allowed'
                 }`}
                 title={createdDraftId ? "Submit to Manager" : "Save as draft first before submitting"}

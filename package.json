@@ -15,13 +15,20 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "test:cov:admin": "jest src/modules/admin --coverage --collectCoverageFrom=\"modules/admin/**/*.ts\"",
+    "test:cov:applicant": "jest src/modules/applicant --coverage --collectCoverageFrom=\"modules/applicant/**/*.ts\"",
+    "test:cov:approver": "jest src/modules/approver --coverage --collectCoverageFrom=\"modules/approver/**/*.ts\"",
+    "test:cov:manager": "jest src/modules/manager --coverage --collectCoverageFrom=\"modules/manager/**/*.ts\"",
+    "test:cov:accounting": "jest src/modules/accounting --coverage --collectCoverageFrom=\"modules/accounting/**/*.ts\"",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d typeorm-cli.config.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d typeorm-cli.config.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d typeorm-cli.config.ts",
-    "postinstall": "git config core.hooksPath .githooks"
+    "postinstall": "git config core.hooksPath .githooks",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts",
+    "seed:clear": "ts-node -r tsconfig-paths/register src/database/clear-seed.ts"
   },
   "dependencies": {
     "@nestjs-modules/ioredis": "^2.2.1",

@@ -45,7 +45,7 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 transition-opacity"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300"
       onClick={handleBackdropClick}
     >
       <div
@@ -53,7 +53,7 @@ export function ConfirmDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="dialog-title"
-        className="bg-white rounded-xl shadow-xl max-w-md w-full mx-auto p-6 transform transition-all scale-100"
+        className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-auto p-6 transform transition-all duration-300 animate-in fade-in zoom-in-95 scale-100"
       >
         <h3 id="dialog-title" className="text-lg font-semibold text-slate-900 mb-2">
           {title}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -147,6 +147,7 @@ export function ManagerRequestDetail() {
 
   const [request, setRequest] = useState<DetailedPaymentRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [isActionSubmitting, setIsActionSubmitting] = useState(false);
   const [comment, setComment] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -161,7 +162,13 @@ export function ManagerRequestDetail() {
     } catch (error) {
       console.error('Failed to fetch request details', error);
       const axiosError = error as AxiosErrorResponse;
-      triggerToast('error', axiosError.response?.data?.message || t('dashboard.manager.detail_fetch_error'));
+
+      if (axiosError.response?.status === 404) {
+        setIsNotFound(true);
+        triggerToast('error', t('dashboard.manager.request_not_found'));
+      } else {
+        triggerToast('error', axiosError.response?.data?.message || t('dashboard.manager.detail_fetch_error'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -173,6 +180,32 @@ export function ManagerRequestDetail() {
     }, 0);
     return () => clearTimeout(timer);
   }, [fetchRequest]);
+
+  const autoReviewTriggered = useRef(false);
+
+  useEffect(() => {
+    if (!request || autoReviewTriggered.current) return;
+    if (request.statusId !== PaymentStatus.SUBMITTED_MANAGER) return;
+
+    autoReviewTriggered.current = true;
+
+    const triggerStartReview = async () => {
+      try {
+        const response = await apiClient.patch<DetailedPaymentRequest>(
+          `/manager/requests/${request.paymentRequestId}/review`,
+          { modifiedDate: request.modifiedDate },
+        );
+        setRequest(response.data);
+      } catch (error) {
+        const axiosError = error as AxiosErrorResponse;
+        if (axiosError.response?.status === 409) {
+          void fetchRequest();
+        }
+      }
+    };
+
+    void triggerStartReview();
+  }, [request, fetchRequest]);
 
   const handleApprove = async () => {
     if (!request) return;
@@ -262,6 +295,28 @@ export function ManagerRequestDetail() {
     return <DetailSkeleton />;
   }
 
+  if (isNotFound) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+          <div className="rounded-full bg-rose-50 p-4">
+            <AlertCircle className="h-10 w-10 text-rose-400" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800">{t('dashboard.manager.request_not_found_title')}</h2>
+          <p className="text-slate-500 text-sm text-center max-w-md">
+            {t('dashboard.manager.request_not_found_detail')}
+          </p>
+          <button
+            onClick={() => navigate('/manager')}
+            className="px-5 py-2.5 bg-blue-900 text-white rounded-lg hover:bg-blue-800 text-sm font-semibold transition-colors"
+          >
+            {t('dashboard.manager.back_to_list')}
+          </button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (!request) {
     return (
       <DashboardLayout>
@@ -303,9 +358,8 @@ export function ManagerRequestDetail() {
               </span>
             </div>
             <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                STATUS_COLORS[request.statusId as PaymentStatus]
-              }`}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${STATUS_COLORS[request.statusId as PaymentStatus]
+                }`}
             >
               {STATUS_LABELS_EN[request.statusId as PaymentStatus]}
             </span>
@@ -330,7 +384,7 @@ export function ManagerRequestDetail() {
               <div>
                 <span className="text-slate-400 block mb-0.5">{t('dashboard.manager.department_branch')}</span>
                 <span className="text-slate-950 font-bold">
-                  {request.applicant?.branch || t('dashboard.manager.no_branch')} 
+                  {request.applicant?.branch || t('dashboard.manager.no_branch')}
                   {request.applicant?.department ? ` (${request.applicant.department})` : ''}
                 </span>
               </div>
@@ -460,13 +514,17 @@ export function ManagerRequestDetail() {
                 <div key={log.approvalLogId} className="relative text-xs">
                   <div className="absolute -left-[19px] top-1.5 bg-white border-2 border-indigo-400 rounded-full h-3 w-3"></div>
                   <div className="flex items-center justify-between text-[11px] text-slate-400 mb-0.5">
-                    <span className="font-semibold text-slate-700">{log.actionTakenByUser?.fullName}</span>
+                    <div>
+                      <span className="font-semibold text-slate-700">{log.actionTakenByUser?.fullName}</span>
+                      {log.actionTakenByUser?.employeeNumber && (
+                        <span className="ml-1.5 text-slate-400">({log.actionTakenByUser.employeeNumber})</span>
+                      )}
+                    </div>
                     <span>{new Date(log.timestamp).toLocaleString('ja-JP')}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                      ACTION_BADGE_COLORS[log.actionTypeId as keyof typeof ACTION_BADGE_COLORS] || 'bg-slate-100 text-slate-800'
-                    }`}>
+                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_BADGE_COLORS[log.actionTypeId as keyof typeof ACTION_BADGE_COLORS] || 'bg-slate-100 text-slate-800'
+                      }`}>
                       {ACTION_LABELS_EN[log.actionTypeId as keyof typeof ACTION_LABELS_EN]}
                     </span>
                     {log.comment && (
@@ -483,57 +541,57 @@ export function ManagerRequestDetail() {
           {/* Verification Decision Form Area */}
           {(request.statusId === PaymentStatus.SUBMITTED_MANAGER ||
             request.statusId === PaymentStatus.MANAGER_REVIEWING) && (
-            <div className="pt-4 border-t border-slate-100 space-y-3">
-              <div className="relative">
-                <span className="text-xs font-bold text-slate-600 block mb-1">
-                  {t('dashboard.manager.comment_label')}
-                </span>
-                <textarea
-                  rows={3}
-                  value={comment}
-                  onChange={(e) => {
-                    setComment(e.target.value);
-                    if (validationError) setValidationError(null);
-                  }}
-                  placeholder={t('dashboard.manager.comment_placeholder')}
-                  className="w-full p-3 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-slate-700"
-                />
-                <div className="flex justify-between items-center mt-1">
-                  <span className="text-[10px] text-slate-400">{t('dashboard.manager.max_chars')}</span>
-                  <span className={`text-[10px] ${comment.length > 500 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
-                    {comment.length} / 500
+              <div className="pt-4 border-t border-slate-100 space-y-3">
+                <div className="relative">
+                  <span className="text-xs font-bold text-slate-600 block mb-1">
+                    {t('dashboard.manager.comment_label')}
                   </span>
+                  <textarea
+                    rows={3}
+                    value={comment}
+                    onChange={(e) => {
+                      setComment(e.target.value);
+                      if (validationError) setValidationError(null);
+                    }}
+                    placeholder={t('dashboard.manager.comment_placeholder')}
+                    className="w-full p-3 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-slate-700"
+                  />
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-[10px] text-slate-400">{t('dashboard.manager.max_chars')}</span>
+                    <span className={`text-[10px] ${comment.length > 500 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                      {comment.length} / 500
+                    </span>
+                  </div>
+                </div>
+
+                {validationError && (
+                  <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>{validationError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    onClick={handleReject}
+                    disabled={isActionSubmitting}
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 text-rose-700 bg-rose-50/30 hover:bg-rose-50 active:bg-rose-100 transition text-xs font-bold disabled:opacity-50"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {t('dashboard.manager.reject')}
+                  </button>
+
+                  <button
+                    onClick={handleApprove}
+                    disabled={isActionSubmitting}
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition text-xs font-bold shadow-md shadow-indigo-600/10 disabled:opacity-50"
+                  >
+                    <Check className="h-4 w-4" />
+                    {t('dashboard.manager.approve')}
+                  </button>
                 </div>
               </div>
-
-              {validationError && (
-                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{validationError}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <button
-                  onClick={handleReject}
-                  disabled={isActionSubmitting}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 text-rose-700 bg-rose-50/30 hover:bg-rose-50 active:bg-rose-100 transition text-xs font-bold disabled:opacity-50"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  {t('dashboard.manager.reject')}
-                </button>
-
-                <button
-                  onClick={handleApprove}
-                  disabled={isActionSubmitting}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition text-xs font-bold shadow-md shadow-indigo-600/10 disabled:opacity-50"
-                >
-                  <Check className="h-4 w-4" />
-                  {t('dashboard.manager.approve')}
-                </button>
-              </div>
-            </div>
-          )}
+            )}
         </div>
       </div>
     </DashboardLayout>

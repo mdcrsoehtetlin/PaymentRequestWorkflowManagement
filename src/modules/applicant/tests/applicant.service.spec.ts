@@ -11,7 +11,7 @@ import { ApprovalLog } from '../../shared/entities/approval-log.entity';
 import { User } from '../../shared/entities/user.entity';
 import { RequestNumberService } from '../../shared/services/request-number.service';
 import { FileUploadService } from '../../shared/services/file-upload.service';
-import { ApplicantGateway } from '../applicant.gateway';
+import { WebsocketGateway } from '../../shared/websocket.gateway';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 /**
@@ -24,7 +24,7 @@ describe('ApplicantService', () => {
   let mockDataSource: { transaction: jest.Mock };
   let mockCacheManager: { get: jest.Mock; set: jest.Mock; del: jest.Mock };
   let mockRequestNumberService: { generateNext: jest.Mock };
-  let mockApplicantGateway: { notifyStatusUpdate: jest.Mock };
+  let mockWebsocketGateway: { sendPersonalNotification: jest.Mock };
   let mockPaymentRequestRepo: Record<string, jest.Mock>;
 
   beforeEach(async () => {
@@ -50,8 +50,8 @@ describe('ApplicantService', () => {
       generateNext: jest.fn().mockResolvedValue('PRF-2026-000001'),
     };
 
-    mockApplicantGateway = {
-      notifyStatusUpdate: jest.fn(),
+    mockWebsocketGateway = {
+      sendPersonalNotification: jest.fn(),
     };
 
     mockPaymentRequestRepo = {
@@ -73,6 +73,10 @@ describe('ApplicantService', () => {
           useValue: { create: jest.fn(), save: jest.fn() },
         },
         {
+          provide: getRepositoryToken(User),
+          useValue: { find: jest.fn() },
+        },
+        {
           provide: CACHE_MANAGER,
           useValue: mockCacheManager,
         },
@@ -89,8 +93,8 @@ describe('ApplicantService', () => {
           useValue: { saveFile: jest.fn() },
         },
         {
-          provide: ApplicantGateway,
-          useValue: mockApplicantGateway,
+          provide: WebsocketGateway,
+          useValue: mockWebsocketGateway,
         },
       ],
     }).compile();
@@ -517,8 +521,11 @@ describe('ApplicantService', () => {
 
       await service.submitToManager(1, 1);
 
-      expect(mockApplicantGateway.notifyStatusUpdate).toHaveBeenCalledWith(
-        '1',
+      expect(
+        mockWebsocketGateway.sendPersonalNotification,
+      ).toHaveBeenCalledWith(
+        1,
+        'request:status-changed',
         expect.objectContaining({
           newStatusId: 2,
           actionByUserId: 1,

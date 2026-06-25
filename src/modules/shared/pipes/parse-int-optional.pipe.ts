@@ -20,7 +20,7 @@ export class ParseIntOptionalPipe implements PipeTransform<
     }
     const parsed = parseInt(value, 10);
     if (isNaN(parsed)) {
-      throw new BadRequestException(`'${value}' は有効な整数ではありません`);
+      throw new BadRequestException(`'${value}' is not a valid integer`);
     }
     return parsed;
   }

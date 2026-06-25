@@ -42,8 +42,7 @@ const roleMenuConfig: Record<string, { title: string; dashboardPath: string; men
     dashboardPath: '/applicant',
     menuItems: [
       { label: 'Dashboard', path: '/applicant' },
-      { label: 'My Applications', path: '/applicant/requests' },
-      { label: 'New Application', path: '/applicant/new' },
+      { label: 'New Application', path: '/applicant/form' },
     ],
   },
 };
@@ -67,9 +66,8 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed top-0 left-0 bottom-0 w-64 bg-blue-900 text-white z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed top-0 left-0 bottom-0 w-64 bg-blue-900 text-white z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="flex flex-col h-full">
           <div className="px-6 py-5 border-b border-blue-800">

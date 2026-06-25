@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, FileText, AlertCircle } from 'lucide-react';
-import { fetchPaymentRequestDetail, submitToManager, submitToApprover, updatePaymentRequest } from './services/api';
+import { ArrowLeft, Send, FileText, AlertCircle, Trash2, Download } from 'lucide-react';
+import { fetchPaymentRequestDetail, submitToManager, submitToApprover, updatePaymentRequest, deleteReceipt, downloadReceipt } from './services/api';
 import apiClient from '../../services/api-client';
 import ReceiptUpload from './components/ReceiptUpload';
 import { STATUS_LABELS_EN, EDITABLE_STATUSES } from '../../types';
@@ -30,7 +30,8 @@ interface DetailData {
   receipts?: Receipt[];
 }
 
-import { StatusBadge } from '../../components/shared';
+import { StatusBadge, ConfirmDialog } from '../../components/shared';
+import { useToast } from '../../hooks/useToast';
 
 const PaymentRequestDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,14 +43,16 @@ const PaymentRequestDetail: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<DetailData> | null>(null);
   const [replyComment, setReplyComment] = useState('');
+  const { success: showSuccess, error: showError } = useToast();
+  const [receiptToDelete, setReceiptToDelete] = useState<string | null>(null);
   const [managers, setManagers] = useState<{ userId: number; fullName: string; department: string }[]>([]);
 
   useEffect(() => {
     // Fetch managers for the dropdown
     const fetchManagers = async () => {
       try {
-        const { data } = await apiClient.get('/admin/users', { params: { role_code: 'MANAGER' } });
-        setManagers(data.data.items || []);
+        const { data } = await apiClient.get('/applicant/payment-requests/managers');
+        setManagers(data.data || []);
       } catch (err) {
         console.error('Failed to load managers', err);
       }
@@ -57,9 +60,9 @@ const PaymentRequestDetail: React.FC = () => {
     fetchManagers();
   }, []);
 
-  const loadData = React.useCallback(async () => {
+  const loadData = React.useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       setError(null);
       const result = await fetchPaymentRequestDetail(id!) as DetailData;
       setData(result);
@@ -67,7 +70,7 @@ const PaymentRequestDetail: React.FC = () => {
       const apiError = err as { response?: { data?: { message?: string } } };
       setError(apiError.response?.data?.message || 'Failed to load details');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [id]);
 
@@ -85,7 +88,8 @@ const PaymentRequestDetail: React.FC = () => {
       setSubmitting(true);
       setError(null);
       await submitToManager(id!);
-      await loadData();
+      showSuccess('Submitted to Manager successfully');
+      await loadData(false);
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { message?: string } } };
       setError(apiError.response?.data?.message || 'Failed to submit request');
@@ -131,9 +135,21 @@ const PaymentRequestDetail: React.FC = () => {
     try {
       setSubmitting(true);
       setError(null);
-      await updatePaymentRequest(id!, editData ?? {});
+      
+      const payload = {
+        ...editData,
+        breakdowns: editData.breakdowns
+          ?.filter((b) => b.description.trim() !== '' || parseFloat(String(b.amount)) > 0)
+          .map((b) => ({
+            description: b.description.trim(),
+            amount: typeof b.amount === 'string' ? parseFloat(b.amount || '0') : (b.amount || 0),
+          })) || [],
+      };
+
+      await updatePaymentRequest(id!, payload);
       setIsEditing(false);
-      await loadData();
+      showSuccess('Changes saved successfully');
+      await loadData(false);
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { message?: string } } };
       setError(apiError.response?.data?.message || 'Failed to update request');
@@ -169,7 +185,7 @@ const PaymentRequestDetail: React.FC = () => {
   const isEditableStatus = [1, 5, 9].includes(data.status_id);
 
   return (
-    <div className="p-6 md:p-8 min-h-screen bg-slate-50 font-sans">
+    <div className="min-h-screen font-sans relative">
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Header */}
@@ -197,14 +213,14 @@ const PaymentRequestDetail: React.FC = () => {
               <button 
                 onClick={handleEditToggle}
                 disabled={submitting}
-                className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-all disabled:opacity-70"
+                className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-70"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSaveEdit}
                 disabled={submitting}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-900 hover:bg-blue-800 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
               >
                 {submitting ? 'Saving...' : 'Save Changes'}
               </button>
@@ -214,7 +230,7 @@ const PaymentRequestDetail: React.FC = () => {
               {isEditableStatus && (
                 <button 
                   onClick={handleEditToggle}
-                  className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-all"
+                  className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
                 >
                   Edit Request
                 </button>
@@ -223,7 +239,7 @@ const PaymentRequestDetail: React.FC = () => {
                 <button 
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-900 hover:bg-blue-800 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
                 >
                   <Send className="w-4 h-4" />
                   {submitting ? 'Submitting...' : 'Submit to Manager'}
@@ -233,7 +249,7 @@ const PaymentRequestDetail: React.FC = () => {
                 <button 
                   onClick={handleApproverSubmit}
                   disabled={submitting}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
                 >
                   <Send className="w-4 h-4" />
                   {submitting ? 'Submitting...' : 'Submit to Final Approver'}
@@ -535,12 +551,38 @@ const PaymentRequestDetail: React.FC = () => {
               {data.receipts && data.receipts.length > 0 ? (
                 <div className="space-y-2">
                   {data.receipts.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between p-2 bg-slate-50 rounded border border-slate-100">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        <FileText className="w-4 h-4 text-slate-400 shrink-0" />
-                        <span className="text-sm text-slate-700 truncate" title={r.file_name}>{r.file_name}</span>
+                    <div key={r.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 group">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-slate-400" />
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">{r.file_name}</p>
+                          <p className="text-xs text-slate-500">{(r.file_size / 1024).toFixed(1)} KB</p>
+                        </div>
                       </div>
-                      <span className="text-xs text-slate-500 shrink-0">{(r.file_size / 1024).toFixed(1)} KB</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await downloadReceipt(data.id, r.id, r.file_name);
+                            } catch {
+                                showError('Failed to download receipt');
+                            }
+                          }}
+                          className="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded-full hover:bg-slate-200"
+                          title="Download receipt"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        {isEditing && EDITABLE_STATUSES.includes(data.status_id) && (
+                          <button
+                            onClick={() => setReceiptToDelete(r.id)}
+                            className="text-slate-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-slate-200"
+                            title="Delete receipt"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -548,9 +590,9 @@ const PaymentRequestDetail: React.FC = () => {
                 <p className="text-sm text-slate-500">No receipts attached.</p>
               )}
 
-              {EDITABLE_STATUSES.includes(data.status_id) && (
+              {isEditing && EDITABLE_STATUSES.includes(data.status_id) && (
                 <div className="pt-2 mt-4 border-t border-slate-100">
-                  <ReceiptUpload paymentRequestId={data.id} onUploadSuccess={loadData} />
+                  <ReceiptUpload paymentRequestId={data.id} onUploadSuccess={() => loadData(false)} />
                 </div>
               )}
             </div>
@@ -558,6 +600,22 @@ const PaymentRequestDetail: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      <ConfirmDialog
+        isOpen={!!receiptToDelete}
+        onClose={() => setReceiptToDelete(null)}
+        onConfirm={async () => {
+          if (receiptToDelete) {
+            await deleteReceipt(data.id, receiptToDelete);
+            setReceiptToDelete(null);
+            loadData(false);
+          }
+        }}
+        title="Delete Receipt"
+        message="Are you sure you want to delete this receipt? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 };

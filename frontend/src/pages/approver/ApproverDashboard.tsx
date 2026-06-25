@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AxiosError } from 'axios';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -7,8 +7,9 @@ import type { ApiErrorResponse } from '../../types';
 import type { ApproverRequestDetailView } from './types';
 import { useApproverRequests } from './hooks/useApproverRequests';
 import { useApproverRequestDetail } from './hooks/useApproverRequestDetail';
-import { SummarySidebar } from './components/SummarySidebar';
 import { FilterSearchBar } from './components/FilterSearchBar';
+import { KpiCard, DashboardKpiGrid } from '../../components/shared';
+import { LayoutGrid, Clock, Eye, CalendarClock } from 'lucide-react';
 import { ApproverRequestTable } from './components/ApproverRequestTable';
 import { ApproverRequestDetail } from './ApproverRequestDetail';
 import { approverService } from './services/approver.service';
@@ -39,14 +40,14 @@ export function ApproverDashboard() {
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [branch, setBranch] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [desiredDate, setDesiredDate] = useState('');
   const [statusId, setStatusId] = useState<number | undefined>(undefined);
-  const [sidebarFilter, setSidebarFilter] = useState<number | undefined>(undefined);
-  const [summary, setSummary] = useState({ totalQueue: 0, pendingCount: 0, reviewingCount: 0, approvedCount: 0, rejectedCount: 0 });
+  const [sidebarFilter, setSidebarFilter] = useState<number | 'desiredDateAlert' | undefined>(6);
+  const previousFilterRef = useRef<number | 'desiredDateAlert' | undefined>(6);
+  const [summary, setSummary] = useState({ totalQueue: 0, pendingCount: 0, reviewingCount: 0, desiredDateAlertCount: 0 });
 
   useEffect(() => {
-    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
+    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: 6, showAll: false });
     approverService.fetchSummary().then(setSummary).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -58,6 +59,7 @@ export function ApproverDashboard() {
   }, [detailError, clearRequestDetail]);
 
   const handleRowClick = async (item: ApproverRequestDetailView) => {
+    previousFilterRef.current = sidebarFilter;
     setSelectedRequestId(item.paymentRequestId);
     await loadRequestDetail(item.paymentRequestId);
   };
@@ -65,13 +67,12 @@ export function ApproverDashboard() {
   const handleRefresh = () => {
     setSearch('');
     setBranch('');
-    setDateFrom('');
-    setDateTo('');
+    setDesiredDate('');
     setStatusId(undefined);
-    setSidebarFilter(undefined);
+    setSidebarFilter(6);
     clearRequestDetail();
     setSelectedRequestId(null);
-    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
+    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: 6, showAll: false });
     approverService.fetchSummary().then(setSummary).catch(() => {});
   };
 
@@ -80,45 +81,48 @@ export function ApproverDashboard() {
     setStatusId(undefined);
     setSearch('');
     setBranch('');
-    setDateFrom('');
-    setDateTo('');
+    setDesiredDate('');
     if (newStatusId === undefined) {
-      applyFilters({ statusId: undefined, search: undefined, branch: undefined, dateFrom: undefined, dateTo: undefined, showAll: true });
+      applyFilters({ statusId: undefined, search: undefined, branch: undefined, desiredDate: undefined, desiredDateAlert: undefined, showAll: true });
     } else {
-      applyFilters({ statusId: newStatusId, search: undefined, branch: undefined, dateFrom: undefined, dateTo: undefined, showAll: false });
+      applyFilters({ statusId: newStatusId, search: undefined, branch: undefined, desiredDate: undefined, desiredDateAlert: undefined, showAll: false });
     }
   };
 
+  const handleDesiredDateAlertFilter = () => {
+    setSidebarFilter('desiredDateAlert');
+    setStatusId(undefined);
+    setSearch('');
+    setBranch('');
+    setDesiredDate('');
+    applyFilters({ statusId: undefined, search: undefined, branch: undefined, desiredDate: undefined, desiredDateAlert: true, showAll: false });
+  };
+
   const handleSearchApply = () => {
-    applyFilters({ statusId, search: search.trim() || undefined, branch: branch.trim() || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined });
+    applyFilters({ statusId, search: search.trim() || undefined, branch: branch.trim() || undefined, desiredDate: desiredDate || undefined, desiredDateAlert: undefined });
   };
 
   const handleClearFilters = () => {
     setSearch('');
     setBranch('');
-    setDateFrom('');
-    setDateTo('');
+    setDesiredDate('');
     setStatusId(undefined);
     setSidebarFilter(undefined);
-    applyFilters({ statusId: undefined, search: undefined, branch: undefined, dateFrom: undefined, dateTo: undefined, showAll: true });
-  };
-
-  const handleDateFromChange = (value: string) => {
-    setDateFrom(value);
-    if (dateTo && value > dateTo) {
-      setDateTo('');
-    }
-  };
-
-  const handleDateToChange = (value: string) => {
-    if (dateFrom && value < dateFrom) return;
-    setDateTo(value);
+    applyFilters({ statusId: undefined, search: undefined, branch: undefined, desiredDate: undefined, desiredDateAlert: undefined, showAll: true });
   };
 
   const handleBack = () => {
     clearRequestDetail();
     setSelectedRequestId(null);
-    loadRequests();
+    const prev = previousFilterRef.current;
+    setSidebarFilter(prev);
+    if (prev === undefined) {
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
+    } else if (prev === 'desiredDateAlert') {
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', desiredDateAlert: true, showAll: false });
+    } else {
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: prev, showAll: false });
+    }
     approverService.fetchSummary().then(setSummary).catch(() => {});
   };
 
@@ -201,26 +205,53 @@ export function ApproverDashboard() {
             )}
 
             <div className="space-y-6">
-              <SummarySidebar
-                totalQueue={summary.totalQueue}
-                pendingCount={summary.pendingCount}
-                reviewingCount={summary.reviewingCount}
-                approvedCount={summary.approvedCount}
-                rejectedCount={summary.rejectedCount}
-                activeFilter={sidebarFilter}
-                onFilterChange={handleSidebarFilter}
-              />
+              <DashboardKpiGrid>
+                <div className={sidebarFilter === undefined ? 'ring-2 ring-blue-400 rounded-xl' : ''}>
+                  <KpiCard
+                    label="Total"
+                    count={summary.totalQueue}
+                    icon={<LayoutGrid />}
+                    colorClasses="bg-blue-50 text-blue-900 border border-blue-200"
+                    onClick={() => handleSidebarFilter(undefined)}
+                  />
+                </div>
+                <div className={sidebarFilter === 6 ? 'ring-2 ring-slate-400 rounded-xl' : ''}>
+                  <KpiCard
+                    label="Pending"
+                    count={summary.pendingCount}
+                    icon={<Clock />}
+                    colorClasses="bg-slate-50 text-slate-900 border border-slate-200"
+                    onClick={() => handleSidebarFilter(6)}
+                  />
+                </div>
+                <div className={sidebarFilter === 7 ? 'ring-2 ring-amber-400 rounded-xl' : ''}>
+                  <KpiCard
+                    label="Under Review"
+                    count={summary.reviewingCount}
+                    icon={<Eye />}
+                    colorClasses="bg-amber-50 text-amber-900 border border-amber-200"
+                    onClick={() => handleSidebarFilter(7)}
+                  />
+                </div>
+                <div className={sidebarFilter === 'desiredDateAlert' ? 'ring-2 ring-red-400 rounded-xl' : ''}>
+                  <KpiCard
+                    label="Desired Date Alert"
+                    count={summary.desiredDateAlertCount}
+                    icon={<CalendarClock />}
+                    colorClasses="bg-red-50 text-red-900 border border-red-200"
+                    onClick={handleDesiredDateAlertFilter}
+                  />
+                </div>
+              </DashboardKpiGrid>
 
               <FilterSearchBar
                 search={search}
                 branch={branch}
-                dateFrom={dateFrom}
-                dateTo={dateTo}
+                desiredDate={desiredDate}
                 statusId={statusId}
                 onSearchChange={setSearch}
                 onBranchChange={setBranch}
-                onDateFromChange={handleDateFromChange}
-                onDateToChange={handleDateToChange}
+                onDesiredDateChange={setDesiredDate}
                 onStatusChange={setStatusId}
                 onSubmit={handleSearchApply}
                 onClear={handleClearFilters}

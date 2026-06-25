@@ -1,6 +1,4 @@
 export interface BreakdownItem {
-  department: string;
-  projectName: string;
   description: string;
   amount: string;
 }

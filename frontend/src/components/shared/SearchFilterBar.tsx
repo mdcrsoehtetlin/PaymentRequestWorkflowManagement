@@ -1,47 +1,29 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Search } from 'lucide-react';
+import { CustomDropdown } from './CustomDropdown';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface FilterField {
-  /** Unique key for the filter field */
   key: string;
-  /** Label displayed above the field */
   label: string;
-  /** Field type — determines which input is rendered */
   type: 'text' | 'select' | 'date';
-  /** Placeholder text for text/date inputs */
   placeholder?: string;
-  /** Options for select fields */
   options?: { value: string | number; label: string }[];
-  /** Grid column span (defaults to 1) */
   colSpan?: number;
   /** Static prefix rendered before text input (e.g. "PRF-") */
   prefix?: string;
 }
 
 export interface SearchFilterBarProps {
-  /** Filter field definitions — drives the entire bar layout */
   fields: FilterField[];
-  /** Current filter values keyed by field.key */
-  values: Record<string, unknown>;
-  /** Called when any filter value changes */
-  onChange: (key: string, value: string | number) => void;
-  /** Called when user clicks Search or presses Enter */
-  onSubmit: () => void;
-  /** Called when user clicks Clear Filters */
+  values: Record<string, string | number>;
+  onApply: (values: Record<string, string | number>) => void;
   onClear?: () => void;
-  /** Shows the Search button (defaults to true) */
   showSearchButton?: boolean;
-  /** Shows the Clear Filters button (defaults to true when onClear is provided) */
   showClearButton?: boolean;
-  /** Disables both Search and Clear buttons (e.g. during loading) */
-  disabled?: boolean;
-  /** Disables only the Clear Filters button (e.g. when no filters active) */
-  clearDisabled?: boolean;
-  /** Custom action buttons rendered after the search/clear buttons */
   actions?: React.ReactNode;
 }
 
@@ -49,23 +31,10 @@ export interface SearchFilterBarProps {
 // Component
 // ---------------------------------------------------------------------------
 
-/**
- * @description Shared search & filter bar for all dashboard views.
- * Renders a composable grid of filter fields (text, select, date) inside a
- * card container. Enforces 300ms debounce on text inputs per §10 performance rules.
- * All styling follows §9.5.3 form control specifications exactly.
- *
- * @param fields - Array of filter field definitions
- * @param values - Current values for each field, keyed by field.key
- * @param onChange - Callback when a field value changes
- * @param onSubmit - Callback when Search is triggered (click or Enter key)
- * @param onClear - Callback to reset all filters
- */
 export function SearchFilterBar({
   fields,
   values,
-  onChange,
-  onSubmit,
+  onApply,
   onClear,
   showSearchButton = true,
   showClearButton,
@@ -74,198 +43,110 @@ export function SearchFilterBar({
   actions,
 }: SearchFilterBarProps) {
   const shouldShowClear = showClearButton ?? !!onClear;
-  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  // Debounced text change handler (300ms per §10)
-  const handleTextChange = useCallback(
-    (key: string, value: string) => {
-      if (debounceTimers.current[key]) {
-        clearTimeout(debounceTimers.current[key]);
-      }
-      debounceTimers.current[key] = setTimeout(() => {
-        onChange(key, value);
-      }, 300);
-    },
-    [onChange],
-  );
+  // Local state for draft filters
+  const [localValues, setLocalValues] = useState<Record<string, string | number>>(values);
 
-  // Cleanup timers on unmount
+  // Sync when parent values change (e.g., cleared from outside)
   useEffect(() => {
-    const timers = debounceTimers.current;
-    return () => {
-      Object.values(timers).forEach(clearTimeout);
-    };
-  }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLocalValues(values);
+  }, [values]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      onSubmit();
+  const handleChange = (key: string, value: string | number) => {
+    setLocalValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSearch = () => {
+    onApply(localValues);
+  };
+
+  const handleClear = () => {
+    setLocalValues({});
+    if (onClear) {
+      onClear();
+    } else {
+      onApply({});
     }
   };
 
-  // Input styling per §9.5.3
-  const inputClasses = [
-    'w-full px-3 py-2',
-    'border border-slate-200 rounded-lg',
-    'text-sm text-slate-900',
-    'placeholder:text-slate-400',
-    'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500',
-    'transition-all duration-200',
-    'disabled:bg-slate-100 disabled:cursor-not-allowed',
-  ].join(' ');
+  const inputClasses = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 disabled:bg-slate-100 disabled:cursor-not-allowed';
+
+  const hasActiveFilters = Object.values(localValues).some((val) => val !== '' && val !== undefined && val !== null);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm mb-6">
+      <div className="grid gap-4 items-end grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[1.5fr_1fr_1fr_1fr_auto]">
         {fields.map((field) => (
           <div
             key={field.key}
-            className={field.colSpan ? `col-span-${field.colSpan}` : ''}
+            className={field.colSpan ? `col-span-${field.colSpan}` : 'w-full'}
           >
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              {field.label}
+            <label className="space-y-2 text-sm text-slate-700 block">
+              <span className="block">{field.label}</span>
+              
+              {field.type === 'text' && (
+                <input
+                  type="text"
+                  value={String(localValues[field.key] ?? '')}
+                  placeholder={field.placeholder}
+                  className={inputClasses}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                />
+              )}
+              
+              {field.type === 'select' && (
+                <CustomDropdown
+                  options={field.options || []}
+                  value={localValues[field.key] ?? ''}
+                  placeholder={field.placeholder || 'Select...'}
+                  onChange={(val) => handleChange(field.key, val ?? '')}
+                />
+              )}
+              
+              {field.type === 'date' && (
+                <input
+                  type="date"
+                  value={String(localValues[field.key] ?? '')}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  placeholder={field.placeholder}
+                  className={inputClasses}
+                />
+              )}
             </label>
-
-            {field.type === 'text' && (
-              <DebouncedTextInput
-                value={String(values[field.key] ?? '')}
-                placeholder={field.placeholder}
-                prefix={field.prefix}
-                className={inputClasses}
-                onChange={(val) => handleTextChange(field.key, val)}
-                onImmediateChange={(val) => onChange(field.key, val)}
-                onKeyDown={handleKeyDown}
-              />
-            )}
-
-            {field.type === 'select' && (
-              <select
-                value={String(values[field.key] ?? '')}
-                onChange={(e) => onChange(field.key, e.target.value)}
-                className={`${inputClasses} bg-white`}
-              >
-                {field.options?.map((opt) => (
-                  <option key={String(opt.value)} value={String(opt.value)}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            {field.type === 'date' && (
-              <input
-                type="date"
-                value={String(values[field.key] ?? '')}
-                onChange={(e) => onChange(field.key, e.target.value)}
-                placeholder={field.placeholder}
-                className={inputClasses}
-              />
-            )}
           </div>
         ))}
+        
+        {(showSearchButton || shouldShowClear || actions) && (
+          <div className="flex items-center gap-3 pb-0.5 xl:col-span-1 md:col-span-2 sm:col-span-2 lg:col-span-4 xl:w-auto w-full justify-start xl:justify-end">
+            {actions}
+            {showSearchButton && (
+              <button
+                type="button"
+                onClick={handleSearch}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 whitespace-nowrap transition-all duration-200"
+              >
+                <Search className="w-4 h-4" />
+                Search
+              </button>
+            )}
+            {shouldShowClear && (
+              <button
+                type="button"
+                onClick={handleClear}
+                disabled={!hasActiveFilters}
+                className={`rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+                  hasActiveFilters 
+                    ? 'text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer' 
+                    : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
+                }`}
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Action row */}
-      {(showSearchButton || shouldShowClear || actions) && (
-        <div className="flex items-center justify-end gap-3 mt-4 pt-3 border-t border-slate-100">
-          {actions}
-          {shouldShowClear && onClear && (
-            <button
-              type="button"
-              onClick={onClear}
-              disabled={disabled || clearDisabled}
-              className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg border border-slate-300 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <X className="w-4 h-4" />
-              Clear Filters
-            </button>
-          )}
-          {showSearchButton && (
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={disabled}
-              className="px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Search className="w-4 h-4" />
-              Search
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Internal: Debounced text input (keeps local state for immediate feedback)
-// ---------------------------------------------------------------------------
-
-interface DebouncedTextInputProps {
-  value: string;
-  placeholder?: string;
-  prefix?: string;
-  className: string;
-  onChange: (value: string) => void;
-  onImmediateChange: (value: string) => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
-}
-
-function DebouncedTextInput({
-  value,
-  placeholder,
-  prefix,
-  className,
-  onChange,
-  onKeyDown,
-}: DebouncedTextInputProps) {
-  const [localValue, setLocalValue] = useState(value);
-  const isInitialMount = useRef(true);
-
-  // Sync external value changes (e.g. clear filters)
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    setLocalValue(value);
-  }, [value]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVal = e.target.value;
-    setLocalValue(newVal);
-    onChange(newVal);
-  };
-
-  return (
-    <div className="relative">
-      {prefix ? (
-        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
-          <span className="px-2 py-2 text-sm text-slate-500 bg-slate-50 border-r border-slate-200 select-none">
-            {prefix}
-          </span>
-          <input
-            type="text"
-            value={localValue}
-            placeholder={placeholder}
-            className={`${className} pl-2 border-0`}
-            onChange={handleChange}
-            onKeyDown={onKeyDown}
-          />
-        </div>
-      ) : (
-        <>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            value={localValue}
-            placeholder={placeholder}
-            className={`${className} pl-9`}
-            onChange={handleChange}
-            onKeyDown={onKeyDown}
-          />
-        </>
-      )}
     </div>
   );
 }

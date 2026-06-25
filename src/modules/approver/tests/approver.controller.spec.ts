@@ -28,6 +28,7 @@ describe('ApproverController', () => {
       findOneForReview: jest.fn(),
       approve: jest.fn(),
       reject: jest.fn(),
+      getSummary: jest.fn(),
     } as unknown as jest.Mocked<ApproverService>;
 
     const module: TestingModule = await Test.createTestingModule({
@@ -41,6 +42,26 @@ describe('ApproverController', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe('GET /approver/payment-requests/summary', () => {
+    it('should call service.getSummary with approver userId', async () => {
+      const expected = {
+        pendingCount: 5,
+        reviewingCount: 2,
+        approvedCount: 3,
+        rejectedCount: 1,
+        paidCount: 4,
+        totalQueue: 15,
+        desiredDateAlertCount: 2,
+      };
+      service.getSummary.mockResolvedValue(expected);
+
+      const result = await controller.getSummary(mockRequest);
+
+      expect(service['getSummary']).toHaveBeenCalledWith(10);
+      expect(result).toEqual(expected);
+    });
   });
 
   describe('GET /approver/payment-requests', () => {
@@ -61,8 +82,7 @@ describe('ApproverController', () => {
         pageSize: 20,
         search: 'office',
         branch: 'Tokyo',
-        dateFrom: '2026-06-01',
-        dateTo: '2026-06-30',
+        desiredDate: '2026-06-01',
       };
       service.findAssignedRequests.mockResolvedValue({
         data: [],

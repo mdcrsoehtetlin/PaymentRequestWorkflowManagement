@@ -1,22 +1,49 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileEdit, Send, XCircle, CheckCircle, Plus, FileText, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { useWebSocket } from './hooks/use-websocket';
+import { FileEdit, Send, XCircle, CheckCircle, Plus } from 'lucide-react';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import { usePaymentRequests } from './hooks/use-payment-requests';
-import { StatusBadge } from '../../components/shared';
+import { StatusBadge, SearchFilterBar, DataTable, DashboardKpiGrid, KpiCard, ConfirmDialog } from '../../components/shared';
+import type { FilterField } from '../../components/shared/SearchFilterBar';
+import type { Column } from '../../components/shared/DataTable';
+import type { PaymentRequestResponseDto } from './services/api';
 
-const formatCurrency = (amount: string, currencyId: number) => {
-  // Mock currency mapping
-  const symbol = currencyId === 1 ? '$' : currencyId === 2 ? '€' : '¥';
-  return `${symbol}${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-};
+import { formatDate, formatCurrency } from '../../utils/format';
+import { CURRENCY_CODES } from '../../types';
+
+const filterFields: FilterField[] = [
+  { key: 'search', label: 'Search', type: 'text', placeholder: 'Request number, applicant, purpose' },
+  { key: 'branch', label: 'Branch', type: 'select', options: [
+    { value: '', label: 'All Branches' },
+    { value: 'Yangon', label: 'Yangon' },
+    { value: 'Mandalay', label: 'Mandalay' },
+    { value: 'Naypyidaw', label: 'Naypyidaw' },
+  ] },
+  { key: 'desiredDate', label: 'Desired Date', type: 'date' },
+  { key: 'status', label: 'Status', type: 'select', options: [
+    { value: '', label: 'All Statuses' },
+    { value: '1', label: 'Draft' },
+    { value: '2', label: 'Submitted to Manager' },
+    { value: '3', label: 'Manager Reviewing' },
+    { value: '4', label: 'Manager Verified' },
+    { value: '5', label: 'Rejected by Manager' },
+    { value: '6', label: 'Submitted to Approver' },
+    { value: '7', label: 'Approver Reviewing' },
+    { value: '8', label: 'Approved' },
+    { value: '9', label: 'Rejected by Approver' },
+    { value: '10', label: 'Paid' },
+  ] },
+];
 
 const ApplicantDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
   
-  const { lastUpdate, clearLastUpdate } = useWebSocket('1');
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const { notifications } = useWebSocket();
+  const lastUpdate = notifications[0];
+
+  // Filter state
+  const [filters, setFilters] = useState<Record<string, string | number>>({});
 
   const {
     data,
@@ -26,216 +53,169 @@ const ApplicantDashboard: React.FC = () => {
     deleteId,
     setDeleteId,
     handleDelete
-  } = usePaymentRequests(limit, lastUpdate);
+  } = usePaymentRequests(limit, lastUpdate, filters);
 
-  useEffect(() => {
-    if (lastUpdate) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setToastMessage(`Request ${lastUpdate.requestNumber} status updated!`);
-      const timer = setTimeout(() => {
-        setToastMessage(null);
-        clearLastUpdate();
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [lastUpdate, clearLastUpdate]);
+  const handleClearFilters = () => {
+    setFilters({});
+    setPage(1);
+  };
+
+  const columns: Column<PaymentRequestResponseDto>[] = React.useMemo(() => [
+    {
+      key: 'request_number',
+      header: 'Request No.',
+      render: (_, row) => (
+        <span className="text-blue-700 font-medium hover:text-blue-900 hover:underline cursor-pointer">
+          {row.request_number}
+        </span>
+      ),
+    },
+    {
+      key: 'application_date',
+      header: 'Application Date',
+      render: (_, row) => <span className="text-sm text-slate-700">{formatDate(row.application_date)}</span>,
+    },
+    {
+      key: 'desired_payment_date',
+      header: 'Desired Date',
+      render: (_, row) => <span className="text-sm text-slate-700">{formatDate(row.desired_payment_date)}</span>,
+    },
+    {
+      key: 'total_amount',
+      header: 'Amount',
+      render: (_, row) => {
+        const currencyCode = CURRENCY_CODES[row.currency_id as keyof typeof CURRENCY_CODES] || 'MMK';
+        return (
+          <span className="font-medium text-slate-900">
+            {formatCurrency(row.total_amount, currencyCode)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (_, row) => <StatusBadge statusId={row.status_id} size="sm" />,
+    },
+    {
+      key: 'action',
+      header: 'Action',
+      render: (_, row) => (
+        <div className="flex justify-end space-x-3" onClick={(e) => e.stopPropagation()}>
+          {row.status_id === 1 && (
+            <button 
+              onClick={() => setDeleteId(row.id)}
+              className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              Delete
+            </button>
+          )}
+          <button 
+            onClick={() => navigate(`/applicant/request/${row.id}`)}
+            className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            View Details
+          </button>
+        </div>
+      ),
+    },
+  ], [navigate, setDeleteId]);
+
+
 
   const kpis = data?.kpis || {
-    total_draft: 0,
-    total_submitted: 0,
-    total_rejected: 0,
-    total_approved: 0,
+    total_requests: 0,
+    pending_review: 0,
+    approved: 0,
+    rejected: 0,
   };
 
   return (
-    <div className="p-6 md:p-8 min-h-screen bg-slate-50 font-sans relative">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-5 duration-300">
-          <div className="bg-white border-l-4 border-blue-500 shadow-lg rounded-r-lg p-4 max-w-sm flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-            <p className="text-sm font-medium text-slate-800">{toastMessage}</p>
-            <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-slate-600 ml-auto">
-              <XCircle className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen font-sans relative">      <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Applicant Dashboard</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Applicant Dashboard</h1>
             <p className="text-slate-500 mt-1">Manage and track your payment requests</p>
           </div>
           <button 
             onClick={() => navigate('/applicant/form')}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-all shadow-blue-600/20 hover:shadow-blue-600/40 active:scale-[0.98]">
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-900 hover:bg-blue-800 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-white font-medium rounded-lg shadow-sm transition-all shadow-blue-900/20 hover:shadow-blue-900/40 active:scale-[0.98]">
             <Plus className="w-5 h-5" />
             New Request
           </button>
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-slate-100 rounded-xl text-slate-600">
-              <FileEdit className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Drafts</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.total_draft}</h3>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
-              <Send className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Submitted</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.total_submitted}</h3>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-red-50 rounded-xl text-red-600">
-              <XCircle className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Rejected</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.total_rejected}</h3>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
-              <CheckCircle className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Approved</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.total_approved}</h3>
-            </div>
-          </div>
-        </div>
+        <DashboardKpiGrid>
+          <KpiCard label="Total Requests" count={kpis.total_requests} icon={<FileEdit />} colorClasses="bg-slate-100 text-slate-600" />
+          <KpiCard label="Pending Review" count={kpis.pending_review} icon={<Send />} colorClasses="bg-blue-50 text-blue-600" />
+          <KpiCard label="Approved" count={kpis.approved} icon={<CheckCircle />} colorClasses="bg-emerald-50 text-emerald-600" />
+          <KpiCard label="Rejected" count={kpis.rejected} icon={<XCircle />} colorClasses="bg-red-50 text-red-600" />
+        </DashboardKpiGrid>
+
+        {/* Search & Filter Bar */}
+        <SearchFilterBar
+          fields={filterFields}
+          values={filters}
+          onApply={(newFilters) => {
+            const formattedFilters = { ...newFilters };
+            if (formattedFilters.status) {
+              formattedFilters.status = parseInt(formattedFilters.status as string, 10);
+            }
+            // Remove empty filters
+            Object.keys(formattedFilters).forEach(key => {
+              if (formattedFilters[key] === '' || formattedFilters[key] === undefined || formattedFilters[key] === null) {
+                delete formattedFilters[key];
+              }
+            });
+            setFilters(formattedFilters);
+            setPage(1);
+          }}
+          onClear={handleClearFilters}
+        />
 
         {/* Data Table */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-[400px]">
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-slate-900">Recent Requests</h2>
-          </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[400px]">
           
-          <div className="flex-1 overflow-x-auto">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400 gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                <p>Loading requests...</p>
-              </div>
-            ) : (!data || !data.requests || data.requests.items.length === 0) ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400 gap-3">
-                <FileText className="w-12 h-12 opacity-20" />
-                <p>No payment requests found.</p>
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/50">
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Request No.</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {data?.requests.items.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors">
-                          {item.request_number}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                        {new Date(item.application_date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-700">
-                        {formatCurrency(item.total_amount, item.currency_id)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge statusId={item.status_id} />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right space-x-3">
-                        {item.status_id === 1 && (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); setDeleteId(item.id); }}
-                            className="text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
-                          >
-                            Delete
-                          </button>
-                        )}
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); navigate(`/applicant/request/${item.id}`); }}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
-                        >
-                          View Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+          <div className="flex-1 p-0 flex flex-col">
+            <DataTable
+              columns={columns}
+              data={data?.requests.items || []}
+              isLoading={loading}
+              emptyMessage="No payment requests found."
+              onRowClick={(row) => navigate(`/applicant/request/${row.id}`)}
+              pagination={
+                data && data.requests.total > 0
+                  ? {
+                      page,
+                      pageSize: limit,
+                      totalItems: data.requests.total,
+                      totalPages: Math.ceil(data.requests.total / limit),
+                      onPageChange: (newPage) => setPage(newPage),
+                      onPageSizeChange: (newSize) => {
+                        setLimit(newSize);
+                        setPage(1);
+                      },
+                    }
+                  : undefined
+              }
+            />
           </div>
-
-          {/* Pagination */}
-          {!loading && data && data.requests.total > 0 && (
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
-              <span className="text-sm text-slate-500">
-                Showing <span className="font-medium text-slate-900">{(page - 1) * limit + 1}</span> to <span className="font-medium text-slate-900">{Math.min(page * limit, data.requests.total)}</span> of <span className="font-medium text-slate-900">{data.requests.total}</span> results
-              </span>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="p-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page * limit >= data.requests.total}
-                  className="p-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Delete Modal */}
-      {deleteId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Draft</h3>
-            <p className="text-sm text-slate-600 mb-6">Are you sure you want to delete this draft? This action cannot be undone.</p>
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setDeleteId(null)}
-                className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-sm transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Delete Draft"
+        message="Are you sure you want to delete this draft? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 };
