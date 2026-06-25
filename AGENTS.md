@@ -1,4 +1,10 @@
 <!-- SPECKIT START -->
+## Active Feature Plan
+
+**Feature**: Clear Filters Button (`006-clear-filters-button`)
+**Plan**: `specs/006-clear-filters-button/plan.md`
+**Spec**: `specs/006-clear-filters-button/spec.md`
+
 ## Development Rules (BINDING — read before any code generation)
 
 All code MUST comply with the full development rules specification:

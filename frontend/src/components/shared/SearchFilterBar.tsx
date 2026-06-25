@@ -18,13 +18,15 @@ export interface FilterField {
   options?: { value: string | number; label: string }[];
   /** Grid column span (defaults to 1) */
   colSpan?: number;
+  /** Static prefix rendered before text input (e.g. "PRF-") */
+  prefix?: string;
 }
 
 export interface SearchFilterBarProps {
   /** Filter field definitions — drives the entire bar layout */
   fields: FilterField[];
   /** Current filter values keyed by field.key */
-  values: Record<string, string | number>;
+  values: Record<string, unknown>;
   /** Called when any filter value changes */
   onChange: (key: string, value: string | number) => void;
   /** Called when user clicks Search or presses Enter */
@@ -35,6 +37,10 @@ export interface SearchFilterBarProps {
   showSearchButton?: boolean;
   /** Shows the Clear Filters button (defaults to true when onClear is provided) */
   showClearButton?: boolean;
+  /** Disables both Search and Clear buttons (e.g. during loading) */
+  disabled?: boolean;
+  /** Disables only the Clear Filters button (e.g. when no filters active) */
+  clearDisabled?: boolean;
   /** Custom action buttons rendered after the search/clear buttons */
   actions?: React.ReactNode;
 }
@@ -63,6 +69,8 @@ export function SearchFilterBar({
   onClear,
   showSearchButton = true,
   showClearButton,
+  disabled = false,
+  clearDisabled = false,
   actions,
 }: SearchFilterBarProps) {
   const shouldShowClear = showClearButton ?? !!onClear;
@@ -122,6 +130,7 @@ export function SearchFilterBar({
               <DebouncedTextInput
                 value={String(values[field.key] ?? '')}
                 placeholder={field.placeholder}
+                prefix={field.prefix}
                 className={inputClasses}
                 onChange={(val) => handleTextChange(field.key, val)}
                 onImmediateChange={(val) => onChange(field.key, val)}
@@ -164,7 +173,8 @@ export function SearchFilterBar({
             <button
               type="button"
               onClick={onClear}
-              className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg border border-slate-300 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 inline-flex items-center gap-1.5"
+              disabled={disabled || clearDisabled}
+              className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg border border-slate-300 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <X className="w-4 h-4" />
               Clear Filters
@@ -174,7 +184,8 @@ export function SearchFilterBar({
             <button
               type="button"
               onClick={onSubmit}
-              className="px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 inline-flex items-center gap-1.5"
+              disabled={disabled}
+              className="px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Search className="w-4 h-4" />
               Search
@@ -193,6 +204,7 @@ export function SearchFilterBar({
 interface DebouncedTextInputProps {
   value: string;
   placeholder?: string;
+  prefix?: string;
   className: string;
   onChange: (value: string) => void;
   onImmediateChange: (value: string) => void;
@@ -202,6 +214,7 @@ interface DebouncedTextInputProps {
 function DebouncedTextInput({
   value,
   placeholder,
+  prefix,
   className,
   onChange,
   onKeyDown,
@@ -226,15 +239,33 @@ function DebouncedTextInput({
 
   return (
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-      <input
-        type="text"
-        value={localValue}
-        placeholder={placeholder}
-        className={`${className} pl-9`}
-        onChange={handleChange}
-        onKeyDown={onKeyDown}
-      />
+      {prefix ? (
+        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+          <span className="px-2 py-2 text-sm text-slate-500 bg-slate-50 border-r border-slate-200 select-none">
+            {prefix}
+          </span>
+          <input
+            type="text"
+            value={localValue}
+            placeholder={placeholder}
+            className={`${className} pl-2 border-0`}
+            onChange={handleChange}
+            onKeyDown={onKeyDown}
+          />
+        </div>
+      ) : (
+        <>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={localValue}
+            placeholder={placeholder}
+            className={`${className} pl-9`}
+            onChange={handleChange}
+            onKeyDown={onKeyDown}
+          />
+        </>
+      )}
     </div>
   );
 }
