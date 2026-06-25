@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react';
 import { PaymentStatus } from '../../../types';
 import { STATUS_LABELS_EN } from '../types';
 import { CustomDropdown } from './CustomDropdown';
@@ -5,17 +6,22 @@ import { CustomDropdown } from './CustomDropdown';
 interface FilterSearchBarProps {
   search: string;
   branch: string;
-  dateFrom: string;
-  dateTo: string;
+  desiredDate: string;
   statusId?: number;
   onSearchChange: (value: string) => void;
   onBranchChange: (value: string) => void;
-  onDateFromChange: (value: string) => void;
-  onDateToChange: (value: string) => void;
+  onDesiredDateChange: (value: string) => void;
   onStatusChange: (value?: number) => void;
   onSubmit: () => void;
   onClear: () => void;
 }
+
+const branchOptions = [
+  { value: '', label: 'All Branches' },
+  { value: 'Yangon', label: 'Yangon' },
+  { value: 'Mandalay', label: 'Mandalay' },
+  { value: 'Naypyidaw', label: 'Naypyidaw' },
+];
 
 const statusOptions = [
   { value: '', label: 'All Statuses' },
@@ -28,20 +34,21 @@ const statusOptions = [
 export function FilterSearchBar({
   search,
   branch,
-  dateFrom,
-  dateTo,
+  desiredDate,
   statusId,
   onSearchChange,
   onBranchChange,
-  onDateFromChange,
-  onDateToChange,
+  onDesiredDateChange,
   onStatusChange,
   onSubmit,
   onClear,
 }: FilterSearchBarProps) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div
+        className="grid gap-4 items-end"
+        style={{ gridTemplateColumns: '1.5fr 1fr 1fr 1fr auto' }}
+      >
         <label className="space-y-2 text-sm text-slate-700">
           <span>Search</span>
           <input
@@ -55,39 +62,24 @@ export function FilterSearchBar({
 
         <label className="space-y-2 text-sm text-slate-700">
           <span>Branch</span>
-          <input
-            type="text"
+          <CustomDropdown
+            options={branchOptions}
             value={branch}
-            onChange={(e) => onBranchChange(e.target.value)}
-            placeholder="Branch name"
-            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            placeholder="All Branches"
+            onChange={(val) => onBranchChange(String(val ?? ''))}
           />
         </label>
 
         <label className="space-y-2 text-sm text-slate-700">
-          <span>Submitted From</span>
+          <span>Desired Date</span>
           <input
             type="date"
-            value={dateFrom}
-            onChange={(e) => onDateFromChange(e.target.value)}
-            max={dateTo || undefined}
+            value={desiredDate}
+            onChange={(e) => onDesiredDateChange(e.target.value)}
             className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
           />
         </label>
 
-        <label className="space-y-2 text-sm text-slate-700">
-          <span>Submitted To</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => onDateToChange(e.target.value)}
-            min={dateFrom || undefined}
-            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-          />
-        </label>
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-[1fr_auto] items-end">
         <label className="space-y-2 text-sm text-slate-700">
           <span>Status</span>
           <CustomDropdown
@@ -98,18 +90,19 @@ export function FilterSearchBar({
           />
         </label>
 
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex items-center gap-3 pb-0.5">
           <button
             type="button"
             onClick={onSubmit}
-            className="rounded-xl bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
+            <Search className="h-4 w-4" />
             Search
           </button>
           <button
             type="button"
             onClick={onClear}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500"
           >
             Clear Filters
           </button>

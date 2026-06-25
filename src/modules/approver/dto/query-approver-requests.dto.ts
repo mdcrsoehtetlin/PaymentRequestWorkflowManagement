@@ -35,16 +35,17 @@ export class QueryApproverRequestsDto extends PaginationQueryDto {
 
   @IsOptional()
   @IsDateString()
-  dateFrom?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dateTo?: string;
+  desiredDate?: string;
 
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()
   showAll?: boolean;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  desiredDateAlert?: boolean;
 
   @IsOptional()
   @IsEnum(ApproverRequestSortFields)

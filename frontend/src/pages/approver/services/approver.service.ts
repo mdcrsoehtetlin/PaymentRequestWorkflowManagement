@@ -8,10 +8,9 @@ import type {
 
 export const approverService = {
   async fetchRequests(query: ApproverRequestQuery) {
-    const { data } = await apiClient.get<PaginatedResponse<ApproverRequestListItem>>(
-      '/approver/payment-requests',
-      { params: query },
-    );
+    const { data } = await apiClient.get<
+      PaginatedResponse<ApproverRequestListItem>
+    >('/approver/payment-requests', { params: query });
 
     return data;
   },
@@ -23,6 +22,7 @@ export const approverService = {
       approvedCount: number;
       rejectedCount: number;
       totalQueue: number;
+      desiredDateAlertCount: number;
     }>('/approver/payment-requests/summary');
 
     return data;
@@ -35,7 +35,10 @@ export const approverService = {
     return data;
   },
 
-  async approveRequest(id: number, payload: { comment?: string; accountingUserId?: number }) {
+  async approveRequest(
+    id: number,
+    payload: { comment?: string; accountingUserId?: number },
+  ) {
     const { data } = await apiClient.post<ActionResponse>(
       `/approver/payment-requests/${id}/approve`,
       payload,

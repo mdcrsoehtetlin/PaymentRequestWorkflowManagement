@@ -61,8 +61,7 @@ describe('ApproverController', () => {
         pageSize: 20,
         search: 'office',
         branch: 'Tokyo',
-        dateFrom: '2026-06-01',
-        dateTo: '2026-06-30',
+        desiredDate: '2026-06-01',
       };
       service.findAssignedRequests.mockResolvedValue({
         data: [],
