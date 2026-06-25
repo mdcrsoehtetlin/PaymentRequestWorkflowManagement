@@ -11,23 +11,36 @@ import type { DashboardResponseDto } from '../services/api';
 export const usePaymentRequests = (
   limit: number = 10,
   externalUpdateTrigger: unknown = null,
+  filters: Omit<
+    import('../services/api').FetchPaymentRequestsParams,
+    'page' | 'limit'
+  > = {},
 ) => {
   const [data, setData] = useState<DashboardResponseDto | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [page, setPage] = useState<number>(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  // We need to keep a stable reference to filters to avoid infinite loops,
+  // or use JSON.stringify(filters) as a dependency.
+  const filterKey = JSON.stringify(filters);
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await fetchPaymentRequests(page, limit);
+      const parsedFilters = JSON.parse(filterKey);
+      const result = await fetchPaymentRequests({
+        page,
+        limit,
+        ...parsedFilters,
+      });
       setData(result);
     } catch (error) {
       console.error('Failed to load dashboard data', error);
     } finally {
       setLoading(false);
     }
-  }, [page, limit]);
+  }, [page, limit, filterKey]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface ToastMessage {
   id: string;
@@ -22,7 +22,10 @@ const notifyListeners = () => {
   listeners.forEach((l) => l([...globalToasts]));
 };
 
-export const triggerGlobalToast = (type: ToastMessage['type'], message: string) => {
+export const triggerGlobalToast = (
+  type: ToastMessage['type'],
+  message: string,
+) => {
   const id = Date.now().toString() + Math.random().toString(36).substring(2, 9);
   globalToasts = [...globalToasts, { id, type, message }];
   notifyListeners();
@@ -53,12 +56,30 @@ export function useToast(): UseToastReturn {
     };
   }, []);
 
+  const success = useCallback(
+    (msg: string) => triggerGlobalToast('success', msg),
+    [],
+  );
+  const error = useCallback(
+    (msg: string) => triggerGlobalToast('error', msg),
+    [],
+  );
+  const warning = useCallback(
+    (msg: string) => triggerGlobalToast('warning', msg),
+    [],
+  );
+  const info = useCallback(
+    (msg: string) => triggerGlobalToast('info', msg),
+    [],
+  );
+  const dismiss = useCallback((id: string) => dismissGlobalToast(id), []);
+
   return {
     toasts,
-    success: (msg) => triggerGlobalToast('success', msg),
-    error: (msg) => triggerGlobalToast('error', msg),
-    warning: (msg) => triggerGlobalToast('warning', msg),
-    info: (msg) => triggerGlobalToast('info', msg),
-    dismiss: dismissGlobalToast,
+    success,
+    error,
+    warning,
+    info,
+    dismiss,
   };
 }

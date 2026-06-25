@@ -17,25 +17,13 @@ import {
   BANK_INFO_REQUIRED_METHODS,
 } from '../../types';
 
-/**
- * Dispatches a globalToast custom event used by the ToastContainer component.
- * Constitution V forbids browser alert()/confirm() dialogs.
- */
-const triggerToast = (
-  type: 'success' | 'error' | 'warning' | 'info',
-  message: string,
-): void => {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(
-      new CustomEvent('globalToast', { detail: { type, message } }),
-    );
-  }
-};
+import { useToast } from '../../hooks/useToast';
 
 const PaymentRequestForm: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const [loading, setLoading] = useState(false);
+  const { success, error, warning } = useToast();
   const today = new Date().toISOString().split('T')[0];
   
   const [formData, setFormData] = useState({
@@ -75,7 +63,7 @@ const PaymentRequestForm: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to fetch managers:', error);
-        triggerToast('warning', 'Could not load active managers list');
+        warning('Could not load active managers list');
       }
     };
     fetchManagers();
@@ -163,7 +151,7 @@ const PaymentRequestForm: React.FC = () => {
     const errors = validateDraft();
     if (errors.length > 0) {
       setValidationErrors(errors);
-      triggerToast('error', errors[0]);
+      error(errors[0]);
       return;
     }
     setValidationErrors([]);
@@ -187,7 +175,7 @@ const PaymentRequestForm: React.FC = () => {
         if (formData.has_receipt && receiptFile) {
            await uploadReceipt(createdDraftId, receiptFile);
         }
-        triggerToast('success', 'Draft updated successfully.');
+        success('Draft updated successfully.');
       } else {
         const response = await apiClient.post('/applicant/payment-requests/draft', payload, {
           withCredentials: true,
@@ -199,12 +187,12 @@ const PaymentRequestForm: React.FC = () => {
            await uploadReceipt(newDraftId, receiptFile);
         }
 
-        triggerToast('success', 'Draft saved successfully.');
+        success('Draft saved successfully.');
       }
-    } catch (error: unknown) {
-      console.error('Failed to save draft', error);
-      const apiError = error as { response?: { data?: { message?: string } } };
-      triggerToast('error', apiError.response?.data?.message || 'Failed to save draft. Please try again.');
+    } catch (err: unknown) {
+      console.error('Failed to save draft', err);
+      const apiError = err as { response?: { data?: { message?: string } } };
+      error(apiError.response?.data?.message || 'Failed to save draft. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -212,14 +200,14 @@ const PaymentRequestForm: React.FC = () => {
 
   const handleSubmitManager = async (): Promise<void> => {
     if (!createdDraftId) {
-      triggerToast('warning', 'Please save as draft first before submitting.');
+      warning('Please save as draft first before submitting.');
       return;
     }
 
     const errors = validateSubmit();
     if (errors.length > 0) {
       setValidationErrors(errors);
-      triggerToast('error', errors[0]);
+      error(errors[0]);
       return;
     }
     setValidationErrors([]);
@@ -229,12 +217,12 @@ const PaymentRequestForm: React.FC = () => {
       await apiClient.post(`/applicant/payment-requests/${createdDraftId}/submit-to-manager`, {}, {
         withCredentials: true,
       });
-      triggerToast('success', 'Request submitted to Manager successfully.');
+      success('Request submitted to Manager successfully.');
       navigate('/applicant');
-    } catch (error: unknown) {
-      console.error('Failed to submit to manager', error);
-      const apiError = error as { response?: { data?: { message?: string } } };
-      triggerToast('error', apiError.response?.data?.message || 'Failed to submit. Please check all fields and try again.');
+    } catch (err: unknown) {
+      console.error('Failed to submit to manager', err);
+      const apiError = err as { response?: { data?: { message?: string } } };
+      error(apiError.response?.data?.message || 'Failed to submit. Please check all fields and try again.');
     } finally {
       setLoading(false);
     }
@@ -255,7 +243,7 @@ const PaymentRequestForm: React.FC = () => {
   );
 
   return (
-    <div className="p-6 md:p-8 min-h-screen bg-slate-50 font-sans">
+    <div className="min-h-screen font-sans">
       <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Header */}

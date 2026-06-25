@@ -292,3 +292,23 @@
 
 - [x] T095 Fix `amount` data type to `string` in `BreakdownItemDto` and frontend components to avoid floating-point precision loss per NFR-009 (contradicts)
 - [x] T096 Align `BreakdownItemTable.tsx` columns with `PaymentBreakdownItem` entity by removing `department`/`projectName` and ensuring correct fields are captured per Data Model (contradicts)
+
+---
+
+## Phase 19: Convergence
+
+**Purpose**: Close gaps identified regarding search and filter functionalities in the applicant dashboard.
+
+- [X] T097 Implement server-side search by `requestNumber` and filters by `statusId`, date range, amount range, and branch in `getDashboardData` service method per FR-015 (missing)
+- [X] T098 Add query parameters (`search`, `status`, `startDate`, `endDate`, `minAmount`, `maxAmount`, `branch`) to `GET /payment-requests` in `applicant.controller.ts` per FR-015 (missing)
+- [X] T099 Update `use-payment-requests.ts` hook to accept and pass search and filter parameters to the API per FR-015 (missing)
+- [X] T100 Add search bar and filter controls (Status, Date Range, Amount Range, Branch) to `ApplicantDashboard.tsx` UI per Scenario 1 / REQ-033 / REQ-034 (missing)
+- [X] T101 Implement 300ms debounce logic for all search and filter inputs in `ApplicantDashboard.tsx` per NFR-010 (missing)
+
+---
+
+## Phase 20: Convergence
+
+**Purpose**: Fix search and filter UI layout issue based on user feedback.
+
+- [X] T102 Redesign search and filter UI controls in `ApplicantDashboard.tsx` to use a dedicated filter section/grid instead of cramping them inline with the header, ensuring a premium responsive layout per REQ-034 (partial)

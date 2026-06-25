@@ -35,12 +35,25 @@ export interface DashboardResponseDto {
   requests: PaginatedPaymentRequestResponseDto;
 }
 
+export interface FetchPaymentRequestsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: number;
+  startDate?: string;
+  endDate?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  branch?: string;
+  desiredDate?: string;
+}
+
 export const fetchPaymentRequests = async (
-  page: number = 1,
-  limit: number = 10,
+  params: FetchPaymentRequestsParams = {},
 ): Promise<DashboardResponseDto> => {
+  const { page = 1, limit = 10, ...filters } = params;
   const response = await apiClient.get<DashboardResponseDto>(API_BASE_URL, {
-    params: { page, limit },
+    params: { page, limit, ...filters },
   });
   return response.data;
 };

@@ -22,7 +22,7 @@ import {
   FileUploadService,
   UploadedFile,
 } from '../shared/services/file-upload.service';
-import { ApplicantGateway } from './applicant.gateway';
+import { WebsocketGateway } from '../shared/websocket.gateway';
 
 /**
  * Service handling applicant payment request logic
@@ -41,7 +41,7 @@ export class ApplicantService {
     private readonly dataSource: DataSource,
     private readonly requestNumberService: RequestNumberService,
     private readonly fileUploadService: FileUploadService,
-    private readonly applicantGateway: ApplicantGateway,
+    private readonly websocketGateway: WebsocketGateway,
   ) {}
 
   async getActiveManagers(): Promise<
@@ -60,8 +60,16 @@ export class ApplicantService {
     applicantId: number,
     page: number = 1,
     limit: number = 10,
+    search?: string,
+    statusId?: number,
+    startDate?: string,
+    endDate?: string,
+    minAmount?: number,
+    maxAmount?: number,
+    branch?: string,
+    desiredDate?: string,
   ): Promise<DashboardResponseDto> {
-    const cacheKey = `applicant_dashboard_${applicantId}_${page}_${limit}`;
+    const cacheKey = `applicant_dashboard_${applicantId}_${page}_${limit}_${search || ''}_${statusId || ''}_${startDate || ''}_${endDate || ''}_${minAmount || ''}_${maxAmount || ''}_${branch || ''}_${desiredDate || ''}`;
     const cached = await this.cacheManager.get<DashboardResponseDto>(cacheKey);
     if (cached) return cached;
 
@@ -70,8 +78,37 @@ export class ApplicantService {
       .select('pr.status_id', 'status_id')
       .addSelect('COUNT(pr.id)', 'count')
       .where('pr.applicant_user_id = :applicantId', { applicantId })
-      .andWhere('pr.is_deleted = false')
-      .groupBy('pr.status_id');
+      .andWhere('pr.is_deleted = false');
+
+    if (search) {
+      kpiQuery.andWhere('pr.request_number ILIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+    if (startDate) {
+      kpiQuery.andWhere('pr.application_date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      kpiQuery.andWhere('pr.application_date <= :endDate', { endDate });
+    }
+    if (minAmount !== undefined) {
+      kpiQuery.andWhere('pr.total_amount >= :minAmount', { minAmount });
+    }
+    if (maxAmount !== undefined) {
+      kpiQuery.andWhere('pr.total_amount <= :maxAmount', { maxAmount });
+    }
+    if (branch) {
+      kpiQuery
+        .innerJoin('pr.applicant', 'applicantUser')
+        .andWhere('applicantUser.branch = :branch', { branch });
+    }
+    if (desiredDate) {
+      kpiQuery.andWhere('pr.desired_payment_date = :desiredDate', {
+        desiredDate,
+      });
+    }
+
+    kpiQuery.groupBy('pr.status_id');
 
     const kpiRaw = await kpiQuery.getRawMany<{
       status_id: number;
@@ -86,20 +123,55 @@ export class ApplicantService {
     };
 
     for (const row of kpiRaw) {
-      const statusId = Number(row.status_id);
+      const rowStatusId = Number(row.status_id);
       const count = Number(row.count);
       kpis.total_requests += count;
-      if ([2, 3, 6, 7].includes(statusId)) kpis.pending_review += count;
-      else if ([8, 10].includes(statusId)) kpis.approved += count;
-      else if ([5, 9].includes(statusId)) kpis.rejected += count;
+      if ([2, 3, 6, 7].includes(rowStatusId)) kpis.pending_review += count;
+      else if ([8, 10].includes(rowStatusId)) kpis.approved += count;
+      else if ([5, 9].includes(rowStatusId)) kpis.rejected += count;
     }
 
-    const [items, total] = await this.paymentRequestRepo.findAndCount({
-      where: { applicantUserId: applicantId, isDeleted: false },
-      order: { modifiedDate: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const query = this.paymentRequestRepo
+      .createQueryBuilder('pr')
+      .where('pr.applicant_user_id = :applicantId', { applicantId })
+      .andWhere('pr.is_deleted = false');
+
+    if (search) {
+      query.andWhere('pr.request_number ILIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+    if (statusId) {
+      query.andWhere('pr.status_id = :statusId', { statusId });
+    }
+    if (startDate) {
+      query.andWhere('pr.application_date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      query.andWhere('pr.application_date <= :endDate', { endDate });
+    }
+    if (minAmount !== undefined) {
+      query.andWhere('pr.total_amount >= :minAmount', { minAmount });
+    }
+    if (maxAmount !== undefined) {
+      query.andWhere('pr.total_amount <= :maxAmount', { maxAmount });
+    }
+
+    // Branch filter requires join if branch is on user.
+    if (branch) {
+      query
+        .innerJoin('pr.applicant', 'applicantUser')
+        .andWhere('applicantUser.branch = :branch', { branch });
+    }
+    if (desiredDate) {
+      query.andWhere('pr.desired_payment_date = :desiredDate', { desiredDate });
+    }
+
+    const [items, total] = await query
+      .orderBy('pr.modifiedDate', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     const mappedItems = items.map((item) => ({
       id: item.id,
@@ -302,15 +374,19 @@ export class ApplicantService {
 
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
-      this.applicantGateway.notifyStatusUpdate(String(applicantId), {
-        paymentRequestId: Number(savedRequest.id),
-        requestNumber: savedRequest.requestNumber,
-        previousStatusId: request.statusId,
-        newStatusId: 2,
-        actionByUserId: Number(applicantId),
-        actionByUserName: 'Applicant',
-        timestamp: log.timestamp.toISOString(),
-      });
+      this.websocketGateway.sendPersonalNotification(
+        applicantId,
+        'request:status-changed',
+        {
+          paymentRequestId: Number(savedRequest.id),
+          requestNumber: savedRequest.requestNumber,
+          previousStatusId: request.statusId,
+          newStatusId: 2,
+          actionByUserId: Number(applicantId),
+          actionByUserName: 'Applicant',
+          timestamp: log.timestamp.toISOString(),
+        },
+      );
 
       return savedRequest;
     });
@@ -467,15 +543,19 @@ export class ApplicantService {
 
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
-      this.applicantGateway.notifyStatusUpdate(String(applicantId), {
-        paymentRequestId: Number(savedRequest.id),
-        requestNumber: savedRequest.requestNumber,
-        previousStatusId: 4,
-        newStatusId: 6,
-        actionByUserId: Number(applicantId),
-        actionByUserName: 'Applicant',
-        timestamp: log.timestamp.toISOString(),
-      });
+      this.websocketGateway.sendPersonalNotification(
+        applicantId,
+        'request:status-changed',
+        {
+          paymentRequestId: Number(savedRequest.id),
+          requestNumber: savedRequest.requestNumber,
+          previousStatusId: 4,
+          newStatusId: 6,
+          actionByUserId: Number(applicantId),
+          actionByUserName: 'Applicant',
+          timestamp: log.timestamp.toISOString(),
+        },
+      );
 
       return savedRequest;
     });
