@@ -281,10 +281,31 @@ step_quality_gates() {
   fi
 }
 
-# ─── STEP 4: Inline Component Duplication Scanner ────────────────────────────
+# ─── STEP 4: Test Coverage Check (Warning) ───────────────────────────────────
+
+step_test_coverage() {
+  print_step "4" "Test Coverage Check (§7.1)"
+
+  cd "$PROJECT_ROOT"
+  echo -e "  ${CYAN}[4]${NC} Running coverage check (generating json-summary)..."
+  
+  # Run coverage but only generate json-summary to keep terminal clean
+  npm run test:cov --silent -- --coverageReporters="json-summary" >/dev/null 2>&1 || true
+  
+  # Use node script to parse and print standard table
+  if [ -f "coverage/coverage-summary.json" ]; then
+    node scripts/coverage-parser.js
+    record_warn "Test Coverage (Warning Mode)"
+  else
+    echo -e "  ${RED}✖ Could not generate coverage/coverage-summary.json${NC}"
+    record_warn "Test Coverage (Parse Error)"
+  fi
+}
+
+# ─── STEP 5: Inline Component Duplication Scanner ────────────────────────────
 
 step_inline_component_scan() {
-  print_step "4" "Inline Component Duplication Scanner (UI Consistency)"
+  print_step "5" "Inline Component Duplication Scanner (UI Consistency)"
 
   local duplicates_found=0
   local duplicate_details=""
@@ -392,6 +413,7 @@ main() {
   step_cross_module_imports
   step_shared_layer_audit
   step_quality_gates
+  step_test_coverage
   step_inline_component_scan
 
   print_report
