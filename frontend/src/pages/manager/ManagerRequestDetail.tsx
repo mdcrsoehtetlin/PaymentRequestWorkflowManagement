@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -147,6 +147,7 @@ export function ManagerRequestDetail() {
 
   const [request, setRequest] = useState<DetailedPaymentRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [isActionSubmitting, setIsActionSubmitting] = useState(false);
   const [comment, setComment] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -160,57 +161,14 @@ export function ManagerRequestDetail() {
       setComment('');
     } catch (error) {
       console.error('Failed to fetch request details', error);
-
-      // --- TEMPORARY MOCK: remove once backend 500 is resolved ---
-      console.warn('[MOCK] Using hardcoded fallback data for development');
-      setRequest({
-        paymentRequestId: Number(id),
-        requestNumber: `PRF-2026-${String(id).padStart(3, '0')}`,
-        applicantUserId: 1,
-        managerUserId: 2,
-        finalApproverUserId: null,
-        accountingUserId: null,
-        currentAssignedToUserId: 2,
-        applicationDate: '2026/6/5',
-        desiredPaymentDate: '2026/6/15',
-        totalAmount: '275500',
-        currencyId: 1,
-        paymentTypeId: 1,
-        paymentMethodId: 1,
-        purpose: 'Office supplies purchase for Q3 operations',
-        bankAccountInfo: 'KBZ Bank - 1234567890',
-        requestContent: 'Purchase of printer paper, toner cartridges, and stationery items for the department.',
-        hasReceipt: true,
-        statusId: PaymentStatus.MANAGER_REVIEWING,
-        submittedToManagerDate: '2026-06-05T09:00:00Z',
-        managerVerificationDate: null,
-        submittedToApproverDate: null,
-        approvalDate: null,
-        paymentCompletedDate: null,
-        createdDate: '2026-06-05T08:30:00Z',
-        modifiedDate: '2026-06-05T09:00:00Z',
-        isDeleted: false,
-        applicant: {
-          userId: 1,
-          fullName: 'Soe Htet Lin',
-          employeeNumber: 'EMP-001',
-          branch: 'Yangon',
-          department: 'Finance',
-        },
-        breakdownItems: [
-          { paymentBreakdownItemId: 1, paymentRequestId: Number(id), lineNumber: 1, itemDate: '2026/6/5', description: 'Printer paper (A4)', amount: '150000', quantity: '10', unitPrice: '15000', createdDate: '2026-06-05T08:30:00Z', modifiedDate: '2026-06-05T08:30:00Z' },
-          { paymentBreakdownItemId: 2, paymentRequestId: Number(id), lineNumber: 2, itemDate: '2026/6/5', description: 'Toner cartridge', amount: '125500', quantity: '1', unitPrice: '125500', createdDate: '2026-06-05T08:30:00Z', modifiedDate: '2026-06-05T08:30:00Z' },
-        ],
-        receiptFiles: [],
-        approvalLogs: [
-          { approvalLogId: '1', paymentRequestId: Number(id), actionTakenByUserId: 1, actionTypeId: 1, previousStatusId: 1, newStatusId: PaymentStatus.SUBMITTED_MANAGER, comment: null, ipAddress: '127.0.0.1', userAgent: 'mock', timestamp: '2026-06-05T09:00:00Z', actionTakenByUser: { userId: 1, fullName: 'Soe Htet Lin', employeeNumber: 'EMP-001', branch: 'Yangon' } },
-        ],
-      } as unknown as DetailedPaymentRequest);
-      setComment('');
-      // --- END MOCK ---
-
       const axiosError = error as AxiosErrorResponse;
-      triggerToast('error', axiosError.response?.data?.message || t('dashboard.manager.detail_fetch_error'));
+
+      if (axiosError.response?.status === 404) {
+        setIsNotFound(true);
+        triggerToast('error', t('dashboard.manager.request_not_found'));
+      } else {
+        triggerToast('error', axiosError.response?.data?.message || t('dashboard.manager.detail_fetch_error'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -222,6 +180,32 @@ export function ManagerRequestDetail() {
     }, 0);
     return () => clearTimeout(timer);
   }, [fetchRequest]);
+
+  const autoReviewTriggered = useRef(false);
+
+  useEffect(() => {
+    if (!request || autoReviewTriggered.current) return;
+    if (request.statusId !== PaymentStatus.SUBMITTED_MANAGER) return;
+
+    autoReviewTriggered.current = true;
+
+    const triggerStartReview = async () => {
+      try {
+        const response = await apiClient.patch<DetailedPaymentRequest>(
+          `/manager/requests/${request.paymentRequestId}/review`,
+          { modifiedDate: request.modifiedDate },
+        );
+        setRequest(response.data);
+      } catch (error) {
+        const axiosError = error as AxiosErrorResponse;
+        if (axiosError.response?.status === 409) {
+          void fetchRequest();
+        }
+      }
+    };
+
+    void triggerStartReview();
+  }, [request, fetchRequest]);
 
   const handleApprove = async () => {
     if (!request) return;
@@ -309,6 +293,28 @@ export function ManagerRequestDetail() {
 
   if (isLoading) {
     return <DetailSkeleton />;
+  }
+
+  if (isNotFound) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+          <div className="rounded-full bg-rose-50 p-4">
+            <AlertCircle className="h-10 w-10 text-rose-400" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800">{t('dashboard.manager.request_not_found_title')}</h2>
+          <p className="text-slate-500 text-sm text-center max-w-md">
+            {t('dashboard.manager.request_not_found_detail')}
+          </p>
+          <button
+            onClick={() => navigate('/manager')}
+            className="px-5 py-2.5 bg-blue-900 text-white rounded-lg hover:bg-blue-800 text-sm font-semibold transition-colors"
+          >
+            {t('dashboard.manager.back_to_list')}
+          </button>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   if (!request) {
@@ -508,7 +514,12 @@ export function ManagerRequestDetail() {
                 <div key={log.approvalLogId} className="relative text-xs">
                   <div className="absolute -left-[19px] top-1.5 bg-white border-2 border-indigo-400 rounded-full h-3 w-3"></div>
                   <div className="flex items-center justify-between text-[11px] text-slate-400 mb-0.5">
-                    <span className="font-semibold text-slate-700">{log.actionTakenByUser?.fullName}</span>
+                    <div>
+                      <span className="font-semibold text-slate-700">{log.actionTakenByUser?.fullName}</span>
+                      {log.actionTakenByUser?.employeeNumber && (
+                        <span className="ml-1.5 text-slate-400">({log.actionTakenByUser.employeeNumber})</span>
+                      )}
+                    </div>
                     <span>{new Date(log.timestamp).toLocaleString('ja-JP')}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
