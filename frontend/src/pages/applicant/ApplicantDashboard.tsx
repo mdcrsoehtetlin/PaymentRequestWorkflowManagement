@@ -9,7 +9,9 @@ export function ApplicantDashboard() {
     <DashboardLayout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/requests" element={<Dashboard />} />
         <Route path="/form" element={<Form />} />
+        <Route path="/new" element={<Form />} />
         <Route path="/request/:id" element={<Detail />} />
       </Routes>
     </DashboardLayout>
