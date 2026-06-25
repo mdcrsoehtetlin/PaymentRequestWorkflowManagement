@@ -24,6 +24,8 @@ export { PageHeader } from './PageHeader';
 export { SearchFilterBar } from './SearchFilterBar';
 export type { FilterField, SearchFilterBarProps } from './SearchFilterBar';
 export { DatePicker } from './DatePicker';
+export { CustomDropdown } from './CustomDropdown';
+export type { DropdownOption } from './CustomDropdown';
 
 // Actions & Feedback
 export { RefreshButton } from './RefreshButton';

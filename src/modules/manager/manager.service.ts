@@ -44,13 +44,19 @@ export class ManagerService {
       ...rest,
       paymentRequestId: request.id,
       breakdownItems: (breakdowns ?? []).map((item) =>
-        this.omitCircularRefs(item as any, ['paymentRequest']),
+        this.omitCircularRefs(item as unknown as Record<string, unknown>, [
+          'paymentRequest',
+        ]),
       ),
       receiptFiles: (receipts ?? []).map((file) =>
-        this.omitCircularRefs(file as any, ['paymentRequest']),
+        this.omitCircularRefs(file as unknown as Record<string, unknown>, [
+          'paymentRequest',
+        ]),
       ),
       approvalLogs: (approvalLogs ?? []).map((log) =>
-        this.omitCircularRefs(log as any, ['payment_request']),
+        this.omitCircularRefs(log as unknown as Record<string, unknown>, [
+          'payment_request',
+        ]),
       ),
     };
   }

@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileEdit, Send, XCircle, CheckCircle, Plus, FileText, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { FileEdit, Send, XCircle, CheckCircle, Plus } from 'lucide-react';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import type { StatusUpdatePayload } from '../../hooks/useWebSocket';
 import { usePaymentRequests } from './hooks/use-payment-requests';
-import { StatusBadge } from '../../components/shared';
+import { StatusBadge, SearchFilterBar, DataTable } from '../../components/shared';
+import type { FilterField } from '../../components/shared/SearchFilterBar';
+import type { Column } from '../../components/shared/DataTable';
+import type { PaymentRequestResponseDto } from './services/api';
 
 const formatCurrency = (amount: string, currencyId: number) => {
   // Mock currency mapping
@@ -12,13 +15,40 @@ const formatCurrency = (amount: string, currencyId: number) => {
   return `${symbol}${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 };
 
+const filterFields: FilterField[] = [
+  { key: 'search', label: 'Search', type: 'text', placeholder: 'Request number, applicant, purpose' },
+  { key: 'branch', label: 'Branch', type: 'select', options: [
+    { value: '', label: 'All Branches' },
+    { value: 'Yangon', label: 'Yangon' },
+    { value: 'Mandalay', label: 'Mandalay' },
+    { value: 'Naypyidaw', label: 'Naypyidaw' },
+  ] },
+  { key: 'desiredDate', label: 'Desired Date', type: 'date' },
+  { key: 'status', label: 'Status', type: 'select', options: [
+    { value: '', label: 'All Statuses' },
+    { value: '1', label: 'Draft' },
+    { value: '2', label: 'Submitted to Manager' },
+    { value: '3', label: 'Manager Reviewing' },
+    { value: '4', label: 'Manager Verified' },
+    { value: '5', label: 'Rejected by Manager' },
+    { value: '6', label: 'Submitted to Approver' },
+    { value: '7', label: 'Approver Reviewing' },
+    { value: '8', label: 'Approved' },
+    { value: '9', label: 'Rejected by Approver' },
+    { value: '10', label: 'Paid' },
+  ] },
+];
+
 const ApplicantDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
   
   const { notifications } = useWebSocket();
   const lastUpdate = notifications[0] as StatusUpdatePayload | undefined;
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Filter state
+  const [filters, setFilters] = useState<Record<string, string | number>>({});
 
   const {
     data,
@@ -28,7 +58,70 @@ const ApplicantDashboard: React.FC = () => {
     deleteId,
     setDeleteId,
     handleDelete
-  } = usePaymentRequests(limit, lastUpdate);
+  } = usePaymentRequests(limit, lastUpdate, filters);
+
+  const handleClearFilters = () => {
+    setFilters({});
+    setPage(1);
+  };
+
+  const columns: Column<PaymentRequestResponseDto>[] = React.useMemo(() => [
+    {
+      key: 'request_number',
+      header: 'Request No.',
+      render: (_, row) => (
+        <span className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors">
+          {row.request_number}
+        </span>
+      ),
+    },
+    {
+      key: 'application_date',
+      header: 'App Date',
+      render: (_, row) => new Date(row.application_date).toLocaleDateString(),
+    },
+    {
+      key: 'created_at',
+      header: 'Created Date',
+      render: (_, row) => new Date(row.created_at).toLocaleDateString(),
+    },
+    {
+      key: 'total_amount',
+      header: 'Amount',
+      render: (_, row) => (
+        <span className="font-medium text-slate-700">
+          {formatCurrency(row.total_amount, row.currency_id)}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (_, row) => <StatusBadge statusId={row.status_id} />,
+    },
+    {
+      key: 'action',
+      header: 'Action',
+      render: (_, row) => (
+        <div className="flex justify-end space-x-3" onClick={(e) => e.stopPropagation()}>
+          {row.status_id === 1 && (
+            <button 
+              onClick={() => setDeleteId(row.id)}
+              className="text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
+            >
+              Delete
+            </button>
+          )}
+          <button 
+            onClick={() => navigate(`/applicant/request/${row.id}`)}
+            className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            View Details
+          </button>
+        </div>
+      ),
+    },
+  ], [navigate, setDeleteId]);
 
   useEffect(() => {
     if (lastUpdate) {
@@ -119,102 +212,54 @@ const ApplicantDashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Search & Filter Bar */}
+        <SearchFilterBar
+          fields={filterFields}
+          values={filters}
+          onApply={(newFilters) => {
+            const formattedFilters = { ...newFilters };
+            if (formattedFilters.status) {
+              formattedFilters.status = parseInt(formattedFilters.status as string, 10);
+            }
+            // Remove empty filters
+            Object.keys(formattedFilters).forEach(key => {
+              if (formattedFilters[key] === '' || formattedFilters[key] === undefined || formattedFilters[key] === null) {
+                delete formattedFilters[key];
+              }
+            });
+            setFilters(formattedFilters);
+            setPage(1);
+          }}
+          onClear={handleClearFilters}
+        />
+
         {/* Data Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-[400px]">
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-slate-900">Recent Requests</h2>
-          </div>
           
-          <div className="flex-1 overflow-x-auto">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400 gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                <p>Loading requests...</p>
-              </div>
-            ) : (!data || !data.requests || data.requests.items.length === 0) ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400 gap-3">
-                <FileText className="w-12 h-12 opacity-20" />
-                <p>No payment requests found.</p>
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/50">
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Request No.</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">App Date</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Created Date</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {data?.requests.items.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors">
-                          {item.request_number}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                        {new Date(item.application_date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-700">
-                        {formatCurrency(item.total_amount, item.currency_id)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge statusId={item.status_id} />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right space-x-3">
-                        {item.status_id === 1 && (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); setDeleteId(item.id); }}
-                            className="text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
-                          >
-                            Delete
-                          </button>
-                        )}
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); navigate(`/applicant/request/${item.id}`); }}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
-                        >
-                          View Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+          <div className="flex-1 p-0 flex flex-col">
+            <DataTable
+              columns={columns}
+              data={data?.requests.items || []}
+              isLoading={loading}
+              emptyMessage="No payment requests found."
+              onRowClick={(row) => navigate(`/applicant/request/${row.id}`)}
+              pagination={
+                data && data.requests.total > 0
+                  ? {
+                      page,
+                      pageSize: limit,
+                      totalItems: data.requests.total,
+                      totalPages: Math.ceil(data.requests.total / limit),
+                      onPageChange: (newPage) => setPage(newPage),
+                      onPageSizeChange: (newSize) => {
+                        setLimit(newSize);
+                        setPage(1);
+                      },
+                    }
+                  : undefined
+              }
+            />
           </div>
-
-          {/* Pagination */}
-          {!loading && data && data.requests.total > 0 && (
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
-              <span className="text-sm text-slate-500">
-                Showing <span className="font-medium text-slate-900">{(page - 1) * limit + 1}</span> to <span className="font-medium text-slate-900">{Math.min(page * limit, data.requests.total)}</span> of <span className="font-medium text-slate-900">{data.requests.total}</span> results
-              </span>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="p-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page * limit >= data.requests.total}
-                  className="p-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

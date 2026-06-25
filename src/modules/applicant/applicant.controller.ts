@@ -57,17 +57,58 @@ export interface IUploadedFile {
 export class ApplicantController {
   constructor(private readonly applicantService: ApplicantService) {}
 
+  @Get('test-error')
+  async testError() {
+    try {
+      await this.applicantService.getDashboardData(
+        3,
+        1,
+        10,
+        '2026',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'Naypyidaw',
+        undefined,
+      );
+      return 'Success';
+    } catch (e: unknown) {
+      return {
+        error: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined,
+      };
+    }
+  }
+
   @Get()
   async getPaymentRequests(
     @Req() req: AuthenticatedRequest,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
+    @Query('search') search?: string,
+    @Query('status') status?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('minAmount') minAmount?: number,
+    @Query('maxAmount') maxAmount?: number,
+    @Query('branch') branch?: string,
+    @Query('desiredDate') desiredDate?: string,
   ): Promise<DashboardResponseDto> {
     const applicantId = Number(req.user.sub);
     return this.applicantService.getDashboardData(
       applicantId,
       Number(page),
       Number(limit),
+      search,
+      status ? Number(status) : undefined,
+      startDate,
+      endDate,
+      minAmount ? Number(minAmount) : undefined,
+      maxAmount ? Number(maxAmount) : undefined,
+      branch,
+      desiredDate,
     );
   }
 
