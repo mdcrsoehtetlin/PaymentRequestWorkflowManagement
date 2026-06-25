@@ -10,7 +10,7 @@ interface BreakdownItemTableProps {
 export const BreakdownItemTable: React.FC<BreakdownItemTableProps> = ({ items, onChange }) => {
   const handleAddBreakdown = () => {
     if (items.length >= 15) return;
-    onChange([...items, { department: '', projectName: '', description: '', amount: '' }]);
+    onChange([...items, { description: '', amount: '' }]);
   };
 
   const handleRemoveBreakdown = (index: number) => {
@@ -44,8 +44,6 @@ export const BreakdownItemTable: React.FC<BreakdownItemTableProps> = ({ items, o
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
             <tr>
-              <th className="px-4 py-3">Department</th>
-              <th className="px-4 py-3">Project</th>
               <th className="px-4 py-3">Description</th>
               <th className="px-4 py-3">Amount</th>
               <th className="px-4 py-3 w-16"></th>
@@ -54,26 +52,6 @@ export const BreakdownItemTable: React.FC<BreakdownItemTableProps> = ({ items, o
           <tbody className="divide-y divide-slate-100">
             {items.map((item, index) => (
               <tr key={index} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-4 py-2">
-                  <input
-                    type="text"
-                    value={item.department}
-                    onChange={(e) => handleBreakdownChange(index, 'department', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
-                    placeholder="Dept..."
-                    required
-                  />
-                </td>
-                <td className="px-4 py-2">
-                  <input
-                    type="text"
-                    value={item.projectName}
-                    onChange={(e) => handleBreakdownChange(index, 'projectName', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
-                    placeholder="Project..."
-                    required
-                  />
-                </td>
                 <td className="px-4 py-2">
                   <input
                     type="text"

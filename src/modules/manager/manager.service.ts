@@ -64,20 +64,11 @@ export class ManagerService {
     const qb = this.paymentRequestRepository
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.applicant', 'applicant')
-      .where('request.currentAssignedToUserId = :managerId', { managerId })
+      .where('request.managerUserId = :managerId', { managerId })
       .andWhere('request.isDeleted = false');
 
     if (statusId) {
       qb.andWhere('request.statusId = :statusId', { statusId });
-    } else {
-      qb.andWhere('request.statusId IN (:...statuses)', {
-        statuses: [
-          PaymentStatus.SUBMITTED_MANAGER,
-          PaymentStatus.MANAGER_REVIEWING,
-          PaymentStatus.MANAGER_VERIFIED,
-          PaymentStatus.REJECTED_MANAGER,
-        ],
-      });
     }
 
     if (dateFrom) {
@@ -116,7 +107,7 @@ export class ManagerService {
     const request = await this.paymentRequestRepository.findOne({
       where: {
         id: id,
-        currentAssignedToUserId: managerId,
+        managerUserId: managerId,
         isDeleted: false,
       },
       relations: ['applicant', 'breakdowns', 'receipts', 'approvalLogs'],

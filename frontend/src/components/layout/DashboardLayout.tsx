@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { useAuth } from '../../hooks/useAuth';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user } = useAuth();
+  const { notifications, unreadCount, markAsRead } = useWebSocket(user?.sub, user?.role);
 
   if (!user) return null;
 
@@ -27,7 +29,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex-1 flex flex-col min-w-0 md:ml-64 transition-all duration-300">
         <Header
           onMenuToggle={() => setIsSidebarOpen(true)}
-          notificationCount={2}
+          notificationCount={unreadCount}
+          notifications={notifications}
+          onMarkAsRead={markAsRead}
         />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full">

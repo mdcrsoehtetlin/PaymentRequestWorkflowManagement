@@ -21,7 +21,7 @@ export class IsTodayOrAfterConstraint implements ValidatorConstraintInterface {
   }
 
   defaultMessage() {
-    return 'VAL-APP-002: 支払希望日は本日以降の日付を入力してください';
+    return 'VAL-APP-002: Desired payment date must be today or a future date';
   }
 }
 

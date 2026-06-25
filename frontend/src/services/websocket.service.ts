@@ -6,6 +6,7 @@ class WebSocketService {
   private maxReconnectAttempts = 5;
 
   connect(userId: number, role: string): void {
+    if (this.socket) return;
     this.socket = io('/socket.io', {
       transports: ['websocket'],
       auth: { token: localStorage.getItem('accessToken') },

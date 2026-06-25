@@ -272,3 +272,23 @@
 - [x] T089 Update `detail.tsx` to display all request fields (Purpose, Content, Target Manager, Payment Type, Currency Type, Bank Account Info) in read-only mode per FR-001. (missing)
 - [x] T090 Update `detail.tsx` Edit mode (`isEditing`) to allow modifying all the aforementioned missing fields per Scenario 6. (missing)
 - [x] T091 Implement the "Add Comment" box in `detail.tsx` to allow applicants to reply to rejection comments, displaying it in the activity log immediately per Scenario 6. (missing)
+
+---
+
+## Phase 17: Convergence
+
+**Purpose**: Close gaps identified in the new applicant form data extraction and display.
+
+- [x] T092 Include `department` in JWT payload in `auth.service.ts` and `frontend/src/types/index.ts` so that it is not hardcoded to 'Engineering' in the applicant form per FR-002 (partial)
+- [x] T093 Remove hardcoded fallback mock data ('EMP-90210', 'Jane Doe', 'Yangon Main') in `frontend/src/pages/applicant/form.tsx` to ensure real employee data is always validated and displayed per FR-002 (partial)
+- [x] T094 Fetch active managers dynamically from an API endpoint for the Target Manager dropdown in `frontend/src/pages/applicant/form.tsx` instead of using hardcoded values per FR-009 (missing)
+
+
+---
+
+## Phase 18: Convergence
+
+**Purpose**: Align breakdown item implementation with NFR-009 precision requirements and the Data Model.
+
+- [x] T095 Fix `amount` data type to `string` in `BreakdownItemDto` and frontend components to avoid floating-point precision loss per NFR-009 (contradicts)
+- [x] T096 Align `BreakdownItemTable.tsx` columns with `PaymentBreakdownItem` entity by removing `department`/`projectName` and ensuring correct fields are captured per Data Model (contradicts)

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft, Send } from 'lucide-react';
 import apiClient from '../../services/api-client';
@@ -52,12 +52,35 @@ const PaymentRequestForm: React.FC = () => {
   });
 
   const [breakdowns, setBreakdowns] = useState<BreakdownItem[]>([
-    { department: '', projectName: '', description: '', amount: '' }
+    { description: '', amount: '' },
   ]);
 
   const [createdDraftId, setCreatedDraftId] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [managers, setManagers] = useState<{ userId: number; fullName: string; department: string }[]>([]);
+
+  useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        const response = await apiClient.get('/applicant/payment-requests/managers', {
+          withCredentials: true,
+        });
+        const fetchedManagers = response.data.data || [];
+        setManagers(fetchedManagers);
+        
+        // Auto-select the first manager if available and none selected
+        if (fetchedManagers.length > 0 && formData.target_manager_id === 1) {
+          setFormData(prev => ({ ...prev, target_manager_id: fetchedManagers[0].userId }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch managers:', error);
+        triggerToast('warning', 'Could not load active managers list');
+      }
+    };
+    fetchManagers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** Validates the form for draft save (relaxed) */
   const validateDraft = (): string[] => {
@@ -152,8 +175,8 @@ const PaymentRequestForm: React.FC = () => {
         breakdowns: breakdowns
           .filter((b) => b.description.trim() !== '' || parseFloat(b.amount) > 0)
           .map((b) => ({
-            description: b.description,
-            amount: parseFloat(b.amount) || 0,
+            description: b.description.trim(),
+            amount: b.amount || '0',
           })),
       };
       
@@ -219,12 +242,12 @@ const PaymentRequestForm: React.FC = () => {
 
   const totalAmount = calculateTotal(breakdowns);
 
-  // Read employee info from auth context (fallback to placeholder for development)
+  // Read employee info from auth context
   const employeeInfo = {
-    number: user?.employeeNumber || 'EMP-90210',
-    name: user?.fullName || 'Jane Doe',
-    branch: user?.branch || 'Yangon Main',
-    department: 'Engineering', // department not in JWT; loaded from profile API
+    number: user?.employeeNumber || '-',
+    name: user?.fullName || '-',
+    branch: user?.branch || '-',
+    department: user?.department || '-',
   };
 
   const showBankAccountField = BANK_INFO_REQUIRED_METHODS.includes(
@@ -313,8 +336,12 @@ const PaymentRequestForm: React.FC = () => {
                       onChange={(e) => setFormData({...formData, target_manager_id: Number(e.target.value)})}
                       aria-required="true"
                     >
-                      <option value={1}>John Smith (Engineering Dept)</option>
-                      <option value={2}>Sarah Connor (Operations)</option>
+                      {managers.length === 0 && <option value={0}>Loading managers...</option>}
+                      {managers.map(m => (
+                        <option key={m.userId} value={m.userId}>
+                          {m.fullName} {m.department ? `(${m.department})` : ''}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -513,7 +540,7 @@ const PaymentRequestForm: React.FC = () => {
               <button 
                 onClick={handleSaveDraft}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
+                className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-white font-medium rounded-lg shadow-sm transition-all disabled:opacity-70"
               >
                 <Save className="w-4 h-4" />
                 {loading ? 'Saving...' : 'Save Draft'}
@@ -522,9 +549,9 @@ const PaymentRequestForm: React.FC = () => {
               <button 
                 onClick={handleSubmitManager}
                 disabled={!createdDraftId || loading}
-                className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-lg transition-all ${
+                className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all ${
                   createdDraftId 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' 
+                    ? 'bg-blue-900 hover:bg-blue-800 text-white shadow-sm' 
                     : 'bg-blue-50 text-blue-400 cursor-not-allowed'
                 }`}
                 title={createdDraftId ? "Submit to Manager" : "Save as draft first before submitting"}
