@@ -1,9 +1,19 @@
 import { Download, ExternalLink, FileText } from 'lucide-react';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatDate } from '../../utils/format';
 import type { ApproverRequestDetailView, PaymentBreakdownItem } from './types';
 import { ApproverActionPanel } from './components/ApproverActionPanel';
 import { ApproverApprovalTimeline } from './components/ApproverApprovalTimeline';
 import { ApproverStatusBadge } from './components/ApproverStatusBadge';
+
+function approverCurrency(amount: string | number, currencyCode = 'MMK'): string {
+  const num = Number(amount);
+  if (isNaN(num)) return `0 ${currencyCode}`;
+  const formatted = num.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+  return `${formatted} ${currencyCode}`;
+}
 
 interface ApproverRequestDetailProps {
   request: ApproverRequestDetailView | null;
@@ -108,15 +118,15 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
                         <td className="py-2 text-slate-700">{formatDate(item.itemDate)}</td>
                         <td className="py-2 text-slate-700">{item.description}</td>
                         <td className="py-2 text-right text-slate-700">{item.quantity ?? '—'}</td>
-                        <td className="py-2 text-right text-slate-700">{item.unitPrice ? formatCurrency(item.unitPrice, request.currencyCode) : '—'}</td>
-                        <td className="py-2 text-right font-medium text-slate-900">{formatCurrency(item.amount, request.currencyCode)}</td>
+                        <td className="py-2 text-right text-slate-700">{item.unitPrice ? approverCurrency(item.unitPrice, request.currencyCode) : '—'}</td>
+                        <td className="py-2 text-right font-medium text-slate-900">{approverCurrency(item.amount, request.currencyCode)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-slate-300 font-semibold">
                       <td colSpan={5} className="py-2 text-right text-slate-900">Total</td>
-                      <td className="py-2 text-right text-slate-900">{formatCurrency(request.totalAmount, request.currencyCode)}</td>
+                      <td className="py-2 text-right text-slate-900">{approverCurrency(request.totalAmount, request.currencyCode)}</td>
                     </tr>
                   </tfoot>
                 </table>
