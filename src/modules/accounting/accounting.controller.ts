@@ -27,6 +27,7 @@ export class AccountingController {
 
   /**
    * Retrieves paginated approved requests for the accounting dashboard.
+   * @param filter KPI filter: 'total' = Approved+Paid, 'pending' = Approved only, 'mandalay' = Mandalay branch, 'desiredDate' = desired date within 3 days
    */
   @Get()
   async getApprovedRequests(
@@ -34,16 +35,16 @@ export class AccountingController {
     @Query('pageSize', new DefaultValuePipe(10), ParseIntPipe) pageSize: number,
     @Query('search') search?: string,
     @Query('branch') branch?: string,
-    @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
+    @Query('desiredDate') desiredDate?: string,
+    @Query('filter') filter?: string,
   ) {
     return this.accountingService.findApprovedRequests(
       page,
       pageSize,
       search,
       branch,
-      dateFrom,
-      dateTo,
+      desiredDate,
+      filter,
     );
   }
 

@@ -91,7 +91,7 @@ export const AccountingQueueTable: FC<Props> = ({
                       onClick={() => onSelectRequest(req.paymentRequestId)}
                       className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
-                      Process
+                      View Detail
                     </button>
                   </td>
                 </tr>
