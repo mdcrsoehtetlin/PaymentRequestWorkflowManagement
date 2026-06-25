@@ -75,6 +75,7 @@ export function PaymentDetailPage() {
   const totalAmount = Number(details?.paymentDetails.totalAmount ?? 0);
   const isMismatched = details !== null && Math.abs(gridSum - totalAmount) > 0.01;
   const isMissingReceipts = details !== null && details.hasReceipt && details.receiptFiles.length === 0;
+  const isPaid = details?.statusId === 10;
 
   const handleConfirmComplete = async () => {
     try {
@@ -128,6 +129,12 @@ export function PaymentDetailPage() {
             Back to Dashboard
           </button>
           <h1 className="text-2xl font-bold text-slate-900">{details.requestNumber}</h1>
+          {isPaid && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 border border-emerald-300">
+              <CheckCircle2 className="h-4 w-4" />
+              PAID
+            </span>
+          )}
         </div>
       </div>
 
@@ -302,31 +309,41 @@ export function PaymentDetailPage() {
           </ol>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <label className="mb-2 block text-sm font-semibold uppercase text-slate-800" htmlFor="accounting-comment">
-            Accounting Comment (Optional)
-          </label>
-          <textarea
-            id="accounting-comment"
-            className="w-full resize-none rounded-lg border border-slate-300 p-3 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-            rows={3}
-            placeholder="Add a comment to be recorded in the audit log..."
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            maxLength={500}
-          />
-          <p className="mt-1 text-right text-xs text-slate-500">{comment.length}/500</p>
-        </section>
+        {!isPaid && (
+          <>
+            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <label className="mb-2 block text-sm font-semibold uppercase text-slate-800" htmlFor="accounting-comment">
+                Accounting Comment (Optional)
+              </label>
+              <textarea
+                id="accounting-comment"
+                className="w-full resize-none rounded-lg border border-slate-300 p-3 text-sm text-slate-900 outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="Add a comment to be recorded in the audit log..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                maxLength={500}
+              />
+              <p className="mt-1 text-right text-xs text-slate-500">{comment.length}/500</p>
+            </section>
 
-        <div className="flex justify-end gap-3 pb-6">
-          <button
-            type="button"
-            onClick={() => setShowConfirmDialog(true)}
-            className="rounded-lg bg-blue-700 px-6 py-2.5 font-medium text-white shadow-sm transition-colors hover:bg-blue-800"
-          >
-            Mark as Paid
-          </button>
-        </div>
+            <div className="flex justify-end gap-3 pb-6">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDialog(true)}
+                className="rounded-lg bg-blue-700 px-6 py-2.5 font-medium text-white shadow-sm transition-colors hover:bg-blue-800"
+              >
+                Mark as Paid
+              </button>
+            </div>
+          </>
+        )}
+
+        {isPaid && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 pb-6 text-sm text-emerald-800">
+            This payment has been completed. No further actions are available.
+          </div>
+        )}
       </div>
 
       {showConfirmDialog && (
