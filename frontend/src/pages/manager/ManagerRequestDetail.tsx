@@ -160,6 +160,55 @@ export function ManagerRequestDetail() {
       setComment('');
     } catch (error) {
       console.error('Failed to fetch request details', error);
+
+      // --- TEMPORARY MOCK: remove once backend 500 is resolved ---
+      console.warn('[MOCK] Using hardcoded fallback data for development');
+      setRequest({
+        paymentRequestId: Number(id),
+        requestNumber: `PRF-2026-${String(id).padStart(3, '0')}`,
+        applicantUserId: 1,
+        managerUserId: 2,
+        finalApproverUserId: null,
+        accountingUserId: null,
+        currentAssignedToUserId: 2,
+        applicationDate: '2026/6/5',
+        desiredPaymentDate: '2026/6/15',
+        totalAmount: '275500',
+        currencyId: 1,
+        paymentTypeId: 1,
+        paymentMethodId: 1,
+        purpose: 'Office supplies purchase for Q3 operations',
+        bankAccountInfo: 'KBZ Bank - 1234567890',
+        requestContent: 'Purchase of printer paper, toner cartridges, and stationery items for the department.',
+        hasReceipt: true,
+        statusId: PaymentStatus.MANAGER_REVIEWING,
+        submittedToManagerDate: '2026-06-05T09:00:00Z',
+        managerVerificationDate: null,
+        submittedToApproverDate: null,
+        approvalDate: null,
+        paymentCompletedDate: null,
+        createdDate: '2026-06-05T08:30:00Z',
+        modifiedDate: '2026-06-05T09:00:00Z',
+        isDeleted: false,
+        applicant: {
+          userId: 1,
+          fullName: 'Soe Htet Lin',
+          employeeNumber: 'EMP-001',
+          branch: 'Yangon',
+          department: 'Finance',
+        },
+        breakdownItems: [
+          { paymentBreakdownItemId: 1, paymentRequestId: Number(id), lineNumber: 1, itemDate: '2026/6/5', description: 'Printer paper (A4)', amount: '150000', quantity: '10', unitPrice: '15000', createdDate: '2026-06-05T08:30:00Z', modifiedDate: '2026-06-05T08:30:00Z' },
+          { paymentBreakdownItemId: 2, paymentRequestId: Number(id), lineNumber: 2, itemDate: '2026/6/5', description: 'Toner cartridge', amount: '125500', quantity: '1', unitPrice: '125500', createdDate: '2026-06-05T08:30:00Z', modifiedDate: '2026-06-05T08:30:00Z' },
+        ],
+        receiptFiles: [],
+        approvalLogs: [
+          { approvalLogId: '1', paymentRequestId: Number(id), actionTakenByUserId: 1, actionTypeId: 1, previousStatusId: 1, newStatusId: PaymentStatus.SUBMITTED_MANAGER, comment: null, ipAddress: '127.0.0.1', userAgent: 'mock', timestamp: '2026-06-05T09:00:00Z', actionTakenByUser: { userId: 1, fullName: 'Soe Htet Lin', employeeNumber: 'EMP-001', branch: 'Yangon' } },
+        ],
+      } as unknown as DetailedPaymentRequest);
+      setComment('');
+      // --- END MOCK ---
+
       const axiosError = error as AxiosErrorResponse;
       triggerToast('error', axiosError.response?.data?.message || t('dashboard.manager.detail_fetch_error'));
     } finally {
@@ -303,9 +352,8 @@ export function ManagerRequestDetail() {
               </span>
             </div>
             <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                STATUS_COLORS[request.statusId as PaymentStatus]
-              }`}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${STATUS_COLORS[request.statusId as PaymentStatus]
+                }`}
             >
               {STATUS_LABELS_EN[request.statusId as PaymentStatus]}
             </span>
@@ -330,7 +378,7 @@ export function ManagerRequestDetail() {
               <div>
                 <span className="text-slate-400 block mb-0.5">{t('dashboard.manager.department_branch')}</span>
                 <span className="text-slate-950 font-bold">
-                  {request.applicant?.branch || t('dashboard.manager.no_branch')} 
+                  {request.applicant?.branch || t('dashboard.manager.no_branch')}
                   {request.applicant?.department ? ` (${request.applicant.department})` : ''}
                 </span>
               </div>
@@ -464,9 +512,8 @@ export function ManagerRequestDetail() {
                     <span>{new Date(log.timestamp).toLocaleString('ja-JP')}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                      ACTION_BADGE_COLORS[log.actionTypeId as keyof typeof ACTION_BADGE_COLORS] || 'bg-slate-100 text-slate-800'
-                    }`}>
+                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_BADGE_COLORS[log.actionTypeId as keyof typeof ACTION_BADGE_COLORS] || 'bg-slate-100 text-slate-800'
+                      }`}>
                       {ACTION_LABELS_EN[log.actionTypeId as keyof typeof ACTION_LABELS_EN]}
                     </span>
                     {log.comment && (
@@ -483,57 +530,57 @@ export function ManagerRequestDetail() {
           {/* Verification Decision Form Area */}
           {(request.statusId === PaymentStatus.SUBMITTED_MANAGER ||
             request.statusId === PaymentStatus.MANAGER_REVIEWING) && (
-            <div className="pt-4 border-t border-slate-100 space-y-3">
-              <div className="relative">
-                <span className="text-xs font-bold text-slate-600 block mb-1">
-                  {t('dashboard.manager.comment_label')}
-                </span>
-                <textarea
-                  rows={3}
-                  value={comment}
-                  onChange={(e) => {
-                    setComment(e.target.value);
-                    if (validationError) setValidationError(null);
-                  }}
-                  placeholder={t('dashboard.manager.comment_placeholder')}
-                  className="w-full p-3 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-slate-700"
-                />
-                <div className="flex justify-between items-center mt-1">
-                  <span className="text-[10px] text-slate-400">{t('dashboard.manager.max_chars')}</span>
-                  <span className={`text-[10px] ${comment.length > 500 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
-                    {comment.length} / 500
+              <div className="pt-4 border-t border-slate-100 space-y-3">
+                <div className="relative">
+                  <span className="text-xs font-bold text-slate-600 block mb-1">
+                    {t('dashboard.manager.comment_label')}
                   </span>
+                  <textarea
+                    rows={3}
+                    value={comment}
+                    onChange={(e) => {
+                      setComment(e.target.value);
+                      if (validationError) setValidationError(null);
+                    }}
+                    placeholder={t('dashboard.manager.comment_placeholder')}
+                    className="w-full p-3 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-slate-700"
+                  />
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-[10px] text-slate-400">{t('dashboard.manager.max_chars')}</span>
+                    <span className={`text-[10px] ${comment.length > 500 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                      {comment.length} / 500
+                    </span>
+                  </div>
+                </div>
+
+                {validationError && (
+                  <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>{validationError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    onClick={handleReject}
+                    disabled={isActionSubmitting}
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 text-rose-700 bg-rose-50/30 hover:bg-rose-50 active:bg-rose-100 transition text-xs font-bold disabled:opacity-50"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {t('dashboard.manager.reject')}
+                  </button>
+
+                  <button
+                    onClick={handleApprove}
+                    disabled={isActionSubmitting}
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition text-xs font-bold shadow-md shadow-indigo-600/10 disabled:opacity-50"
+                  >
+                    <Check className="h-4 w-4" />
+                    {t('dashboard.manager.approve')}
+                  </button>
                 </div>
               </div>
-
-              {validationError && (
-                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{validationError}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <button
-                  onClick={handleReject}
-                  disabled={isActionSubmitting}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 text-rose-700 bg-rose-50/30 hover:bg-rose-50 active:bg-rose-100 transition text-xs font-bold disabled:opacity-50"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  {t('dashboard.manager.reject')}
-                </button>
-
-                <button
-                  onClick={handleApprove}
-                  disabled={isActionSubmitting}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition text-xs font-bold shadow-md shadow-indigo-600/10 disabled:opacity-50"
-                >
-                  <Check className="h-4 w-4" />
-                  {t('dashboard.manager.approve')}
-                </button>
-              </div>
-            </div>
-          )}
+            )}
         </div>
       </div>
     </DashboardLayout>
