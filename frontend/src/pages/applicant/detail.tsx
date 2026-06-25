@@ -30,7 +30,8 @@ interface DetailData {
   receipts?: Receipt[];
 }
 
-import { StatusBadge } from '../../components/shared';
+import { StatusBadge, ConfirmDialog } from '../../components/shared';
+import { useToast } from '../../hooks/useToast';
 
 const PaymentRequestDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,12 +43,8 @@ const PaymentRequestDetail: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<DetailData> | null>(null);
   const [replyComment, setReplyComment] = useState('');
-  const [toastMessage, setToastMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
-
-  const triggerToast = (type: 'success' | 'error', text: string) => {
-    setToastMessage({ type, text });
-    setTimeout(() => setToastMessage(null), 5000);
-  };
+  const { success: showSuccess, error: showError } = useToast();
+  const [receiptToDelete, setReceiptToDelete] = useState<string | null>(null);
   const [managers, setManagers] = useState<{ userId: number; fullName: string; department: string }[]>([]);
 
   useEffect(() => {
@@ -91,7 +88,7 @@ const PaymentRequestDetail: React.FC = () => {
       setSubmitting(true);
       setError(null);
       await submitToManager(id!);
-      triggerToast('success', 'Submitted to Manager successfully');
+      showSuccess('Submitted to Manager successfully');
       await loadData(false);
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { message?: string } } };
@@ -151,7 +148,7 @@ const PaymentRequestDetail: React.FC = () => {
 
       await updatePaymentRequest(id!, payload);
       setIsEditing(false);
-      triggerToast('success', 'Changes saved successfully');
+      showSuccess('Changes saved successfully');
       await loadData(false);
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { message?: string } } };
@@ -188,19 +185,7 @@ const PaymentRequestDetail: React.FC = () => {
   const isEditableStatus = [1, 5, 9].includes(data.status_id);
 
   return (
-    <div className="p-6 md:p-8 min-h-screen bg-slate-50 font-sans relative">
-      {toastMessage && (
-        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-5 duration-300">
-          <div className={`bg-white border-l-4 ${toastMessage.type === 'success' ? 'border-emerald-500' : 'border-red-500'} shadow-lg rounded-r-lg p-4 max-w-sm flex items-start gap-3`}>
-            {toastMessage.type === 'success' ? (
-              <Send className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-            ) : (
-              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-            )}
-            <p className="text-sm font-medium text-slate-800">{toastMessage.text}</p>
-          </div>
-        </div>
-      )}
+    <div className="min-h-screen font-sans relative">
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Header */}
@@ -580,7 +565,7 @@ const PaymentRequestDetail: React.FC = () => {
                             try {
                               await downloadReceipt(data.id, r.id, r.file_name);
                             } catch {
-                              triggerToast('error', 'Failed to download receipt');
+                                showError('Failed to download receipt');
                             }
                           }}
                           className="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded-full hover:bg-slate-200"
@@ -590,12 +575,7 @@ const PaymentRequestDetail: React.FC = () => {
                         </button>
                         {isEditing && EDITABLE_STATUSES.includes(data.status_id) && (
                           <button
-                            onClick={async () => {
-                              if (window.confirm('Are you sure you want to delete this receipt?')) {
-                                await deleteReceipt(data.id, r.id);
-                                loadData(false);
-                              }
-                            }}
+                            onClick={() => setReceiptToDelete(r.id)}
                             className="text-slate-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-slate-200"
                             title="Delete receipt"
                           >
@@ -620,6 +600,22 @@ const PaymentRequestDetail: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      <ConfirmDialog
+        isOpen={!!receiptToDelete}
+        onClose={() => setReceiptToDelete(null)}
+        onConfirm={async () => {
+          if (receiptToDelete) {
+            await deleteReceipt(data.id, receiptToDelete);
+            setReceiptToDelete(null);
+            loadData(false);
+          }
+        }}
+        title="Delete Receipt"
+        message="Are you sure you want to delete this receipt? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 };

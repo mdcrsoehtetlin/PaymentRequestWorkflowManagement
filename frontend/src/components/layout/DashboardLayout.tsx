@@ -4,6 +4,7 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 import { useAuth } from '../../hooks/useAuth';
 import { useWebSocket } from '../../hooks/useWebSocket';
+import { ToastContainer } from '../shared/Toast';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,12 +13,13 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user } = useAuth();
-  const { notifications, unreadCount, markAsRead } = useWebSocket(user?.sub, user?.role);
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useWebSocket(user?.sub, user?.role);
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
+      <ToastContainer />
       {/* Sidebar (fixed on desktop, overlay on mobile) */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -32,6 +34,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           notificationCount={unreadCount}
           notifications={notifications}
           onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          userRole={user.role as string}
         />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full">

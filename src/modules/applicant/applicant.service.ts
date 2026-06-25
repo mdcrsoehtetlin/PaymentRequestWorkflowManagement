@@ -22,7 +22,7 @@ import {
   FileUploadService,
   UploadedFile,
 } from '../shared/services/file-upload.service';
-import { ApplicantGateway } from './applicant.gateway';
+import { WebsocketGateway } from '../shared/websocket.gateway';
 
 /**
  * Service handling applicant payment request logic
@@ -41,7 +41,7 @@ export class ApplicantService {
     private readonly dataSource: DataSource,
     private readonly requestNumberService: RequestNumberService,
     private readonly fileUploadService: FileUploadService,
-    private readonly applicantGateway: ApplicantGateway,
+    private readonly websocketGateway: WebsocketGateway,
   ) {}
 
   async getActiveManagers(): Promise<
@@ -374,15 +374,19 @@ export class ApplicantService {
 
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
-      this.applicantGateway.notifyStatusUpdate(String(applicantId), {
-        paymentRequestId: Number(savedRequest.id),
-        requestNumber: savedRequest.requestNumber,
-        previousStatusId: request.statusId,
-        newStatusId: 2,
-        actionByUserId: Number(applicantId),
-        actionByUserName: 'Applicant',
-        timestamp: log.timestamp.toISOString(),
-      });
+      this.websocketGateway.sendPersonalNotification(
+        applicantId,
+        'request:status-changed',
+        {
+          paymentRequestId: Number(savedRequest.id),
+          requestNumber: savedRequest.requestNumber,
+          previousStatusId: request.statusId,
+          newStatusId: 2,
+          actionByUserId: Number(applicantId),
+          actionByUserName: 'Applicant',
+          timestamp: log.timestamp.toISOString(),
+        },
+      );
 
       return savedRequest;
     });
@@ -539,15 +543,19 @@ export class ApplicantService {
 
       await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
 
-      this.applicantGateway.notifyStatusUpdate(String(applicantId), {
-        paymentRequestId: Number(savedRequest.id),
-        requestNumber: savedRequest.requestNumber,
-        previousStatusId: 4,
-        newStatusId: 6,
-        actionByUserId: Number(applicantId),
-        actionByUserName: 'Applicant',
-        timestamp: log.timestamp.toISOString(),
-      });
+      this.websocketGateway.sendPersonalNotification(
+        applicantId,
+        'request:status-changed',
+        {
+          paymentRequestId: Number(savedRequest.id),
+          requestNumber: savedRequest.requestNumber,
+          previousStatusId: 4,
+          newStatusId: 6,
+          actionByUserId: Number(applicantId),
+          actionByUserName: 'Applicant',
+          timestamp: log.timestamp.toISOString(),
+        },
+      );
 
       return savedRequest;
     });

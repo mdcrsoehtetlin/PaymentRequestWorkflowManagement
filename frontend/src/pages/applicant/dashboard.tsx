@@ -1,19 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileEdit, Send, XCircle, CheckCircle, Plus } from 'lucide-react';
 import { useWebSocket } from '../../hooks/useWebSocket';
-import type { StatusUpdatePayload } from '../../hooks/useWebSocket';
 import { usePaymentRequests } from './hooks/use-payment-requests';
-import { StatusBadge, SearchFilterBar, DataTable } from '../../components/shared';
+import { StatusBadge, SearchFilterBar, DataTable, DashboardKpiGrid, KpiCard, ConfirmDialog } from '../../components/shared';
 import type { FilterField } from '../../components/shared/SearchFilterBar';
 import type { Column } from '../../components/shared/DataTable';
 import type { PaymentRequestResponseDto } from './services/api';
 
-const formatCurrency = (amount: string, currencyId: number) => {
-  // Mock currency mapping
-  const symbol = currencyId === 1 ? '$' : currencyId === 2 ? '€' : '¥';
-  return `${symbol}${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-};
+import { formatDate, formatCurrency } from '../../utils/format';
+import { CURRENCY_CODES } from '../../types';
 
 const filterFields: FilterField[] = [
   { key: 'search', label: 'Search', type: 'text', placeholder: 'Request number, applicant, purpose' },
@@ -44,8 +40,7 @@ const ApplicantDashboard: React.FC = () => {
   const [limit, setLimit] = useState(10);
   
   const { notifications } = useWebSocket();
-  const lastUpdate = notifications[0] as StatusUpdatePayload | undefined;
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const lastUpdate = notifications[0];
 
   // Filter state
   const [filters, setFilters] = useState<Record<string, string | number>>({});
@@ -70,34 +65,37 @@ const ApplicantDashboard: React.FC = () => {
       key: 'request_number',
       header: 'Request No.',
       render: (_, row) => (
-        <span className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors">
+        <span className="text-blue-700 font-medium hover:text-blue-900 hover:underline cursor-pointer">
           {row.request_number}
         </span>
       ),
     },
     {
       key: 'application_date',
-      header: 'App Date',
-      render: (_, row) => new Date(row.application_date).toLocaleDateString(),
+      header: 'Application Date',
+      render: (_, row) => <span className="text-sm text-slate-700">{formatDate(row.application_date)}</span>,
     },
     {
-      key: 'created_at',
-      header: 'Created Date',
-      render: (_, row) => new Date(row.created_at).toLocaleDateString(),
+      key: 'desired_payment_date',
+      header: 'Desired Date',
+      render: (_, row) => <span className="text-sm text-slate-700">{formatDate(row.desired_payment_date)}</span>,
     },
     {
       key: 'total_amount',
       header: 'Amount',
-      render: (_, row) => (
-        <span className="font-medium text-slate-700">
-          {formatCurrency(row.total_amount, row.currency_id)}
-        </span>
-      ),
+      render: (_, row) => {
+        const currencyCode = CURRENCY_CODES[row.currency_id as keyof typeof CURRENCY_CODES] || 'MMK';
+        return (
+          <span className="font-medium text-slate-900">
+            {formatCurrency(row.total_amount, currencyCode)}
+          </span>
+        );
+      },
     },
     {
       key: 'status',
       header: 'Status',
-      render: (_, row) => <StatusBadge statusId={row.status_id} />,
+      render: (_, row) => <StatusBadge statusId={row.status_id} size="sm" />,
     },
     {
       key: 'action',
@@ -107,14 +105,14 @@ const ApplicantDashboard: React.FC = () => {
           {row.status_id === 1 && (
             <button 
               onClick={() => setDeleteId(row.id)}
-              className="text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
+              className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >
               Delete
             </button>
           )}
           <button 
             onClick={() => navigate(`/applicant/request/${row.id}`)}
-            className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+            className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             View Details
           </button>
@@ -123,16 +121,7 @@ const ApplicantDashboard: React.FC = () => {
     },
   ], [navigate, setDeleteId]);
 
-  useEffect(() => {
-    if (lastUpdate) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setToastMessage(`Request ${lastUpdate.requestNumber || lastUpdate.paymentRequestId} status updated!`);
-      const timer = setTimeout(() => {
-        setToastMessage(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [lastUpdate]);
+
 
   const kpis = data?.kpis || {
     total_requests: 0,
@@ -142,26 +131,12 @@ const ApplicantDashboard: React.FC = () => {
   };
 
   return (
-    <div className="p-6 md:p-8 min-h-screen bg-slate-50 font-sans relative">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-5 duration-300">
-          <div className="bg-white border-l-4 border-blue-500 shadow-lg rounded-r-lg p-4 max-w-sm flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-            <p className="text-sm font-medium text-slate-800">{toastMessage}</p>
-            <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-slate-600 ml-auto">
-              <XCircle className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen font-sans relative">      <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Applicant Dashboard</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Applicant Dashboard</h1>
             <p className="text-slate-500 mt-1">Manage and track your payment requests</p>
           </div>
           <button 
@@ -173,44 +148,12 @@ const ApplicantDashboard: React.FC = () => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-slate-100 rounded-xl text-slate-600">
-              <FileEdit className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Total Requests</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.total_requests}</h3>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
-              <Send className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Pending Review</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.pending_review}</h3>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
-              <CheckCircle className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Approved</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.approved}</h3>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-red-50 rounded-xl text-red-600">
-              <XCircle className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Rejected</p>
-              <h3 className="text-2xl font-bold text-slate-900">{kpis.rejected}</h3>
-            </div>
-          </div>
-        </div>
+        <DashboardKpiGrid>
+          <KpiCard label="Total Requests" count={kpis.total_requests} icon={<FileEdit />} colorClasses="bg-slate-100 text-slate-600" />
+          <KpiCard label="Pending Review" count={kpis.pending_review} icon={<Send />} colorClasses="bg-blue-50 text-blue-600" />
+          <KpiCard label="Approved" count={kpis.approved} icon={<CheckCircle />} colorClasses="bg-emerald-50 text-emerald-600" />
+          <KpiCard label="Rejected" count={kpis.rejected} icon={<XCircle />} colorClasses="bg-red-50 text-red-600" />
+        </DashboardKpiGrid>
 
         {/* Search & Filter Bar */}
         <SearchFilterBar
@@ -234,7 +177,7 @@ const ApplicantDashboard: React.FC = () => {
         />
 
         {/* Data Table */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-[400px]">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[400px]">
           
           <div className="flex-1 p-0 flex flex-col">
             <DataTable
@@ -264,28 +207,15 @@ const ApplicantDashboard: React.FC = () => {
       </div>
 
       {/* Delete Modal */}
-      {deleteId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Draft</h3>
-            <p className="text-sm text-slate-600 mb-6">Are you sure you want to delete this draft? This action cannot be undone.</p>
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setDeleteId(null)}
-                className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-white font-medium rounded-lg shadow-sm transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Delete Draft"
+        message="Are you sure you want to delete this draft? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 };

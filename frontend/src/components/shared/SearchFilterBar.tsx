@@ -66,7 +66,7 @@ export function SearchFilterBar({
     }
   };
 
-  const inputClasses = 'w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all duration-200 disabled:bg-slate-100 disabled:cursor-not-allowed';
+  const inputClasses = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 disabled:bg-slate-100 disabled:cursor-not-allowed';
 
   const hasActiveFilters = Object.values(localValues).some((val) => val !== '' && val !== undefined && val !== null);
 
@@ -120,7 +120,7 @@ export function SearchFilterBar({
               <button
                 type="button"
                 onClick={handleSearch}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 whitespace-nowrap transition-all duration-200"
               >
                 <Search className="w-4 h-4" />
                 Search
@@ -131,7 +131,7 @@ export function SearchFilterBar({
                 type="button"
                 onClick={handleClear}
                 disabled={!hasActiveFilters}
-                className={`rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 transition-all duration-200 ${
+                className={`rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
                   hasActiveFilters 
                     ? 'text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer' 
                     : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
