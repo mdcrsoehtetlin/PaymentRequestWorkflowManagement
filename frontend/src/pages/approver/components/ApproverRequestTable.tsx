@@ -36,7 +36,7 @@ export function ApproverRequestTable({
     {
       key: 'requestNumber',
       header: 'Request No.',
-      sortable: true,
+      sortable: false,
       width: '13%',
       render: (value: unknown) => (
         <span className="text-blue-700 font-medium hover:text-blue-900 hover:underline cursor-pointer">

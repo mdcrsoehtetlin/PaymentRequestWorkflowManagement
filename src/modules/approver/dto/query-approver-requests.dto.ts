@@ -59,11 +59,16 @@ import {
   UserSummary,
 } from '../../shared/types';
 
+export interface ApproverUserSummary extends UserSummary {
+  department: string;
+  email: string;
+}
+
 export interface ApproverRequestListItem {
   paymentRequestId: number;
   requestNumber: string;
-  applicant: UserSummary;
-  manager: UserSummary | null;
+  applicant: ApproverUserSummary;
+  manager: ApproverUserSummary | null;
   applicationDate: string;
   desiredPaymentDate: string;
   totalAmount: string;
@@ -76,6 +81,9 @@ export interface ApproverRequestListItem {
 }
 
 export interface ApproverRequestDetailView extends PaymentRequestDetailView {
+  applicant: ApproverUserSummary;
+  manager: ApproverUserSummary | null;
+  finalApprover: ApproverUserSummary | null;
   canApprove: boolean;
   canReject: boolean;
   latestManagerComment: string | null;
