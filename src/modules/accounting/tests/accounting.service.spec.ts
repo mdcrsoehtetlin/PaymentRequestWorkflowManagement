@@ -440,6 +440,85 @@ describe('AccountingService', () => {
       expect(result.receiptFiles).toHaveLength(1);
       expect(result.receiptFiles[0].fileName).toBe('receipt.pdf');
     });
+
+    it('should re-throw when queryBuilder throws an error', async () => {
+      const qb = createMockQueryBuilder();
+      qb.getOne.mockRejectedValue(new Error('DB connection lost'));
+      paymentRequestRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await expect(service.findOneForAccounting(100)).rejects.toThrow(
+        'DB connection lost',
+      );
+    });
+
+    it('should map approval logs to timeline', async () => {
+      const qb = createMockQueryBuilder();
+      const mockRequest = {
+        id: 100,
+        requestNumber: 'PR-2026-001',
+        statusId: 8,
+        hasReceipt: false,
+        applicantUserId: 1,
+        applicant: {
+          fullName: 'John',
+          employeeNumber: 'E1',
+          branch: 'Y',
+          department: null,
+          email: 't@t.com',
+        },
+        totalAmount: '1000',
+        currencyId: 1,
+        paymentTypeId: 1,
+        paymentMethodId: 1,
+        purpose: 'p',
+        requestContent: 'r',
+        applicationDate: '2026-06-01',
+        desiredPaymentDate: '2026-06-10',
+        breakdowns: [],
+        receipts: [],
+        approvalLogs: [
+          {
+            approvalLogId: 'log-1',
+            actionTypeId: 3,
+            previousStatusId: null,
+            newStatusId: 2,
+            comment: 'Submitted by applicant',
+            timestamp: new Date('2026-06-01T09:00:00Z'),
+            action_taken_by_user: {
+              userId: 1,
+              fullName: 'John Doe',
+              employeeNumber: 'E1',
+            },
+          },
+          {
+            approvalLogId: 'log-2',
+            actionTypeId: 5,
+            previousStatusId: 3,
+            newStatusId: 4,
+            comment: null,
+            timestamp: new Date('2026-06-02T10:00:00Z'),
+            action_taken_by_user: {
+              userId: 5,
+              fullName: 'Jane Manager',
+              employeeNumber: 'E5',
+            },
+          },
+        ],
+      };
+      qb.getOne.mockResolvedValue(mockRequest);
+      paymentRequestRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.findOneForAccounting(100);
+
+      expect(result.approvalTimeline).toHaveLength(2);
+      expect(result.approvalTimeline[0].id).toBe('log-1');
+      expect(result.approvalTimeline[0].actionTypeId).toBe(3);
+      expect(result.approvalTimeline[0].comment).toBe('Submitted by applicant');
+      expect(result.approvalTimeline[0].user.fullName).toBe('John Doe');
+      expect(result.approvalTimeline[1].id).toBe('log-2');
+      expect(result.approvalTimeline[1].comment).toBeNull();
+      expect(result.approvalTimeline[1].user.fullName).toBe('Jane Manager');
+    });
   });
 
   describe('completePayment', () => {
