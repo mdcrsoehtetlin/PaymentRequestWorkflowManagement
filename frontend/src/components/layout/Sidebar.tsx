@@ -1,6 +1,6 @@
 import { LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 interface SidebarProps {
@@ -31,10 +31,9 @@ const roleMenuConfig: Record<string, { title: string; dashboardPath: string; men
     title: 'Admin Console',
     dashboardPath: '/admin',
     menuItems: [
-      { label: 'Dashboard', path: '/admin' },
-      { label: 'User Management', path: '/admin/users' },
-      { label: 'Master Data', path: '/admin/master-data' },
-      { label: 'Audit Log', path: '/admin/audit-log' },
+      { label: 'ユーザー管理', path: '/admin/users' },
+      { label: 'マスターデータ', path: '/admin/master-data' },
+      { label: '監査ログ', path: '/admin/audit-logs' },
     ],
   },
   APPLICANT: {
@@ -50,7 +49,6 @@ const roleMenuConfig: Record<string, { title: string; dashboardPath: string; men
 export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const roleConfig = roleMenuConfig[currentRole] ?? roleMenuConfig.APPLICANT;
   const title = roleConfig.title;
@@ -77,31 +75,35 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
 
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             {roleConfig.menuItems.length === 0 ? (
-              <a
-                href={dashboardPath}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate(dashboardPath);
-                  onClose();
-                }}
-                className="block px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-800 text-white transition-colors"
+              <NavLink
+                to={dashboardPath}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-blue-800 text-white'
+                      : 'text-blue-100 hover:bg-blue-800 hover:text-white'
+                  }`
+                }
               >
                 {t('sidebar.dashboard')}
-              </a>
+              </NavLink>
             ) : (
               roleConfig.menuItems.map((item) => (
-                <a
+                <NavLink
                   key={item.label}
-                  href={item.path}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate(item.path);
-                    onClose();
-                  }}
-                  className="block px-4 py-2.5 rounded-lg text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+                  to={item.path}
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-blue-800 text-white'
+                        : 'text-blue-100 hover:bg-blue-800 hover:text-white'
+                    }`
+                  }
                 >
                   {item.label}
-                </a>
+                </NavLink>
               ))
             )}
           </nav>
