@@ -237,7 +237,7 @@ describe('ApplicantService', () => {
       await service.createDraft(1, dto);
 
       expect(mockCacheManager.del).toHaveBeenCalledWith(
-        'applicant_dashboard_1_1_10',
+        'applicant_dashboard_1_1_10_________',
       );
     });
   });

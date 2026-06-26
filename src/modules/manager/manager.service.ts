@@ -8,19 +8,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
 import { PaymentRequest } from '../shared/entities/payment-request.entity';
+import { ReceiptFile } from '../shared/entities/receipt-file.entity';
 import { AuditLogService } from '../shared/services/audit-log.service';
 import { WebsocketGateway } from '../shared/websocket.gateway';
 import { QueryRequestsDto } from './dto/query-requests.dto';
 import { ApproveRequestDto } from './dto/approve-request.dto';
 import { RejectRequestDto } from './dto/reject-request.dto';
 import { StartReviewDto } from './dto/start-review.dto';
-import {
-  ApprovalActionType,
-  PaymentStatus,
-  RoleCode,
-  UserRole,
-} from '../shared/types';
-import { User } from '../shared/entities/user.entity';
+import { ApprovalActionType, PaymentStatus, RoleCode } from '../shared/types';
 
 @Injectable()
 export class ManagerService {
@@ -29,6 +24,8 @@ export class ManagerService {
   constructor(
     @InjectRepository(PaymentRequest)
     private readonly paymentRequestRepository: Repository<PaymentRequest>,
+    @InjectRepository(ReceiptFile)
+    private readonly receiptFileRepository: Repository<ReceiptFile>,
     private readonly dataSource: DataSource,
     private readonly auditLogService: AuditLogService,
     private readonly websocketGateway: WebsocketGateway,
@@ -55,11 +52,18 @@ export class ManagerService {
           'paymentRequest',
         ]),
       ),
-      receiptFiles: (receipts ?? []).map((file) =>
-        this.omitCircularRefs(file as unknown as Record<string, unknown>, [
-          'paymentRequest',
-        ]),
-      ),
+      receiptFiles: (receipts ?? []).map((file) => ({
+        receiptFileId: file.id,
+        paymentRequestId: file.paymentRequestId,
+        originalFileName: file.originalFileName,
+        storedFileName: file.storedFileName,
+        fileStoragePath: file.storage_key,
+        fileSize: file.file_size != null ? String(file.file_size) : null,
+        mimeType: file.mime_type,
+        uploadedByUserId: file.uploadedByUserId,
+        uploadedDate: file.uploadedDate,
+        isDeleted: file.isDeleted,
+      })),
       approvalLogs: (approvalLogs ?? []).map((log) => ({
         ...this.omitCircularRefs(log as any, [
           'payment_request',
@@ -87,7 +91,10 @@ export class ManagerService {
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.applicant', 'applicant')
       .where('request.managerUserId = :managerId', { managerId })
-      .andWhere('request.isDeleted = false');
+      .andWhere('request.isDeleted = false')
+      .andWhere('request.statusId != :draftStatus', {
+        draftStatus: PaymentStatus.DRAFT,
+      });
 
     if (statusId) {
       qb.andWhere('request.statusId = :statusId', { statusId });
@@ -114,6 +121,24 @@ export class ManagerService {
       ...r,
       paymentRequestId: r.id,
     }));
+  }
+
+  async downloadReceipt(
+    managerId: number,
+    requestId: number,
+    receiptId: number,
+  ): Promise<ReceiptFile> {
+    const request = await this.paymentRequestRepository.findOne({
+      where: { id: requestId, managerUserId: managerId, isDeleted: false },
+    });
+    if (!request) throw new NotFoundException('指定された申請が見つかりません');
+
+    const receipt = await this.receiptFileRepository.findOne({
+      where: { id: receiptId, paymentRequestId: requestId, isDeleted: false },
+    });
+    if (!receipt) throw new NotFoundException('領収書が見つかりません');
+
+    return receipt;
   }
 
   async getRequestDetails(id: number, managerId: number) {
@@ -296,7 +321,6 @@ export class ManagerService {
     dto: ApproveRequestDto,
     ipAddress: string,
     userAgent: string,
-    managerName: string,
   ) {
     this.logger.log(`Verifying request ${id} by manager ${managerId}`);
 
@@ -308,7 +332,7 @@ export class ManagerService {
     }
 
     try {
-      const txResult = await this.dataSource.transaction(
+      await this.dataSource.transaction(
         async (entityManager: EntityManager) => {
           const request = await entityManager.findOne(PaymentRequest, {
             where: {
@@ -343,39 +367,14 @@ export class ManagerService {
           }
 
           const previousStatus = request.statusId;
-          let nextAssigneeId = request.finalApproverUserId;
-
-          if (!nextAssigneeId) {
-            const activeApprover = await entityManager.findOne(User, {
-              where: {
-                roleId: UserRole.APPROVER,
-                isActive: true,
-              },
-              order: { userId: 'ASC' },
-            });
-
-            if (!activeApprover) {
-              throw new BadRequestException({
-                errorCode: 'ERR-MGR-NO-APPROVER',
-                message:
-                  '利用可能な承認者がいません。管理者に連絡してください。',
-              });
-            }
-
-            nextAssigneeId = activeApprover.userId;
-            this.logger.log(
-              `Auto-assigned approver userId=${nextAssigneeId} for request ${id}`,
-            );
-          }
 
           await entityManager.update(
             PaymentRequest,
             { id },
             {
-              statusId: PaymentStatus.SUBMITTED_APPROVER,
-              submittedToApproverDate: new Date(),
-              finalApproverUserId: nextAssigneeId,
-              currentAssignedToUserId: nextAssigneeId,
+              statusId: PaymentStatus.MANAGER_VERIFIED,
+              managerVerificationDate: new Date(),
+              currentAssignedToUserId: managerId,
               modifiedDate: new Date(),
             },
           );
@@ -385,46 +384,18 @@ export class ManagerService {
             actionTakenByUserId: managerId,
             actionTypeId: ApprovalActionType.MGR_VERIFIED,
             previousStatusId: previousStatus,
-            newStatusId: PaymentStatus.SUBMITTED_APPROVER,
+            newStatusId: PaymentStatus.MANAGER_VERIFIED,
             comment: dto.comment || '承認されました。',
             ipAddress,
             userAgent,
           });
-
-          return {
-            previousStatus,
-            requestNumber: request.requestNumber,
-            nextAssigneeId,
-          };
         },
       );
 
       try {
-        this.websocketGateway.sendPersonalNotification(
-          txResult.nextAssigneeId,
-          'statusUpdate',
-          {
-            event: 'statusUpdate',
-            paymentRequestId: id,
-            requestNumber: txResult.requestNumber,
-            previousStatusId: txResult.previousStatus,
-            newStatusId: PaymentStatus.SUBMITTED_APPROVER,
-            actionByUserId: managerId,
-            actionByName: managerName,
-            comment: dto.comment || null,
-            timestamp: new Date().toISOString(),
-          },
-        );
-
         this.websocketGateway.sendStatusUpdate(RoleCode.MANAGER, {
           event: 'queueChange',
           action: 'VERIFIED',
-          requestId: id,
-        });
-
-        this.websocketGateway.sendStatusUpdate(RoleCode.APPROVER, {
-          event: 'queueChange',
-          action: 'NEW_REQUEST',
           requestId: id,
         });
       } catch (wsErr) {
@@ -436,7 +407,7 @@ export class ManagerService {
 
       return {
         success: true,
-        message: '申請を承認し、承認者に転送しました。',
+        message: '申請を確認済みにしました。',
       };
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));

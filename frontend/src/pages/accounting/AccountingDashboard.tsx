@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, CalendarClock, CheckCircle, Clock, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, CalendarClock, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { KpiCard } from '../../components/shared/KpiCard';
+import { SearchFilterBar } from '../../components/shared/SearchFilterBar';
+import type { FilterField } from '../../components/shared/SearchFilterBar';
 import { useAuth } from '../../hooks/useAuth';
 
 import { AccountingQueueTable } from './components/AccountingQueueTable';
@@ -12,31 +14,59 @@ import { useAccountingQueue, type KpiFilter } from './hooks/useAccountingQueue';
 import { useAccountingWebSockets } from './hooks/useAccountingWebSockets';
 import { getSummaryCounts, type SummaryCounts } from './services/accounting.service';
 
+const accountingFilterFields: FilterField[] = [
+  {
+    key: 'search',
+    label: 'Search',
+    type: 'text',
+    placeholder: 'Request #, applicant name...',
+  },
+  {
+    key: 'branch',
+    label: 'Branch',
+    type: 'select',
+    options: [
+      { value: '', label: 'All Branches' },
+      { value: 'Yangon', label: 'Yangon' },
+      { value: 'Mandalay', label: 'Mandalay' },
+    ],
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    type: 'select',
+    options: [
+      { value: '', label: 'All Statuses' },
+      { value: '8', label: 'Approved' },
+      { value: '10', label: 'Paid' },
+    ],
+  },
+  {
+    key: 'desiredDate',
+    label: 'Desired Date',
+    type: 'date',
+  },
+];
+
 export function AccountingDashboard() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [filters, setFilters] = useState<Record<string, string | number>>({});
+
   const {
     data,
     total,
     page,
     pageSize,
-    searchInput,
-    branchInput,
-    desiredDateInput,
     kpiFilter,
     loading,
     error,
     setPage,
     setPageSize,
-    setSearchInput,
-    setBranchInput,
-    setDesiredDateInput,
     setKpiFilter,
-    submitSearch,
-    clearFilters,
     refreshQueue,
-  } = useAccountingQueue();
+  } = useAccountingQueue(filters);
 
   useAccountingWebSockets(
     user?.sub,
@@ -67,6 +97,7 @@ export function AccountingDashboard() {
 
   const handleKpiClick = (filter: KpiFilter) => {
     setKpiFilter((prev) => (prev === filter ? null : filter));
+    setFilters({});
     setPage(1);
   };
 
@@ -112,6 +143,11 @@ export function AccountingDashboard() {
     },
   ];
 
+  const handleClearFilters = () => {
+    setFilters({});
+    setPage(1);
+  };
+
   return (
     <DashboardLayout>
       <div className="mb-6 flex items-center justify-between">
@@ -146,56 +182,24 @@ export function AccountingDashboard() {
         </div>
       )}
 
-      <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="min-w-[180px] flex-1">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Search</label>
-            <input
-              type="text"
-              placeholder="Request #, applicant name..."
-              className="w-full rounded-md border border-slate-300 p-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
-            />
-          </div>
-          <div className="min-w-[130px]">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Branch</label>
-            <select
-              className="w-full rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              value={branchInput}
-              onChange={(e) => setBranchInput(e.target.value)}
-            >
-              <option value="">All Branches</option>
-              <option value="Yangon">Yangon</option>
-              <option value="Mandalay">Mandalay</option>
-            </select>
-          </div>
-          <div className="min-w-[130px]">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Desired Date</label>
-            <input
-              type="date"
-              className="w-full rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              value={desiredDateInput}
-              onChange={(e) => setDesiredDateInput(e.target.value)}
-            />
-          </div>
-          <button
-            onClick={submitSearch}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            <Search className="h-4 w-4" />
-            Search
-          </button>
-          <button
-            onClick={clearFilters}
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Clear Filters
-          </button>
-        </div>
-      </div>
+      <SearchFilterBar
+        fields={accountingFilterFields}
+        values={filters}
+        onApply={(newFilters) => {
+          const formattedFilters = { ...newFilters };
+          if (formattedFilters.status) {
+            formattedFilters.status = Number(formattedFilters.status);
+          }
+          Object.keys(formattedFilters).forEach(key => {
+            if (formattedFilters[key] === '' || formattedFilters[key] === undefined || formattedFilters[key] === null) {
+              delete formattedFilters[key];
+            }
+          });
+          setFilters(formattedFilters);
+          setPage(1);
+        }}
+        onClear={handleClearFilters}
+      />
 
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">

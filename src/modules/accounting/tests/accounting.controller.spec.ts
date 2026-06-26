@@ -56,6 +56,7 @@ describe('AccountingController', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
       );
       expect(result).toEqual(expected);
     });
@@ -82,6 +83,7 @@ describe('AccountingController', () => {
         'Yangon',
         '2026-06-15',
         'total',
+        undefined,
       );
     });
   });
