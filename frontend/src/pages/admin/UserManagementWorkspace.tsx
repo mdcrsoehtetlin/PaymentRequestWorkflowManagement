@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Edit2, RefreshCw } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { SearchFilterBar, type FilterField } from '../../components/shared/SearchFilterBar';
@@ -32,6 +33,7 @@ type Filters = Record<string, string>;
  * Displays a paginated grid of system users with search, filter, and actions.
  */
 export function UserManagementWorkspace() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
@@ -93,30 +95,30 @@ export function UserManagementWorkspace() {
   }, [filters, pagination.page, pagination.pageSize]);
 
   const filterFields: FilterField[] = [
-    { key: 'keyword', label: 'キーワード', type: 'text', placeholder: '社員番号または氏名で検索' },
+    { key: 'keyword', label: t('admin.user_management.filters.keyword'), type: 'text', placeholder: t('admin.user_management.filters.keyword_placeholder') },
     {
       key: 'roleId',
-      label: '役割',
+      label: t('admin.user_management.filters.role'),
       type: 'select',
-      placeholder: 'すべて',
+      placeholder: t('common.all'),
       options: [
-        { value: '', label: 'すべて' },
-        { value: '1', label: '申請者' },
-        { value: '2', label: 'マネージャー' },
-        { value: '3', label: '承認者' },
-        { value: '4', label: '経理' },
-        { value: '5', label: '管理者' },
+        { value: '', label: t('common.all') },
+        { value: '1', label: t('admin.user_management.role.applicant') },
+        { value: '2', label: t('admin.user_management.role.manager') },
+        { value: '3', label: t('admin.user_management.role.approver') },
+        { value: '4', label: t('admin.user_management.role.accounting') },
+        { value: '5', label: t('admin.user_management.role.admin') },
       ],
     },
     {
       key: 'isActive',
-      label: 'ステータス',
+      label: t('admin.user_management.filters.status'),
       type: 'select',
-      placeholder: 'すべて',
+      placeholder: t('common.all'),
       options: [
-        { value: '', label: 'すべて' },
-        { value: 'true', label: '有効' },
-        { value: 'false', label: '無効' },
+        { value: '', label: t('common.all') },
+        { value: 'true', label: t('admin.user_management.status.active') },
+        { value: 'false', label: t('admin.user_management.status.inactive') },
       ],
     },
   ];
@@ -218,28 +220,22 @@ export function UserManagementWorkspace() {
   }, [users, sorting]);
 
   const columns: Column<UserRecord>[] = [
-    { key: 'employeeNumber', header: '社員番号', sortable: true },
-    { key: 'fullName', header: '氏名', sortable: true },
-    { key: 'email', header: 'メールアドレス', sortable: true },
-    { key: 'branch', header: '拠点', sortable: true },
+    { key: 'employeeNumber', header: t('admin.user_management.columns.employee_number'), sortable: true },
+    { key: 'fullName', header: t('admin.user_management.columns.full_name'), sortable: true },
+    { key: 'email', header: t('admin.user_management.columns.email'), sortable: true },
+    { key: 'branch', header: t('admin.user_management.columns.branch'), sortable: true },
     {
       key: 'roleId',
-      header: '役割',
+      header: t('admin.user_management.columns.role'),
       sortable: true,
       render: (_val, row) => {
-        const roleMap: Record<number, string> = {
-          1: '申請者',
-          2: 'マネージャー',
-          3: '承認者',
-          4: '経理',
-          5: '管理者',
-        };
-        return roleMap[row.roleId] ?? '不明';
+        const roleKey = { 1: 'applicant', 2: 'manager', 3: 'approver', 4: 'accounting', 5: 'admin' }[row.roleId];
+        return roleKey ? t(`admin.user_management.role.${roleKey}`) : t('admin.user_management.role.unknown');
       },
     },
     {
       key: 'isActive',
-      header: 'ステータス',
+      header: t('admin.user_management.columns.status'),
       sortable: true,
       render: (_val, row) => (
         <button
@@ -254,13 +250,13 @@ export function UserManagementWorkspace() {
               : 'bg-slate-100 text-slate-500 border-slate-200'
           } ${row.userId === 1 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-80'}`}
         >
-          {row.isActive ? '有効' : '無効'}
+          {row.isActive ? t('admin.user_management.status.active') : t('admin.user_management.status.inactive')}
         </button>
       ),
     },
     {
       key: 'actions',
-      header: '操作',
+      header: t('admin.user_management.columns.actions'),
       render: (_val, row) => (
         <div className="flex items-center gap-1">
           <button
@@ -269,7 +265,7 @@ export function UserManagementWorkspace() {
               handleEdit(row);
             }}
             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-            title="編集"
+            title={t('admin.user_management.actions.edit')}
           >
             <Edit2 className="w-4 h-4" />
           </button>
@@ -279,7 +275,7 @@ export function UserManagementWorkspace() {
               handleResetPassword(row);
             }}
             className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
-            title="パスワードリセット"
+            title={t('admin.user_management.actions.password_reset')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -290,19 +286,19 @@ export function UserManagementWorkspace() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">ユーザーアカウント管理</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{t('admin.user_management.title')}</h1>
           <p className="text-sm text-slate-500 mt-1">
-            アプリケーションユーザーの管理、役割の割り当て、アクセスの切り替え
+            {t('admin.user_management.description')}
           </p>
         </div>
         <button
           onClick={handleCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium whitespace-nowrap self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          新規ユーザー登録
+          {t('admin.user_management.create_button')}
         </button>
       </div>
 
@@ -316,13 +312,13 @@ export function UserManagementWorkspace() {
 
       {/* Users Grid */}
       <div className="mb-2 text-sm text-slate-500">
-        登録ユーザー数 ({pagination.totalItems})
+        {t('admin.user_management.registered_count')} ({pagination.totalItems})
       </div>
       <DataTable
         columns={columns}
         data={sortedUsers}
         isLoading={isLoading}
-        emptyMessage="ユーザーが見つかりません"
+        emptyMessage={t('admin.user_management.empty_message')}
         sorting={{
           sortBy: sorting.sortBy,
           sortOrder: sorting.sortOrder,

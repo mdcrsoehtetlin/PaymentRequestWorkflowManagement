@@ -119,12 +119,16 @@
       "appr_review_start": "Approver Review Started",
       "approved": "Approved",
       "appr_rejected": "Rejected by Approver",
-      "payment_completed": "Payment Completed"
+      "payment_completed": "Payment Completed",
+      "cancelled": "Cancelled",
+      "draft_saved": "Draft Saved"
     },
     "payment_type": {
       "expense_reimburse": "Expense Reimbursement",
       "service_payment": "Service Payment",
       "advance_payment": "Advance Payment",
+      "reimbursement": "Reimbursement",
+      "direct_vendor_payment": "Direct Vendor Payment",
       "other": "Other"
     },
     "payment_method": {
@@ -132,12 +136,730 @@
       "cash": "Cash",
       "check": "Check"
     },
+    "currency": {
+      "MMK": "MMK",
+      "USD": "USD",
+      "JPY": "JPY",
+      "THB": "THB"
+    },
     "role": {
       "applicant": "Applicant",
       "manager": "Manager",
       "approver": "Approver",
       "accounting": "Accounting",
       "admin": "Admin"
+    },
+    "branch": {
+      "yangon": "Yangon",
+      "mandalay": "Mandalay",
+      "naypyidaw": "Naypyidaw"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "unknown": "Unknown",
+    "all": "All",
+    "search": "Search",
+    "clear_filters": "Clear Filters",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "save": "Save",
+    "edit": "Edit",
+    "submit": "Submit",
+    "back": "Back",
+    "loading": "Loading...",
+    "processing": "Processing...",
+    "rows": "rows",
+    "showing": "Showing",
+    "of": "of",
+    "results": "results",
+    "previous": "Previous",
+    "next": "Next",
+    "no_description": "No description",
+    "items": "items",
+    "total": "Total",
+    "date": "Date",
+    "description": "Description",
+    "amount": "Amount",
+    "status": "Status",
+    "action": "Action",
+    "open": "Open",
+    "download_all_receipts": "Download All Receipts ({{count}})",
+    "back_to_list": "Back to List",
+    "back_to_dashboard": "Back to Dashboard"
+  },
+  "applicant": {
+    "dashboard": {
+      "title": "Applicant Dashboard",
+      "description": "Manage and track your payment requests",
+      "new_request": "New Request",
+      "kpi": {
+        "total_requests": "Total Requests",
+        "pending_review": "Pending Review",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "columns": {
+        "request_no": "Request No.",
+        "purpose": "Purpose",
+        "application_date": "Application Date",
+        "desired_date": "Desired Date",
+        "amount": "Amount",
+        "status": "Status",
+        "action": "Action"
+      },
+      "empty_message": "No payment requests found.",
+      "delete_draft": {
+        "title": "Delete Draft",
+        "message": "Are you sure you want to delete this draft? This action cannot be undone.",
+        "confirm": "Delete"
+      }
+    },
+    "detail": {
+      "title": "Request Details",
+      "created_on": "Created on",
+      "go_back": "Go Back",
+      "buttons": {
+        "cancel": "Cancel",
+        "save_changes": "Save Changes",
+        "saving": "Saving...",
+        "edit_request": "Edit Request",
+        "submit_to_manager": "Submit to Manager",
+        "submitting": "Submitting...",
+        "submit_to_approver": "Submit to Final Approver",
+        "comment": "Comment"
+      },
+      "rejection_banner": {
+        "title": "Request Rejected",
+        "no_comment": "No comment provided.",
+        "guidance": "Please edit your request to address the feedback and resubmit."
+      },
+      "fields": {
+        "purpose": "Purpose / Usage",
+        "payment_content": "Payment Request Content",
+        "application_date": "Application Date",
+        "desired_payment_date": "Desired Payment Date",
+        "target_manager": "Target Manager",
+        "select_manager": "Select Manager",
+        "payment_type": "Payment Type",
+        "currency": "Currency",
+        "payment_method": "Payment Method",
+        "bank_account_phone": "Bank Account / Phone",
+        "receipts_attached": "Receipts Attached"
+      },
+      "breakdown": {
+        "title": "Breakdown Items",
+        "add_item": "+ Add Item",
+        "no_description": "No description",
+        "total_amount": "Total Amount"
+      },
+      "activity_log": "Activity Log",
+      "status_changed_to": "Status changed to",
+      "reply_to_rejection": {
+        "title": "Reply to Rejection",
+        "placeholder": "Add a comment to explain your updates..."
+      },
+      "details_section": "Details",
+      "receipts": {
+        "title": "Receipts",
+        "no_receipts": "No receipts attached.",
+        "download": "Download receipt",
+        "delete": "Delete receipt",
+        "failed_download": "Failed to download receipt",
+        "confirm_delete": {
+          "title": "Delete Receipt",
+          "message": "Are you sure you want to delete this receipt? This action cannot be undone.",
+          "confirm": "Delete"
+        }
+      },
+      "errors": {
+        "not_found": "Request not found or access denied.",
+        "failed_load_details": "Failed to load details",
+        "failed_load_managers": "Failed to load managers",
+        "failed_submit": "Failed to submit request",
+        "failed_submit_approver": "Failed to submit to Approver",
+        "failed_update": "Failed to update request"
+      },
+      "success": {
+        "submitted": "Submitted to Manager successfully",
+        "saved": "Changes saved successfully"
+      },
+      "user_id_prefix": "User ID: "
+    },
+    "form": {
+      "title": "New Payment Request",
+      "description": "Create a draft to submit for approval",
+      "validation_errors_heading": "Please fix the following errors:",
+      "fields": {
+        "purpose": "Purpose / Usage",
+        "purpose_placeholder": "e.g. Q3 Marketing Campaign Expenses",
+        "payment_content": "Payment Request Content",
+        "content_placeholder": "Detailed explanation of the request...",
+        "target_manager": "Target Manager",
+        "loading_managers": "Loading managers...",
+        "payment_type": "Payment Type",
+        "payment_method": "Payment Method",
+        "currency": "Currency",
+        "bank_account_phone": "Bank Account / Phone",
+        "bank_placeholder": "Enter bank account number or phone number",
+        "application_date": "Application Date",
+        "desired_payment_date": "Desired Payment Date",
+        "receipt_present": "Receipt Present?"
+      },
+      "employee_info": "Employee Information",
+      "employee_number": "Employee Number",
+      "name": "Name",
+      "branch": "Branch",
+      "department": "Department",
+      "actions_section": "Actions",
+      "buttons": {
+        "save_draft": "Save Draft",
+        "saving": "Saving...",
+        "submit_to_manager": "Submit to Manager",
+        "save_first": "Save as draft first before submitting"
+      },
+      "receipt_section": {
+        "title": "Receipts",
+        "instruction": "Select a receipt file to attach. It will be uploaded when you save the draft.",
+        "selected": "Selected: "
+      },
+      "total_amount": "Total Amount",
+      "validation": {
+        "at_least_one_item": "At least one breakdown item is required.",
+        "application_date_future": "Application date cannot be a future date.",
+        "desired_date_past": "Desired payment date must be today or later.",
+        "purpose_required": "Purpose / Usage is required.",
+        "purpose_max": "Purpose must not exceed 255 characters.",
+        "content_required": "Payment Request Content is required.",
+        "content_max": "Payment Request Content must not exceed 1000 characters.",
+        "manager_required": "Target Manager must be selected.",
+        "currency_required": "Currency must be selected.",
+        "payment_type_required": "Payment Type must be selected.",
+        "payment_method_required": "Payment Method must be selected.",
+        "bank_account_required": "Bank Account / Phone information is required for this payment method.",
+        "receipt_required": "Please save as draft and upload receipt files before submitting.",
+        "amount_min": "All breakdown item amounts must be greater than 0.",
+        "amount_max": "Breakdown item amounts must not exceed 1,000,000,000."
+      },
+      "success": {
+        "draft_updated": "Draft updated successfully.",
+        "draft_saved": "Draft saved successfully.",
+        "submitted": "Request submitted to Manager successfully."
+      },
+      "errors": {
+        "failed_save": "Failed to save draft. Please try again.",
+        "failed_submit": "Failed to submit. Please check all fields and try again.",
+        "managers_load": "Could not load active managers list"
+      },
+      "save_first_warning": "Please save as draft first before submitting."
+    },
+    "receipt_upload": {
+      "uploading": "Uploading...",
+      "drag_hint": "Click or drag file to this area to upload",
+      "constraints": "Strictly PDF, JPG or PNG. Max 10MB.",
+      "size_error": "File size exceeds 10MB limit.",
+      "type_error": "Invalid file type. Only PDF, JPEG, and PNG are allowed.",
+      "failed_upload": "Failed to upload receipt"
+    },
+    "breakdown_table": {
+      "title": "Payment Breakdown",
+      "add_item": "Add Item",
+      "columns": {
+        "description": "Description",
+        "amount": "Amount"
+      },
+      "desc_placeholder": "Desc...",
+      "amount_placeholder": "0.00"
+    },
+    "validation": {
+      "application_date_past": "申請日は本日以前の日付を入力してください",
+      "purpose_required": "目的を入力してください（最大500文字）",
+      "application_date_required": "申請日を入力してください",
+      "desired_date_required": "支払希望日を入力してください",
+      "content_required": "申請内容を入力してください（最大1000文字）",
+      "currency_required": "通貨を選択してください",
+      "payment_type_required": "支払種別を選択してください",
+      "payment_method_required": "支払方法を選択してください",
+      "manager_required": "担当マネージャーを選択してください",
+      "bank_account_required": "銀行口座情報を入力してください",
+      "breakdown_count": "明細は1件以上15件以内で入力してください"
+    }
+  },
+  "manager": {
+    "dashboard": {
+      "title": "Manager Dashboard",
+      "description": "Verify payment requests submitted by your team",
+      "filters": {
+        "status": "Status",
+        "date": "Date",
+        "search_placeholder": "Search by applicant name..."
+      },
+      "columns": {
+        "request_no": "Request No.",
+        "applicant": "Applicant",
+        "amount": "Amount",
+        "application_date": "Application Date",
+        "desired_date": "Desired Date",
+        "status": "Status",
+        "action": "Action",
+        "no": "No."
+      },
+      "buttons": {
+        "view_detail": "View Detail",
+        "clear_filters": "Clear Filters"
+      },
+      "empty_message": "No matching payment requests.",
+      "pagination": {
+        "showing": "Showing",
+        "of": "of",
+        "results": "results",
+        "previous": "Previous",
+        "next": "Next",
+        "rows": "rows"
+      }
+    },
+    "detail": {
+      "title": "Request Details",
+      "breakdown_no": "No.",
+      "fields": {
+        "request_number": "Request Number",
+        "applied": "Applied:",
+        "applicant": "Applicant",
+        "employee_number": "Employee Number",
+        "department": "Department",
+        "branch": "Branch",
+        "email": "Email",
+        "desired_payment_date": "Desired Payment Date",
+        "purpose": "Purpose",
+        "payment_type": "Payment Type",
+        "payment_method": "Payment Method",
+        "bank_account_phone": "Bank Account / Phone",
+        "currency": "Currency",
+        "total": "Total"
+      },
+      "breakdown": {
+        "title": "Breakdown Items",
+        "columns": {
+          "no": "#",
+          "date": "Date",
+          "description": "Description",
+          "qty": "Qty",
+          "unit_price": "Unit Price",
+          "amount": "Amount"
+        },
+        "empty": "No breakdown items."
+      },
+      "receipts": {
+        "title": "Receipt Files",
+        "download_all": "Download All Receipts ({{count}})",
+        "empty": "No receipt files attached."
+      },
+      "approval_history": "Approval History",
+      "empty_history": "No approval history available."
+    },
+    "action_panel": {
+      "title": "Actions",
+      "description": "Approve or reject this request.",
+      "buttons": {
+        "approve": "Approve",
+        "reject": "Reject",
+        "submit_rejection": "Submit Rejection",
+        "cancel": "Cancel"
+      },
+      "rejection_comment": "Rejection Comment",
+      "rejection_placeholder": "Enter rejection reason (min 10 characters)...",
+      "comment_min_error": "Comment must be at least 10 characters ({{length}}/10)",
+      "confirm_rejection": {
+        "title": "Confirm Rejection",
+        "message": "Are you sure you want to reject this request?\n\nYour comment: \"{{comment}}\"",
+        "confirm": "Reject",
+        "cancel": "Cancel"
+      }
+    },
+    "success": {
+      "approve": "Request approved successfully.",
+      "reject": "Request rejected successfully."
+    },
+    "errors": {
+      "approve": "Failed to approve request.",
+      "reject": "Failed to reject request.",
+      "load_details": "Failed to load request details."
+    }
+  },
+  "approver": {
+    "dashboard": {
+      "title": "Approver Dashboard",
+      "description": "Make final approval decisions",
+      "kpi": {
+        "total": "Total",
+        "pending": "Pending",
+        "under_review": "Under Review",
+        "desired_date_alert": "Desired Date Alert"
+      },
+      "back_to_queue": "Back to Queue"
+    },
+    "detail": {
+      "empty_state": "Select a request from the list to view details.",
+      "fields": {
+        "request_number": "Request Number",
+        "applied": "Applied:",
+        "applicant": "Applicant",
+        "employee_number": "Employee Number",
+        "department": "Department",
+        "branch": "Branch",
+        "email": "Email",
+        "desired_payment_date": "Desired Payment Date",
+        "purpose": "Purpose"
+      },
+      "breakdown": {
+        "title": "Breakdown Items",
+        "columns": {
+          "no": "#",
+          "date": "Date",
+          "description": "Description",
+          "qty": "Qty",
+          "unit_price": "Unit Price",
+          "amount": "Amount"
+        },
+        "total": "Total",
+        "empty": "No breakdown items."
+      },
+      "receipts": {
+        "title": "Receipt Files",
+        "download_all": "Download All Receipts ({{count}})",
+        "empty": "No receipt files attached."
+      },
+      "approval_history": "Approval History",
+      "empty_history": "No approval history available."
+    },
+    "action_panel": {
+      "title": "Actions",
+      "description": "Approve or reject this request.",
+      "buttons": {
+        "approve": "Approve",
+        "reject": "Reject",
+        "submit_rejection": "Submit Rejection",
+        "cancel": "Cancel"
+      },
+      "rejection_comment": "Rejection Comment",
+      "rejection_placeholder": "Enter rejection reason (min 10 characters)...",
+      "comment_min_error": "Comment must be at least 10 characters ({{length}}/10)",
+      "confirm_rejection": {
+        "title": "Confirm Rejection",
+        "message": "Are you sure you want to reject this request?\n\nYour comment: \"{{comment}}\"",
+        "confirm": "Reject",
+        "cancel": "Cancel"
+      },
+      "approved_comment": "Approved"
+    },
+    "filters": {
+      "search": "Search",
+      "search_placeholder": "Request number, applicant, purpose",
+      "branch": "Branch",
+      "all_branches": "All Branches",
+      "desired_date": "Desired Date",
+      "status": "Status",
+      "all_statuses": "All Statuses"
+    },
+    "table": {
+      "columns": {
+        "request_no": "Request No.",
+        "applicant": "Applicant",
+        "branch": "Branch",
+        "application_date": "Application Date",
+        "desired_date": "Desired Date",
+        "amount": "Amount",
+        "status": "Status",
+        "action": "Action"
+      },
+      "view_details": "View Details",
+      "empty_message": "No pending requests"
+    },
+    "timeline": {
+      "empty": "No approval history available.",
+      "action_label": "Action {{actionTypeId}}"
+    },
+    "success": {
+      "approve": "Request approved successfully.",
+      "reject": "Request rejected successfully."
+    },
+    "errors": {
+      "approve": "Failed to approve request.",
+      "reject": "Failed to reject request.",
+      "load_details": "Failed to load request details."
+    }
+  },
+  "accounting": {
+    "dashboard": {
+      "title": "Accounting Dashboard",
+      "description": "Process payments for approved requests",
+      "filters": {
+        "search": "Search",
+        "search_placeholder": "Request #, applicant name...",
+        "branch": "Branch",
+        "all_branches": "All Branches",
+        "status": "Status",
+        "all_statuses": "All Statuses",
+        "approved": "Approved",
+        "paid": "Paid",
+        "desired_date": "Desired Date"
+      },
+      "kpi": {
+        "total": "Total",
+        "pending": "Pending",
+        "mandalay_alerts": "Mandalay Alerts",
+        "desired_date_alerts": "Desired Date Alerts"
+      },
+      "refresh": "Refresh"
+    },
+    "queue_table": {
+      "loading": "Loading queue...",
+      "columns": {
+        "request_no": "Request #",
+        "applicant": "Applicant",
+        "branch": "Branch",
+        "application_date": "Application Date",
+        "desired_date": "Desired Date",
+        "amount": "Amount",
+        "status": "Status",
+        "action": "Action"
+      },
+      "view_detail": "View Detail",
+      "empty_message": "No approved payment requests pending.",
+      "pagination": {
+        "showing": "Showing",
+        "of": "of",
+        "results": "results",
+        "previous": "Previous",
+        "next": "Next",
+        "rows": "rows"
+      }
+    },
+    "detail": {
+      "loading": "Loading payment details...",
+      "not_found": "Payment request not found.",
+      "back_to_dashboard": "Back to Dashboard",
+      "paid_badge": "PAID",
+      "subtitle": "Payment request details are read-only for accounting review.",
+      "close_aria": "Close payment detail",
+      "alerts": {
+        "total_mismatch": "Total Mismatch Detected",
+        "total_mismatch_detail": "Header total ({{headerTotal}}) does not match breakdown sum ({{breakdownSum}})",
+        "missing_receipts": "Missing Receipts",
+        "missing_receipts_detail": "This request is flagged as requiring receipts, but no active digital receipt files are attached."
+      },
+      "sections": {
+        "applicant": "Applicant",
+        "payment": "Payment",
+        "request_context": "Request Context",
+        "breakdown_items": "Breakdown Items",
+        "receipt_files": "Receipt Files",
+        "approval_timeline": "Approval Timeline"
+      },
+      "fields": {
+        "name": "Name",
+        "employee": "Employee",
+        "branch": "Branch",
+        "department": "Department",
+        "email": "Email",
+        "total": "Total",
+        "method": "Method",
+        "type": "Type",
+        "application": "Application",
+        "desired_date": "Desired Date",
+        "bank_info": "Bank Info",
+        "purpose": "Purpose",
+        "request_content": "Request Content"
+      },
+      "receipts": {
+        "empty": "No receipt files attached.",
+        "download_all": "Download All Receipts ({{count}})",
+        "open": "Open"
+      },
+      "timeline": {
+        "empty": "No approval history recorded.",
+        "action_label": "Action {{actionTypeId}}"
+      },
+      "comment": {
+        "label": "Accounting Comment (Optional)",
+        "placeholder": "Add a comment to be recorded in the audit log..."
+      },
+      "buttons": {
+        "back_to_list": "Back to List",
+        "download_all": "Download All Receipts ({{count}})",
+        "close": "Close",
+        "mark_as_paid": "Mark as Paid"
+      },
+      "paid_info": "This payment has been completed. No further actions are available."
+    },
+    "completion_dialog": {
+      "title": "Confirm Payment Completion",
+      "request": "Request",
+      "amount_to_pay": "Amount to be paid",
+      "warning_irreversible": "This action is irreversible.",
+      "warning_detail": "Once marked as paid, the request status cannot be changed. Ensure all amounts and receipts have been verified.",
+      "buttons": {
+        "cancel": "Cancel",
+        "processing": "Processing...",
+        "confirm": "Confirm and Mark as Paid"
+      }
+    },
+    "branch_alert": {
+      "mandalay": "IMPORTANT: Coordinate with Toe San for Cash Payment",
+      "default": "Standard Bank Transfer Processing"
+    },
+    "success": {
+      "paid": "Payment marked as PAID successfully."
+    },
+    "errors": {
+      "load_details": "Failed to load request details.",
+      "complete_payment": "Failed to complete payment.",
+      "fetch_queue": "Error fetching queue"
+    }
+  },
+  "admin": {
+    "sidebar": {
+      "user_management": "User Management",
+      "master_data": "Master Data",
+      "audit_logs": "Audit Logs"
+    },
+    "user_management": {
+      "title": "User Account Management",
+      "description": "Manage application users, assign roles, and toggle access",
+      "create_button": "New User",
+      "registered_count": "Registered Users",
+      "empty_message": "No users found",
+      "columns": {
+        "employee_number": "Employee No.",
+        "full_name": "Full Name",
+        "email": "Email",
+        "branch": "Branch",
+        "role": "Role",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "role": {
+        "applicant": "Applicant",
+        "manager": "Manager",
+        "approver": "Approver",
+        "accounting": "Accounting",
+        "admin": "Admin",
+        "unknown": "Unknown"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "actions": {
+        "edit": "Edit",
+        "password_reset": "Password Reset"
+      },
+      "filters": {
+        "keyword": "Keyword",
+        "keyword_placeholder": "Search by employee number or name",
+        "role": "Role",
+        "status": "Status"
+      }
+    },
+    "master_data": {
+      "title": "Master Data Configuration",
+      "description": "View system lookup tables",
+      "empty_message": "No data available",
+      "categories": {
+        "currencies": "Currencies",
+        "roles": "Roles",
+        "statuses": "Statuses",
+        "payment_types": "Payment Types",
+        "payment_methods": "Payment Methods"
+      }
+    },
+    "audit_log": {
+      "title": "Audit Logs",
+      "description": "View global transaction audit history",
+      "empty_message": "No matching logs found",
+      "filters": {
+        "request_number": "Request Number",
+        "request_number_placeholder": "Enter number",
+        "actor_name": "Actor Name",
+        "actor_name_placeholder": "Search by name",
+        "action_type": "Action Type",
+        "start_date": "Start Date",
+        "end_date": "End Date",
+        "date_error": "Start date cannot be later than end date"
+      },
+      "columns": {
+        "request_number": "Request Number",
+        "actor": "Actor",
+        "action": "Action",
+        "ip_address": "IP Address",
+        "date_time": "Date/Time",
+        "view_detail": "View Detail"
+      },
+      "action_label": {
+        "created": "Created",
+        "edited": "Edited",
+        "submitted": "Submitted",
+        "mgr_review_start": "Manager Review Started",
+        "mgr_review": "Manager Review",
+        "mgr_rejected": "Manager Rejected",
+        "appr_review_start": "Approver Review Started",
+        "approved": "Approved",
+        "appr_rejected": "Approver Rejected",
+        "payment_completed": "Payment Completed",
+        "unknown": "Unknown"
+      }
+    },
+    "metadata_detail": {
+      "title": "Log Detail",
+      "labels": {
+        "log_id": "Log ID",
+        "request_number": "Request Number",
+        "actor": "Actor",
+        "action": "Action",
+        "date_time": "Date/Time",
+        "ip_address": "IP Address",
+        "user_agent": "User Agent",
+        "comment": "Comment"
+      }
+    },
+    "user_form": {
+      "title_create": "New User Registration",
+      "title_edit": "Edit User Details",
+      "title_reset": "Password Reset",
+      "labels": {
+        "employee_number": "Employee Number",
+        "full_name": "Full Name",
+        "email": "Email",
+        "branch": "Branch",
+        "role": "Role"
+      },
+      "role_options": {
+        "applicant": "Applicant",
+        "manager": "Manager",
+        "approver": "Approver",
+        "accounting": "Accounting",
+        "admin": "Admin"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "processing": "Processing...",
+        "create": "Register",
+        "save": "Save Changes",
+        "reset": "Reset"
+      },
+      "reset_confirm": {
+        "prompt_suffix": "'s password?",
+        "warning": "A new temporary password will be generated and the current session will be invalidated."
+      },
+      "password_result": {
+        "generated": "Temporary password has been generated.",
+        "copy": "Copy",
+        "notice": "This password will only be shown once. Please record it in a safe place.",
+        "close": "Close"
+      },
+      "error": "Operation failed"
     }
   }
 }
