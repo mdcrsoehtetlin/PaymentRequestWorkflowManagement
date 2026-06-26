@@ -68,22 +68,45 @@ export class AccountingService {
 
   /**
    * Retrieves paginated approved requests for the accounting dashboard.
+   * @param filter KPI filter: 'total' = Approved+Paid, 'pending' = Approved only, 'mandalay' = Mandalay branch, 'desiredDate' = desired date within 3 days
    */
   async findApprovedRequests(
     page: number = 1,
     pageSize: number = 10,
     search?: string,
     branch?: string,
-    dateFrom?: string,
-    dateTo?: string,
+    desiredDate?: string,
+    filter?: string,
   ) {
-    this.logger.log(`Fetching approved requests page ${page} size ${pageSize}`);
+    this.logger.log(
+      `Fetching approved requests page ${page} size ${pageSize} filter=${filter ?? 'none'}`,
+    );
 
     const queryBuilder = this.paymentRequestRepository
       .createQueryBuilder('pr')
-      .leftJoinAndSelect('pr.applicant', 'applicant')
-      .where('pr.status_id = :statusId', { statusId: 8 }) // APPROVED
-      .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false });
+      .leftJoinAndSelect('pr.applicant', 'applicant');
+
+    // Apply KPI filter
+    if (filter === 'total') {
+      queryBuilder.where('pr.status_id IN (:...statusIds)', {
+        statusIds: [8, 10],
+      });
+    } else if (filter === 'mandalay') {
+      queryBuilder
+        .where('pr.status_id = :statusId', { statusId: 8 })
+        .andWhere('applicant.branch = :branch', { branch: 'Mandalay' });
+    } else if (filter === 'desiredDate') {
+      queryBuilder
+        .where('pr.status_id = :statusId', { statusId: 8 })
+        .andWhere(
+          "pr.desired_payment_date <= CURRENT_DATE + INTERVAL '3 days'",
+        );
+    } else {
+      // default: pending (status 8 only)
+      queryBuilder.where('pr.status_id = :statusId', { statusId: 8 });
+    }
+
+    queryBuilder.andWhere('pr.is_deleted = :isDeleted', { isDeleted: false });
 
     if (search) {
       queryBuilder.andWhere(
@@ -96,12 +119,10 @@ export class AccountingService {
       queryBuilder.andWhere('applicant.branch = :branch', { branch });
     }
 
-    if (dateFrom) {
-      queryBuilder.andWhere('pr.application_date >= :dateFrom', { dateFrom });
-    }
-
-    if (dateTo) {
-      queryBuilder.andWhere('pr.application_date <= :dateTo', { dateTo });
+    if (desiredDate) {
+      queryBuilder.andWhere('pr.desired_payment_date = :desiredDate', {
+        desiredDate,
+      });
     }
 
     // Sort: desired_payment_date ASC, application_date ASC, request_number ASC
@@ -137,21 +158,24 @@ export class AccountingService {
 
   /**
    * Returns summary counts for KPI cards.
+   * total             = Approved (8) + Paid (10)
+   * pending           = Approved (8) only — awaiting payment
+   * mandalayAlerts    = Approved (8) + branch Mandalay
+   * desiredDateAlerts = Approved (8) + desired_payment_date is overdue or within 3 days
    */
   async getSummaryCounts() {
     this.logger.log('Fetching summary counts for accounting dashboard');
 
-    const totalApproved = await this.paymentRequestRepository
+    const total = await this.paymentRequestRepository
       .createQueryBuilder('pr')
-      .where('pr.status_id = :statusId', { statusId: 8 })
+      .where('pr.status_id IN (:...statusIds)', { statusIds: [8, 10] })
       .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false })
       .getCount();
 
-    const pendingToday = await this.paymentRequestRepository
+    const pending = await this.paymentRequestRepository
       .createQueryBuilder('pr')
       .where('pr.status_id = :statusId', { statusId: 8 })
       .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false })
-      .andWhere('pr.application_date = CURRENT_DATE')
       .getCount();
 
     const mandalayAlerts = await this.paymentRequestRepository
@@ -162,20 +186,18 @@ export class AccountingService {
       .andWhere('applicant.branch = :branch', { branch: 'Mandalay' })
       .getCount();
 
-    const missingReceipts = await this.paymentRequestRepository
+    const desiredDateAlerts = await this.paymentRequestRepository
       .createQueryBuilder('pr')
-      .leftJoin('pr.receipts', 'rf', 'rf.is_deleted = false')
       .where('pr.status_id = :statusId', { statusId: 8 })
       .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false })
-      .andWhere('pr.has_receipt = true')
-      .andWhere('rf.id IS NULL')
+      .andWhere("pr.desired_payment_date <= CURRENT_DATE + INTERVAL '3 days'")
       .getCount();
 
     return {
-      totalApproved,
-      pendingToday,
+      total,
+      pending,
       mandalayAlerts,
-      missingReceipts,
+      desiredDateAlerts,
     };
   }
 
@@ -215,7 +237,7 @@ export class AccountingService {
         .leftJoinAndSelect('pr.approvalLogs', 'approvalLogs')
         .leftJoinAndSelect('approvalLogs.action_taken_by_user', 'actionUser')
         .where('pr.payment_request_id = :id', { id: Number(id) })
-        .andWhere('pr.status_id = :statusId', { statusId: 8 })
+        .andWhere('pr.status_id IN (:...statusIds)', { statusIds: [8, 10] })
         .andWhere('pr.is_deleted = :isDeleted', { isDeleted: false })
         .orderBy('approvalLogs.timestamp', 'ASC')
         .getOne();
@@ -228,10 +250,10 @@ export class AccountingService {
 
     if (!request) {
       this.logger.warn(
-        `Payment request ${id} not found (status=8, isDeleted=false)`,
+        `Payment request ${id} not found (status in [8,10], isDeleted=false)`,
       );
       throw new NotFoundException(
-        `Payment request ${id} not found or not in APPROVED state`,
+        `Payment request ${id} not found or not in APPROVED/PAID state`,
       );
     }
 

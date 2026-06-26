@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   ParseIntPipe,
@@ -9,8 +10,8 @@ import {
   Query,
   Ip,
   Headers,
+  BadRequestException,
 } from '@nestjs/common';
-import { Request } from 'express';
 import { ManagerService } from './manager.service';
 import { JwtAuthGuard } from '../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../shared/guards/roles.guard';
@@ -20,6 +21,7 @@ import { RoleCode, JwtPayload } from '../shared/types';
 import { QueryRequestsDto } from './dto/query-requests.dto';
 import { ApproveRequestDto } from './dto/approve-request.dto';
 import { RejectRequestDto } from './dto/reject-request.dto';
+import { StartReviewDto } from './dto/start-review.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(RoleCode.MANAGER)
@@ -43,20 +45,37 @@ export class ManagerController {
   }
 
   /**
-   * @description Fetches details of a specific payment request.
-   * Triggers an automatic transition to MANAGER_REVIEWING (3) if it's currently SUBMITTED_MANAGER (2).
+   * @description Fetches details of a specific payment request (read-only, no side effects).
    */
   @Get(':id')
   async getRequestDetails(
     @CurrentUser() user: JwtPayload,
     @Param('id', ParseIntPipe) id: number,
+  ) {
+    const managerId = user.sub;
+    return this.managerService.getRequestDetails(id, managerId);
+  }
+
+  /**
+   * @description Transitions a request from SUBMITTED_MANAGER to MANAGER_REVIEWING.
+   * Called when the manager opens a request detail view for the first time.
+   * @param user The logged-in manager from JWT payload.
+   * @param id The ID of the payment request.
+   * @param dto Contains the client-side modifiedDate for optimistic concurrency check.
+   */
+  @Patch(':id/review')
+  async startReview(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: StartReviewDto,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
     const managerId = user.sub;
-    return this.managerService.getRequestDetails(
+    return this.managerService.startReview(
       id,
       managerId,
+      dto,
       ipAddress,
       userAgent || 'system',
     );
@@ -76,6 +95,9 @@ export class ManagerController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
+    if (!id || id <= 0) {
+      throw new BadRequestException('有効な申請IDが指定されていません');
+    }
     const managerId = user.sub;
     const managerName = user.fullName;
     return this.managerService.verifyRequest(
@@ -102,6 +124,9 @@ export class ManagerController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
+    if (!id || id <= 0) {
+      throw new BadRequestException('有効な申請IDが指定されていません');
+    }
     const managerId = user.sub;
     const managerName = user.fullName;
     return this.managerService.rejectRequest(

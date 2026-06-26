@@ -13,7 +13,14 @@ import { WebsocketGateway } from '../shared/websocket.gateway';
 import { QueryRequestsDto } from './dto/query-requests.dto';
 import { ApproveRequestDto } from './dto/approve-request.dto';
 import { RejectRequestDto } from './dto/reject-request.dto';
-import { ApprovalActionType, PaymentStatus, RoleCode } from '../shared/types';
+import { StartReviewDto } from './dto/start-review.dto';
+import {
+  ApprovalActionType,
+  PaymentStatus,
+  RoleCode,
+  UserRole,
+} from '../shared/types';
+import { User } from '../shared/entities/user.entity';
 
 @Injectable()
 export class ManagerService {
@@ -53,11 +60,20 @@ export class ManagerService {
           'paymentRequest',
         ]),
       ),
-      approvalLogs: (approvalLogs ?? []).map((log) =>
-        this.omitCircularRefs(log as unknown as Record<string, unknown>, [
+      approvalLogs: (approvalLogs ?? []).map((log) => ({
+        ...this.omitCircularRefs(log as any, [
           'payment_request',
+          'action_taken_by_user',
         ]),
-      ),
+        actionTakenByUser: log.action_taken_by_user
+          ? {
+              userId: log.action_taken_by_user.userId,
+              fullName: log.action_taken_by_user.fullName,
+              employeeNumber: log.action_taken_by_user.employeeNumber,
+              branch: log.action_taken_by_user.branch,
+            }
+          : null,
+      })),
     };
   }
 
@@ -100,12 +116,7 @@ export class ManagerService {
     }));
   }
 
-  async getRequestDetails(
-    id: number,
-    managerId: number,
-    ipAddress = '127.0.0.1',
-    userAgent = 'system',
-  ) {
+  async getRequestDetails(id: number, managerId: number) {
     this.logger.log(
       `Fetching details for request ID: ${id} by manager: ${managerId}`,
     );
@@ -116,23 +127,85 @@ export class ManagerService {
         managerUserId: managerId,
         isDeleted: false,
       },
-      relations: ['applicant', 'breakdowns', 'receipts', 'approvalLogs'],
+      relations: [
+        'applicant',
+        'breakdowns',
+        'receipts',
+        'approvalLogs',
+        'approvalLogs.action_taken_by_user',
+      ],
     });
 
     if (!request) {
       throw new NotFoundException('指定された申請が見つかりません');
     }
 
-    if (request.statusId === Number(PaymentStatus.SUBMITTED_MANAGER)) {
-      this.logger.log(
-        `Auto-transitioning request ID: ${id} to MANAGER_REVIEWING`,
+    if (request.approvalLogs) {
+      request.approvalLogs.sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
       );
+    }
 
+    return this.serializeRequest(request);
+  }
+
+  /**
+   * @description Transitions a request from SUBMITTED_MANAGER to MANAGER_REVIEWING.
+   * Called via PATCH /manager/requests/:id/review when the manager opens a request.
+   * Uses entityManager.update() to avoid cascade side-effects on breakdown items.
+   */
+  async startReview(
+    id: number,
+    managerId: number,
+    dto: StartReviewDto,
+    ipAddress: string,
+    userAgent: string,
+  ) {
+    this.logger.log(
+      `Starting review for request ID: ${id} by manager: ${managerId}`,
+    );
+
+    const request = await this.paymentRequestRepository.findOne({
+      where: {
+        id,
+        managerUserId: managerId,
+        isDeleted: false,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('指定された申請が見つかりません');
+    }
+
+    if (request.statusId !== Number(PaymentStatus.SUBMITTED_MANAGER)) {
+      throw new BadRequestException(
+        `リクエストの状態が「提出済み」ではないため、レビューを開始できません（現在の状態: ${request.statusId}）`,
+      );
+    }
+
+    const dbTime = new Date(request.modifiedDate).getTime();
+    const clientTime = new Date(dto.modifiedDate).getTime();
+    if (dbTime !== clientTime) {
+      throw new ConflictException({
+        errorCode: 'ERR-MGR-409',
+        message:
+          'この申請は他のユーザーによって更新されました。リストを更新します。',
+      });
+    }
+
+    try {
       await this.dataSource.transaction(
         async (entityManager: EntityManager) => {
-          request.statusId = PaymentStatus.MANAGER_REVIEWING;
-          request.modifiedDate = new Date();
-          await entityManager.save(request);
+          await entityManager.update(
+            PaymentRequest,
+            { id },
+            {
+              statusId: PaymentStatus.MANAGER_REVIEWING,
+              currentAssignedToUserId: managerId,
+              modifiedDate: new Date(),
+            },
+          );
 
           await this.auditLogService.createLog(entityManager, {
             paymentRequestId: id,
@@ -146,15 +219,47 @@ export class ManagerService {
           });
         },
       );
-
-      const updatedRequest = await this.paymentRequestRepository.findOne({
-        where: { id: id },
-        relations: ['applicant', 'breakdowns', 'receipts', 'approvalLogs'],
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : JSON.stringify(err);
+      this.logger.error(
+        `[startReview] Transaction failed for request ID: ${id} — ${detail}`,
+        err,
+      );
+      throw new BadRequestException({
+        errorCode: 'ERR-MGR-REVIEW-FAIL',
+        message: `レビューの開始に失敗しました: ${detail}`,
       });
+    }
 
-      if (updatedRequest) {
+    const updatedRequest = await this.paymentRequestRepository.findOne({
+      where: { id },
+      relations: [
+        'applicant',
+        'breakdowns',
+        'receipts',
+        'approvalLogs',
+        'approvalLogs.action_taken_by_user',
+      ],
+    });
+
+    if (updatedRequest) {
+      try {
         this.websocketGateway.sendPersonalNotification(
           updatedRequest.applicantUserId,
+          'statusUpdate',
+          {
+            event: 'statusUpdate',
+            paymentRequestId: id,
+            requestNumber: updatedRequest.requestNumber,
+            previousStatusId: PaymentStatus.SUBMITTED_MANAGER,
+            newStatusId: PaymentStatus.MANAGER_REVIEWING,
+            actionByUserId: managerId,
+            timestamp: new Date().toISOString(),
+          },
+        );
+
+        this.websocketGateway.sendPersonalNotification(
+          managerId,
           'statusUpdate',
           {
             event: 'statusUpdate',
@@ -172,16 +277,14 @@ export class ManagerService {
           action: 'REVIEW_START',
           requestId: id,
         });
-
-        return this.serializeRequest(updatedRequest);
+      } catch (wsErr) {
+        this.logger.warn(
+          `WebSocket notification failed for request ID: ${id}`,
+          wsErr,
+        );
       }
-    }
 
-    if (request.approvalLogs) {
-      request.approvalLogs.sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-      );
+      return this.serializeRequest(updatedRequest);
     }
 
     return this.serializeRequest(request);
@@ -197,68 +300,115 @@ export class ManagerService {
   ) {
     this.logger.log(`Verifying request ${id} by manager ${managerId}`);
 
-    return await this.dataSource.transaction(
-      async (entityManager: EntityManager) => {
-        const request = await entityManager.findOne(PaymentRequest, {
-          where: {
-            id: id,
-            currentAssignedToUserId: managerId,
-            isDeleted: false,
-          },
-          lock: { mode: 'pessimistic_write' },
-        });
+    if (!id || id <= 0) {
+      throw new BadRequestException({
+        errorCode: 'ERR-MGR-INVALID-ID',
+        message: '有効な申請IDが指定されていません',
+      });
+    }
 
-        if (!request) {
-          throw new NotFoundException('指定された申請が見つかりません');
-        }
-
-        if (
-          request.statusId !== Number(PaymentStatus.MANAGER_REVIEWING) &&
-          request.statusId !== Number(PaymentStatus.SUBMITTED_MANAGER)
-        ) {
-          throw new BadRequestException(
-            'この申請は現在レビュー中または提出済み状態ではないため、承認できません',
-          );
-        }
-
-        const dbTime = new Date(request.modifiedDate).getTime();
-        const clientTime = new Date(dto.modifiedDate).getTime();
-        if (dbTime !== clientTime) {
-          throw new ConflictException({
-            errorCode: 'ERR-MGR-409',
-            message:
-              'この申請は他のユーザーによって更新されました。リストを更新します。',
+    try {
+      const txResult = await this.dataSource.transaction(
+        async (entityManager: EntityManager) => {
+          const request = await entityManager.findOne(PaymentRequest, {
+            where: {
+              id: id,
+              currentAssignedToUserId: managerId,
+              isDeleted: false,
+            },
+            lock: { mode: 'pessimistic_write' },
           });
-        }
 
-        const previousStatus = request.statusId;
+          if (!request) {
+            throw new NotFoundException('指定された申請が見つかりません');
+          }
 
-        request.statusId = PaymentStatus.MANAGER_VERIFIED;
-        request.managerVerificationDate = new Date();
-        request.modifiedDate = new Date();
-        request.currentAssignedToUserId = request.applicantUserId;
-        await entityManager.save(request);
+          if (
+            request.statusId !== Number(PaymentStatus.MANAGER_REVIEWING) &&
+            request.statusId !== Number(PaymentStatus.SUBMITTED_MANAGER)
+          ) {
+            throw new BadRequestException(
+              'この申請は現在レビュー中または提出済み状態ではないため、承認できません',
+            );
+          }
 
-        await this.auditLogService.createLog(entityManager, {
-          paymentRequestId: id,
-          actionTakenByUserId: managerId,
-          actionTypeId: ApprovalActionType.MGR_VERIFIED,
-          previousStatusId: previousStatus,
-          newStatusId: PaymentStatus.MANAGER_VERIFIED,
-          comment: dto.comment || '承認されました。',
-          ipAddress,
-          userAgent,
-        });
+          const dbTime = new Date(request.modifiedDate).getTime();
+          const clientTime = new Date(dto.modifiedDate).getTime();
+          if (dbTime !== clientTime) {
+            throw new ConflictException({
+              errorCode: 'ERR-MGR-409',
+              message:
+                'この申請は他のユーザーによって更新されました。リストを更新します。',
+            });
+          }
 
+          const previousStatus = request.statusId;
+          let nextAssigneeId = request.finalApproverUserId;
+
+          if (!nextAssigneeId) {
+            const activeApprover = await entityManager.findOne(User, {
+              where: {
+                roleId: UserRole.APPROVER,
+                isActive: true,
+              },
+              order: { userId: 'ASC' },
+            });
+
+            if (!activeApprover) {
+              throw new BadRequestException({
+                errorCode: 'ERR-MGR-NO-APPROVER',
+                message:
+                  '利用可能な承認者がいません。管理者に連絡してください。',
+              });
+            }
+
+            nextAssigneeId = activeApprover.userId;
+            this.logger.log(
+              `Auto-assigned approver userId=${nextAssigneeId} for request ${id}`,
+            );
+          }
+
+          await entityManager.update(
+            PaymentRequest,
+            { id },
+            {
+              statusId: PaymentStatus.SUBMITTED_APPROVER,
+              submittedToApproverDate: new Date(),
+              finalApproverUserId: nextAssigneeId,
+              currentAssignedToUserId: nextAssigneeId,
+              modifiedDate: new Date(),
+            },
+          );
+
+          await this.auditLogService.createLog(entityManager, {
+            paymentRequestId: id,
+            actionTakenByUserId: managerId,
+            actionTypeId: ApprovalActionType.MGR_VERIFIED,
+            previousStatusId: previousStatus,
+            newStatusId: PaymentStatus.SUBMITTED_APPROVER,
+            comment: dto.comment || '承認されました。',
+            ipAddress,
+            userAgent,
+          });
+
+          return {
+            previousStatus,
+            requestNumber: request.requestNumber,
+            nextAssigneeId,
+          };
+        },
+      );
+
+      try {
         this.websocketGateway.sendPersonalNotification(
-          request.applicantUserId,
+          txResult.nextAssigneeId,
           'statusUpdate',
           {
             event: 'statusUpdate',
             paymentRequestId: id,
-            requestNumber: request.requestNumber,
-            previousStatusId: previousStatus,
-            newStatusId: PaymentStatus.MANAGER_VERIFIED,
+            requestNumber: txResult.requestNumber,
+            previousStatusId: txResult.previousStatus,
+            newStatusId: PaymentStatus.SUBMITTED_APPROVER,
             actionByUserId: managerId,
             actionByName: managerName,
             comment: dto.comment || null,
@@ -272,12 +422,37 @@ export class ManagerService {
           requestId: id,
         });
 
-        return {
-          success: true,
-          message: '申請を承認しました。申請者に通知されます。',
-        };
-      },
-    );
+        this.websocketGateway.sendStatusUpdate(RoleCode.APPROVER, {
+          event: 'queueChange',
+          action: 'NEW_REQUEST',
+          requestId: id,
+        });
+      } catch (wsErr) {
+        this.logger.warn(
+          `WebSocket notification failed for request ID: ${id}`,
+          wsErr,
+        );
+      }
+
+      return {
+        success: true,
+        message: '申請を承認し、承認者に転送しました。',
+      };
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('DEBUG ERROR:', err.message, err.stack);
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException({
+        errorCode: 'ERR-MGR-VERIFY-FAIL',
+        message: `承認処理に失敗しました: ${err.message}`,
+      });
+    }
   }
 
   async rejectRequest(
@@ -292,66 +467,87 @@ export class ManagerService {
       `Rejecting request ${id} by manager ${managerId} with reason: ${dto.comment}`,
     );
 
-    return await this.dataSource.transaction(
-      async (entityManager: EntityManager) => {
-        const request = await entityManager.findOne(PaymentRequest, {
-          where: {
-            id: id,
-            currentAssignedToUserId: managerId,
-            isDeleted: false,
-          },
-          lock: { mode: 'pessimistic_write' },
-        });
+    if (!id || id <= 0) {
+      throw new BadRequestException({
+        errorCode: 'ERR-MGR-INVALID-ID',
+        message: '有効な申請IDが指定されていません',
+      });
+    }
 
-        if (!request) {
-          throw new NotFoundException('指定された申請が見つかりません');
-        }
-
-        if (
-          request.statusId !== Number(PaymentStatus.MANAGER_REVIEWING) &&
-          request.statusId !== Number(PaymentStatus.SUBMITTED_MANAGER)
-        ) {
-          throw new BadRequestException(
-            'この申請は現在レビュー中または提出済み状態ではないため、差し戻しできません',
-          );
-        }
-
-        const dbTime = new Date(request.modifiedDate).getTime();
-        const clientTime = new Date(dto.modifiedDate).getTime();
-        if (dbTime !== clientTime) {
-          throw new ConflictException({
-            errorCode: 'ERR-MGR-409',
-            message:
-              'この申請は他のユーザーによって更新されました。リストを更新します。',
+    try {
+      const txResult = await this.dataSource.transaction(
+        async (entityManager: EntityManager) => {
+          const request = await entityManager.findOne(PaymentRequest, {
+            where: {
+              id: id,
+              currentAssignedToUserId: managerId,
+              isDeleted: false,
+            },
+            lock: { mode: 'pessimistic_write' },
           });
-        }
 
-        const previousStatus = request.statusId;
+          if (!request) {
+            throw new NotFoundException('指定された申請が見つかりません');
+          }
 
-        request.statusId = PaymentStatus.REJECTED_MANAGER;
-        request.modifiedDate = new Date();
-        request.currentAssignedToUserId = request.applicantUserId;
-        await entityManager.save(request);
+          if (
+            request.statusId !== Number(PaymentStatus.MANAGER_REVIEWING) &&
+            request.statusId !== Number(PaymentStatus.SUBMITTED_MANAGER)
+          ) {
+            throw new BadRequestException(
+              'この申請は現在レビュー中または提出済み状態ではないため、差し戻しできません',
+            );
+          }
 
-        await this.auditLogService.createLog(entityManager, {
-          paymentRequestId: id,
-          actionTakenByUserId: managerId,
-          actionTypeId: ApprovalActionType.MGR_REJECTED,
-          previousStatusId: previousStatus,
-          newStatusId: PaymentStatus.REJECTED_MANAGER,
-          comment: dto.comment,
-          ipAddress,
-          userAgent,
-        });
+          const dbTime = new Date(request.modifiedDate).getTime();
+          const clientTime = new Date(dto.modifiedDate).getTime();
+          if (dbTime !== clientTime) {
+            throw new ConflictException({
+              errorCode: 'ERR-MGR-409',
+              message:
+                'この申請は他のユーザーによって更新されました。リストを更新します。',
+            });
+          }
 
+          const previousStatus = request.statusId;
+
+          await entityManager.update(
+            PaymentRequest,
+            { id },
+            {
+              statusId: PaymentStatus.REJECTED_MANAGER,
+              modifiedDate: new Date(),
+              currentAssignedToUserId: request.applicantUserId,
+            },
+          );
+
+          await this.auditLogService.createLog(entityManager, {
+            paymentRequestId: id,
+            actionTakenByUserId: managerId,
+            actionTypeId: ApprovalActionType.MGR_REJECTED,
+            previousStatusId: previousStatus,
+            newStatusId: PaymentStatus.REJECTED_MANAGER,
+            comment: dto.comment,
+            ipAddress,
+            userAgent,
+          });
+
+          return {
+            previousStatus,
+            requestNumber: request.requestNumber,
+          };
+        },
+      );
+
+      try {
         this.websocketGateway.sendPersonalNotification(
-          request.applicantUserId,
+          managerId,
           'statusUpdate',
           {
             event: 'statusUpdate',
             paymentRequestId: id,
-            requestNumber: request.requestNumber,
-            previousStatusId: previousStatus,
+            requestNumber: txResult.requestNumber,
+            previousStatusId: txResult.previousStatus,
             newStatusId: PaymentStatus.REJECTED_MANAGER,
             actionByUserId: managerId,
             actionByName: managerName,
@@ -365,12 +561,31 @@ export class ManagerService {
           action: 'REJECTED',
           requestId: id,
         });
+      } catch (wsErr) {
+        this.logger.warn(
+          `WebSocket notification failed for request ID: ${id}`,
+          wsErr,
+        );
+      }
 
-        return {
-          success: true,
-          message: '申請を差し戻しました。申請者に通知されます。',
-        };
-      },
-    );
+      return {
+        success: true,
+        message: '申請を差し戻しました。申請者に通知されます。',
+      };
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('DEBUG ERROR:', err.message, err.stack);
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException({
+        errorCode: 'ERR-MGR-REJECT-FAIL',
+        message: `差し戻し処理に失敗しました: ${err.message}`,
+      });
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AxiosError } from 'axios';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -42,11 +42,12 @@ export function ApproverDashboard() {
   const [branch, setBranch] = useState('');
   const [desiredDate, setDesiredDate] = useState('');
   const [statusId, setStatusId] = useState<number | undefined>(undefined);
-  const [sidebarFilter, setSidebarFilter] = useState<number | 'desiredDateAlert' | undefined>(undefined);
+  const [sidebarFilter, setSidebarFilter] = useState<number | 'desiredDateAlert' | undefined>(6);
+  const previousFilterRef = useRef<number | 'desiredDateAlert' | undefined>(6);
   const [summary, setSummary] = useState({ totalQueue: 0, pendingCount: 0, reviewingCount: 0, desiredDateAlertCount: 0 });
 
   useEffect(() => {
-    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
+    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: 6, showAll: false });
     approverService.fetchSummary().then(setSummary).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -58,6 +59,7 @@ export function ApproverDashboard() {
   }, [detailError, clearRequestDetail]);
 
   const handleRowClick = async (item: ApproverRequestDetailView) => {
+    previousFilterRef.current = sidebarFilter;
     setSelectedRequestId(item.paymentRequestId);
     await loadRequestDetail(item.paymentRequestId);
   };
@@ -67,10 +69,10 @@ export function ApproverDashboard() {
     setBranch('');
     setDesiredDate('');
     setStatusId(undefined);
-    setSidebarFilter(undefined);
+    setSidebarFilter(6);
     clearRequestDetail();
     setSelectedRequestId(null);
-    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
+    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: 6, showAll: false });
     approverService.fetchSummary().then(setSummary).catch(() => {});
   };
 
@@ -112,7 +114,15 @@ export function ApproverDashboard() {
   const handleBack = () => {
     clearRequestDetail();
     setSelectedRequestId(null);
-    loadRequests();
+    const prev = previousFilterRef.current;
+    setSidebarFilter(prev);
+    if (prev === undefined) {
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
+    } else if (prev === 'desiredDateAlert') {
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', desiredDateAlert: true, showAll: false });
+    } else {
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: prev, showAll: false });
+    }
     approverService.fetchSummary().then(setSummary).catch(() => {});
   };
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import apiClient from '../../services/api-client';
 import { wsService } from '../../services/websocket.service';
@@ -16,10 +16,11 @@ import {
 import {
   Search,
   RefreshCw,
-  Sparkles,
   Inbox,
   ChevronDown,
 } from 'lucide-react';
+import { KpiCard, DashboardKpiGrid } from '../../components/shared';
+import { LayoutGrid, Clock, Eye, CheckCircle, XCircle } from 'lucide-react';
 
 const triggerToast = (type: 'success' | 'error' | 'warning' | 'info', message: string) => {
   window.dispatchEvent(new CustomEvent('globalToast', { detail: { type, message } }));
@@ -33,6 +34,7 @@ export function ManagerDashboard() {
   const { t } = useTranslation();
   const { user } = useAuthContext();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [requests, setRequests] = useState<PaymentRequestWithApplicant[]>([]);
   const [isListLoading, setIsListLoading] = useState(true);
@@ -55,6 +57,9 @@ export function ManagerDashboard() {
 
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Sidebar KPI card filter (tracks which card is visually highlighted)
+  const [sidebarFilter, setSidebarFilter] = useState<number | undefined>(undefined);
 
   // Fetch on mount and whenever active filters change
   useEffect(() => {
@@ -85,7 +90,7 @@ export function ManagerDashboard() {
 
     load();
     return () => { cancelled = true; };
-  }, [activeStatus, activeDate, activeSearch, refreshKey, t]);
+  }, [activeStatus, activeDate, activeSearch, refreshKey, location.pathname, t]);
 
   const handleSearch = () => {
     setActiveSearch(localSearchText);
@@ -100,6 +105,18 @@ export function ManagerDashboard() {
     setLocalDate('');
     setActiveSearch('');
     setActiveStatus('');
+    setActiveDate('');
+    setSidebarFilter(undefined);
+    setPage(1);
+  };
+
+  const handleSidebarFilter = (newStatusId?: number) => {
+    setSidebarFilter(newStatusId);
+    setLocalSearchText('');
+    setLocalStatus('');
+    setLocalDate('');
+    setActiveSearch('');
+    setActiveStatus(newStatusId ?? '');
     setActiveDate('');
     setPage(1);
   };
@@ -129,6 +146,8 @@ export function ManagerDashboard() {
     };
   }, [user]);
 
+
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
@@ -144,8 +163,7 @@ export function ManagerDashboard() {
   const reviewingCount = requests.filter(r => r.statusId === PaymentStatus.MANAGER_REVIEWING).length;
   const verifiedCount = requests.filter(r => r.statusId === PaymentStatus.MANAGER_VERIFIED).length;
   const rejectedCount = requests.filter(r => r.statusId === PaymentStatus.REJECTED_MANAGER).length;
-  const approvedCount = requests.filter(r => r.statusId === PaymentStatus.APPROVED).length;
-  const paidCount = requests.filter(r => r.statusId === PaymentStatus.PAID).length;
+
 
   const totalResults = requests.length;
   const totalPages = Math.ceil(totalResults / pageSize);
@@ -188,8 +206,7 @@ export function ManagerDashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-              <Sparkles className="h-8 w-8 text-indigo-600 animate-pulse" />
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
               {t('dashboard.manager.title')}
             </h1>
             <p className="text-slate-500 mt-1 text-sm">{t('dashboard.manager.welcome_message')}</p>
@@ -206,66 +223,53 @@ export function ManagerDashboard() {
         </div>
 
         {/* Metrics Summary Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-          {[
-            {
-              title: t('dashboard.manager.total_assigned'),
-              count: totalCount,
-              color: 'border-blue-500/20 text-blue-700 bg-blue-500/5',
-              glow: 'bg-blue-400',
-            },
-            {
-              title: t('dashboard.manager.pending_review'),
-              count: pendingCount,
-              color: 'border-amber-500/20 text-amber-700 bg-amber-500/5',
-              glow: 'bg-amber-400',
-            },
-            {
-              title: t('dashboard.manager.reviewing'),
-              count: reviewingCount,
-              color: 'border-indigo-500/20 text-indigo-700 bg-indigo-500/5',
-              glow: 'bg-indigo-400',
-            },
-            {
-              title: t('dashboard.manager.verified'),
-              count: verifiedCount,
-              color: 'border-emerald-500/20 text-emerald-700 bg-emerald-500/5',
-              glow: 'bg-emerald-400',
-            },
-            {
-              title: t('dashboard.manager.rejected'),
-              count: rejectedCount,
-              color: 'border-rose-500/20 text-rose-700 bg-rose-500/5',
-              glow: 'bg-rose-400',
-            },
-            {
-              title: t('dashboard.manager.approved'),
-              count: approvedCount,
-              color: 'border-teal-500/20 text-teal-700 bg-teal-500/5',
-              glow: 'bg-teal-400',
-            },
-            {
-              title: t('dashboard.manager.paid'),
-              count: paidCount,
-              color: 'border-violet-500/20 text-violet-700 bg-violet-500/5',
-              glow: 'bg-violet-400',
-            },
-          ].map((item, idx) => (
-            <div
-              key={idx}
-              className={`p-5 rounded-2xl border text-left cursor-default ${item.color}`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider opacity-85">{item.title}</span>
-                <span className="flex h-2.5 w-2.5 relative">
-                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${item.glow}`}></span>
-                  <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${item.glow}`}></span>
-                </span>
-              </div>
-              <div className="text-3xl font-black mt-2 tracking-tight">{item.count}</div>
-            </div>
-          ))}
-        </div>
+        <DashboardKpiGrid>
+          <div className={sidebarFilter === undefined ? 'ring-2 ring-blue-400 rounded-xl' : ''}>
+            <KpiCard
+              label={t('dashboard.manager.total_assigned')}
+              count={totalCount}
+              icon={<LayoutGrid />}
+              colorClasses="bg-blue-50 text-blue-900 border border-blue-200"
+              onClick={() => handleSidebarFilter(undefined)}
+            />
+          </div>
+          <div className={sidebarFilter === PaymentStatus.SUBMITTED_MANAGER ? 'ring-2 ring-amber-400 rounded-xl' : ''}>
+            <KpiCard
+              label={t('dashboard.manager.pending_review')}
+              count={pendingCount}
+              icon={<Clock />}
+              colorClasses="bg-amber-50 text-amber-900 border border-amber-200"
+              onClick={() => handleSidebarFilter(PaymentStatus.SUBMITTED_MANAGER)}
+            />
+          </div>
+          <div className={sidebarFilter === PaymentStatus.MANAGER_REVIEWING ? 'ring-2 ring-indigo-400 rounded-xl' : ''}>
+            <KpiCard
+              label={t('dashboard.manager.reviewing')}
+              count={reviewingCount}
+              icon={<Eye />}
+              colorClasses="bg-indigo-50 text-indigo-900 border border-indigo-200"
+              onClick={() => handleSidebarFilter(PaymentStatus.MANAGER_REVIEWING)}
+            />
+          </div>
+          <div className={sidebarFilter === PaymentStatus.MANAGER_VERIFIED ? 'ring-2 ring-emerald-400 rounded-xl' : ''}>
+            <KpiCard
+              label={t('dashboard.manager.verified')}
+              count={verifiedCount}
+              icon={<CheckCircle />}
+              colorClasses="bg-emerald-50 text-emerald-900 border border-emerald-200"
+              onClick={() => handleSidebarFilter(PaymentStatus.MANAGER_VERIFIED)}
+            />
+          </div>
+          <div className={sidebarFilter === PaymentStatus.REJECTED_MANAGER ? 'ring-2 ring-rose-400 rounded-xl' : ''}>
+            <KpiCard
+              label={t('dashboard.manager.rejected')}
+              count={rejectedCount}
+              icon={<XCircle />}
+              colorClasses="bg-rose-50 text-rose-900 border border-rose-200"
+              onClick={() => handleSidebarFilter(PaymentStatus.REJECTED_MANAGER)}
+            />
+          </div>
+        </DashboardKpiGrid>
 
         {/* Filter Block */}
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -424,7 +428,7 @@ export function ManagerDashboard() {
                             onClick={() => handleProcess(req.paymentRequestId)}
                             className="inline-flex items-center gap-1.5 rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                           >
-                            Process
+                            View Detail
                           </button>
                         </td>
                       </tr>
