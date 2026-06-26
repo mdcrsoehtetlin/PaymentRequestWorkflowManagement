@@ -43,7 +43,7 @@ export const AccountingQueueTable: FC<Props> = ({
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Request #</th>
+              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Request No.</th>
               <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Applicant</th>
               <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Branch</th>
               <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Application Date</th>

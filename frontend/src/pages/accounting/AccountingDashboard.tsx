@@ -19,7 +19,7 @@ const accountingFilterFields: FilterField[] = [
     key: 'search',
     label: 'Search',
     type: 'text',
-    placeholder: 'Request #, applicant name...',
+      placeholder: 'Request No, Applicant Name...',
   },
   {
     key: 'branch',
@@ -196,6 +196,7 @@ export function AccountingDashboard() {
             }
           });
           setFilters(formattedFilters);
+          setKpiFilter(null);
           setPage(1);
         }}
         onClear={handleClearFilters}
