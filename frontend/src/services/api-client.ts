@@ -39,6 +39,10 @@ const triggerToast = (
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiErrorResponse>) => {
+    if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+      return Promise.reject(error);
+    }
+
     const status = error.response?.status;
     const data = error.response?.data;
 
