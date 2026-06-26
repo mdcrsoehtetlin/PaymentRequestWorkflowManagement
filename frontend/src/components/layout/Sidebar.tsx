@@ -1,6 +1,6 @@
 import { LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 interface SidebarProps {
@@ -52,6 +52,7 @@ function useRoleMenuConfig() {
 export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const roleMenuConfig = useRoleMenuConfig();
 
   const roleConfig = roleMenuConfig[currentRole as keyof typeof roleMenuConfig] ?? roleMenuConfig.APPLICANT;
@@ -98,7 +99,7 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
               roleConfig.menuItems.map((item) => (
                 <NavLink
                   key={item.label}
-                  href={item.path}
+                  to={item.path}
                   onClick={(e) => {
                     e.preventDefault();
                     if (window.location.pathname === item.path) {
