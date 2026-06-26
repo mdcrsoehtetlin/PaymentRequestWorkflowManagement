@@ -1,26 +1,28 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, X } from 'lucide-react';
 import { apiClient } from '../../services/api-client';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 
 type MasterCategory = 'currencies' | 'roles' | 'statuses' | 'payment-types' | 'payment-methods';
 
-const CATEGORIES: { value: MasterCategory; label: string }[] = [
-  { value: 'currencies', label: '通貨' },
-  { value: 'roles', label: '役割' },
-  { value: 'statuses', label: 'ステータス' },
-  { value: 'payment-types', label: '支払タイプ' },
-  { value: 'payment-methods', label: '支払方法' },
-];
-
 /**
  * @description Master Data Configuration workspace component.
  * Displays read-only lookup tables for system configuration.
  */
 export function MasterDataWorkspace() {
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState<MasterCategory>('currencies');
   const [data, setData] = useState<Record<string, unknown>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const categories: { value: MasterCategory; label: string }[] = [
+    { value: 'currencies', label: t('admin.master_data.categories.currencies') },
+    { value: 'roles', label: t('admin.master_data.categories.roles') },
+    { value: 'statuses', label: t('admin.master_data.categories.statuses') },
+    { value: 'payment-types', label: t('admin.master_data.categories.payment_types') },
+    { value: 'payment-methods', label: t('admin.master_data.categories.payment_methods') },
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,16 +87,16 @@ export function MasterDataWorkspace() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">マスターデータ設定</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t('admin.master_data.title')}</h1>
         <p className="text-sm text-slate-500 mt-1">
-          システムのルックアップテーブルを確認できます
+          {t('admin.master_data.description')}
         </p>
       </div>
 
       {/* Category Selector */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
         <div className="flex flex-wrap items-center gap-2">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat.value}
               onClick={() => setActiveCategory(cat.value)}
@@ -115,7 +117,7 @@ export function MasterDataWorkspace() {
         columns={getColumns()}
         data={data}
         isLoading={isLoading}
-        emptyMessage="データがありません"
+        emptyMessage={t('admin.master_data.empty_message')}
       />
     </div>
   );

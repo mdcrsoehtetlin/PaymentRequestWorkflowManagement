@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Eye, Search } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { CustomDropdown } from '../../components/shared/CustomDropdown';
@@ -32,31 +33,17 @@ interface AuditLogResponse {
 
 type Filters = Record<string, string>;
 
-const ACTION_OPTIONS = [
-  { value: '', label: 'すべて' },
-  { value: '1', label: '作成' },
-  { value: '2', label: '編集' },
-  { value: '3', label: '提出' },
-  { value: '4', label: 'マネージャー確認開始' },
-  { value: '5', label: 'マネージャー確認' },
-  { value: '6', label: 'マネージャー差戻し' },
-  { value: '7', label: '承認者確認開始' },
-  { value: '8', label: '承認' },
-  { value: '9', label: '承認者差戻し' },
-  { value: '10', label: '支払完了' },
-];
-
-const ACTION_LABELS: Record<number, string> = {
-  1: '作成',
-  2: '編集',
-  3: '提出',
-  4: 'マネージャー確認開始',
-  5: 'マネージャー確認',
-  6: 'マネージャー差戻し',
-  7: '承認者確認開始',
-  8: '承認',
-  9: '承認者差戻し',
-  10: '支払完了',
+const ACTION_TYPE_MAP: Record<number, string> = {
+  1: 'created',
+  2: 'edited',
+  3: 'submitted',
+  4: 'mgr_review_start',
+  5: 'mgr_review',
+  6: 'mgr_rejected',
+  7: 'appr_review_start',
+  8: 'approved',
+  9: 'appr_rejected',
+  10: 'payment_completed',
 };
 
 /**
@@ -64,6 +51,7 @@ const ACTION_LABELS: Record<number, string> = {
  * Displays global transaction audit logs with search filters and metadata panel.
  */
 export function AuditLogWorkspace() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<AuditLogRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
@@ -106,11 +94,25 @@ export function AuditLogWorkspace() {
     actorName: '',
   });
 
+  const actionOptions = [
+    { value: '', label: t('common.all') },
+    { value: '1', label: t('admin.audit_log.action_label.created') },
+    { value: '2', label: t('admin.audit_log.action_label.edited') },
+    { value: '3', label: t('admin.audit_log.action_label.submitted') },
+    { value: '4', label: t('admin.audit_log.action_label.mgr_review_start') },
+    { value: '5', label: t('admin.audit_log.action_label.mgr_review') },
+    { value: '6', label: t('admin.audit_log.action_label.mgr_rejected') },
+    { value: '7', label: t('admin.audit_log.action_label.appr_review_start') },
+    { value: '8', label: t('admin.audit_log.action_label.approved') },
+    { value: '9', label: t('admin.audit_log.action_label.appr_rejected') },
+    { value: '10', label: t('admin.audit_log.action_label.payment_completed') },
+  ];
+
   const handleSearch = () => {
     const startDate = draft.startDate;
     const endDate = draft.endDate;
     if (startDate && endDate && startDate > endDate) {
-      setDateError('開始日は終了日より後に設定できません');
+      setDateError(t('admin.audit_log.filters.date_error'));
       return;
     }
     setDateError('');
@@ -190,30 +192,30 @@ export function AuditLogWorkspace() {
   const columns: Column<AuditLogRecord>[] = [
     {
       key: 'requestNumber',
-      header: 'リクエスト番号',
+      header: t('admin.audit_log.columns.request_number'),
       sortable: true,
       render: (_val, row) => row.requestNumber ?? 'Unknown',
     },
     {
       key: 'actorName',
-      header: '実行者',
+      header: t('admin.audit_log.columns.actor'),
       sortable: true,
     },
     {
       key: 'actionTypeId',
-      header: 'アクション',
+      header: t('admin.audit_log.columns.action'),
       sortable: true,
-      render: (_val, row) => ACTION_LABELS[row.actionTypeId] ?? '不明',
+      render: (_val, row) => t(`admin.audit_log.action_label.${ACTION_TYPE_MAP[row.actionTypeId] ?? 'unknown'}`),
     },
     {
       key: 'ipAddress',
-      header: 'IPアドレス',
+      header: t('admin.audit_log.columns.ip_address'),
       sortable: true,
       width: '140px',
     },
     {
       key: 'timestamp',
-      header: '日時',
+      header: t('admin.audit_log.columns.date_time'),
       sortable: true,
       render: (_val, row) => new Date(row.timestamp).toLocaleString('ja-JP'),
     },
@@ -227,7 +229,7 @@ export function AuditLogWorkspace() {
             setSelectedLog(row);
           }}
           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-          title="詳細を見る"
+          title={t('admin.audit_log.columns.view_detail')}
         >
           <Eye className="w-4 h-4" />
         </button>
@@ -238,9 +240,9 @@ export function AuditLogWorkspace() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">監査ログ</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t('admin.audit_log.title')}</h1>
         <p className="text-sm text-slate-500 mt-1">
-          グローバルトランザクション履歴を確認できます
+          {t('admin.audit_log.description')}
         </p>
       </div>
 
@@ -249,7 +251,7 @@ export function AuditLogWorkspace() {
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {/* Request Number */}
           <div>
-            <label className="block text-sm text-slate-700 mb-1">リクエスト番号</label>
+            <label className="block text-sm text-slate-700 mb-1">{t('admin.audit_log.filters.request_number')}</label>
             <div className="flex">
               <span className="inline-flex items-center rounded-l-lg border border-r-0 border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 whitespace-nowrap">
                 PRF-
@@ -258,7 +260,7 @@ export function AuditLogWorkspace() {
                 type="text"
                 value={draft.requestNumber}
                 onChange={(e) => setDraft((prev) => ({ ...prev, requestNumber: e.target.value }))}
-                placeholder="番号を入力"
+                placeholder={t('admin.audit_log.filters.request_number_placeholder')}
                 className={`${inputClasses} rounded-l-none`}
               />
             </div>
@@ -266,30 +268,30 @@ export function AuditLogWorkspace() {
 
           {/* Actor Name */}
           <div>
-            <label className="block text-sm text-slate-700 mb-1">実行者名</label>
+            <label className="block text-sm text-slate-700 mb-1">{t('admin.audit_log.filters.actor_name')}</label>
             <input
               type="text"
               value={draft.actorName}
               onChange={(e) => setDraft((prev) => ({ ...prev, actorName: e.target.value }))}
-              placeholder="名前で検索"
+              placeholder={t('admin.audit_log.filters.actor_name_placeholder')}
               className={inputClasses}
             />
           </div>
 
           {/* Action Type */}
           <div>
-            <label className="block text-sm text-slate-700 mb-1">アクション種別</label>
+            <label className="block text-sm text-slate-700 mb-1">{t('admin.audit_log.filters.action_type')}</label>
             <CustomDropdown
-              options={ACTION_OPTIONS}
+              options={actionOptions}
               value={draft.actionTypeId}
-              placeholder="すべて"
+              placeholder={t('common.all')}
               onChange={(val) => setDraft((prev) => ({ ...prev, actionTypeId: String(val ?? '') }))}
             />
           </div>
 
           {/* Start Date */}
           <div>
-            <label className="block text-sm text-slate-700 mb-1">開始日</label>
+            <label className="block text-sm text-slate-700 mb-1">{t('admin.audit_log.filters.start_date')}</label>
             <input
               type="date"
               value={draft.startDate}
@@ -300,7 +302,7 @@ export function AuditLogWorkspace() {
 
           {/* End Date */}
           <div>
-            <label className="block text-sm text-slate-700 mb-1">終了日</label>
+            <label className="block text-sm text-slate-700 mb-1">{t('admin.audit_log.filters.end_date')}</label>
             <input
               type="date"
               value={draft.endDate}
@@ -319,7 +321,7 @@ export function AuditLogWorkspace() {
               className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 whitespace-nowrap transition-all duration-200"
             >
               <Search className="w-4 h-4" />
-              Search
+              {t('common.search')}
             </button>
             <button
               type="button"
@@ -331,7 +333,7 @@ export function AuditLogWorkspace() {
                   : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
               }`}
             >
-              Clear Filters
+              {t('common.clear_filters')}
             </button>
           </div>
         </div>
@@ -344,7 +346,7 @@ export function AuditLogWorkspace() {
             className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 whitespace-nowrap transition-all duration-200"
           >
             <Search className="w-4 h-4" />
-            Search
+            {t('common.search')}
           </button>
           <button
             type="button"
@@ -356,7 +358,7 @@ export function AuditLogWorkspace() {
                 : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
             }`}
           >
-            Clear Filters
+            {t('common.clear_filters')}
           </button>
         </div>
       </div>
@@ -371,7 +373,7 @@ export function AuditLogWorkspace() {
             columns={columns}
             data={sortedLogs}
             isLoading={isLoading}
-            emptyMessage="該当するログが見つかりません"
+            emptyMessage={t('admin.audit_log.empty_message')}
             onRowClick={(row) => setSelectedLog(row as unknown as AuditLogRecord)}
             sorting={{
               sortBy: sorting.sortBy,

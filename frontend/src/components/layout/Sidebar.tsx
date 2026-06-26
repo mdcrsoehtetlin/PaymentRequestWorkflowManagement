@@ -9,48 +9,52 @@ interface SidebarProps {
   currentRole: string;
 }
 
-const roleMenuConfig: Record<string, { title: string; dashboardPath: string; menuItems: { label: string; path: string }[] }> = {
-  APPROVER: {
-    title: 'Approver Console',
-    dashboardPath: '/approver',
-    menuItems: [],
-  },
-  MANAGER: {
-    title: 'Manager Console',
-    dashboardPath: '/manager',
-    menuItems: [],
-  },
-  ACCOUNTING: {
-    title: 'Accounting Console',
-    dashboardPath: '/accounting',
-    menuItems: [
-      { label: 'Dashboard', path: '/accounting' },
-    ],
-  },
-  ADMIN: {
-    title: 'Admin Console',
-    dashboardPath: '/admin',
-    menuItems: [
-      { label: 'ユーザー管理', path: '/admin/users' },
-      { label: 'マスターデータ', path: '/admin/master-data' },
-      { label: '監査ログ', path: '/admin/audit-logs' },
-    ],
-  },
-  APPLICANT: {
-    title: 'Applicant Console',
-    dashboardPath: '/applicant',
-    menuItems: [
-      { label: 'Dashboard', path: '/applicant' },
-      { label: 'New Application', path: '/applicant/form' },
-    ],
-  },
-};
+function useRoleMenuConfig() {
+  const { t } = useTranslation();
+  return {
+    APPROVER: {
+      title: 'Approver Console',
+      dashboardPath: '/approver',
+      menuItems: [],
+    },
+    MANAGER: {
+      title: 'Manager Console',
+      dashboardPath: '/manager',
+      menuItems: [],
+    },
+    ACCOUNTING: {
+      title: 'Accounting Console',
+      dashboardPath: '/accounting',
+      menuItems: [
+        { label: 'Dashboard', path: '/accounting' },
+      ],
+    },
+    ADMIN: {
+      title: 'Admin Console',
+      dashboardPath: '/admin',
+      menuItems: [
+        { label: t('admin.sidebar.user_management'), path: '/admin/users' },
+        { label: t('admin.sidebar.master_data'), path: '/admin/master-data' },
+        { label: t('admin.sidebar.audit_logs'), path: '/admin/audit-logs' },
+      ],
+    },
+    APPLICANT: {
+      title: 'Applicant Console',
+      dashboardPath: '/applicant',
+      menuItems: [
+        { label: 'Dashboard', path: '/applicant' },
+        { label: 'New Application', path: '/applicant/form' },
+      ],
+    },
+  };
+}
 
 export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
+  const roleMenuConfig = useRoleMenuConfig();
 
-  const roleConfig = roleMenuConfig[currentRole] ?? roleMenuConfig.APPLICANT;
+  const roleConfig = roleMenuConfig[currentRole as keyof typeof roleMenuConfig] ?? roleMenuConfig.APPLICANT;
   const title = roleConfig.title;
   const dashboardPath = roleConfig.dashboardPath;
 
