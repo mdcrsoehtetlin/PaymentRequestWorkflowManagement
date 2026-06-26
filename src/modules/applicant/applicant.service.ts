@@ -68,8 +68,9 @@ export class ApplicantService {
     maxAmount?: number,
     branch?: string,
     desiredDate?: string,
+    kpi?: string,
   ): Promise<DashboardResponseDto> {
-    const cacheKey = `applicant_dashboard_${applicantId}_${page}_${limit}_${search || ''}_${statusId || ''}_${startDate || ''}_${endDate || ''}_${minAmount || ''}_${maxAmount || ''}_${branch || ''}_${desiredDate || ''}`;
+    const cacheKey = `applicant_dashboard_${applicantId}_${page}_${limit}_${search || ''}_${statusId || ''}_${startDate || ''}_${endDate || ''}_${minAmount || ''}_${maxAmount || ''}_${branch || ''}_${desiredDate || ''}_${kpi || ''}`;
     const cached = await this.cacheManager.get<DashboardResponseDto>(cacheKey);
     if (cached) return cached;
 
@@ -143,6 +144,22 @@ export class ApplicantService {
     }
     if (statusId) {
       query.andWhere('pr.status_id = :statusId', { statusId });
+    }
+
+    if (kpi) {
+      if (kpi === 'pending_review') {
+        query.andWhere('pr.status_id IN (:...pendingIds)', {
+          pendingIds: [2, 3, 6, 7],
+        });
+      } else if (kpi === 'approved') {
+        query.andWhere('pr.status_id IN (:...approvedIds)', {
+          approvedIds: [8, 10],
+        });
+      } else if (kpi === 'rejected') {
+        query.andWhere('pr.status_id IN (:...rejectedIds)', {
+          rejectedIds: [5, 9],
+        });
+      }
     }
     if (startDate) {
       query.andWhere('pr.application_date >= :startDate', { startDate });
@@ -290,7 +307,7 @@ export class ApplicantService {
       });
       await manager.save(log);
 
-      await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
+      await this.clearDashboardCache(applicantId);
 
       return savedRequest;
     });
@@ -372,7 +389,7 @@ export class ApplicantService {
       });
       await manager.save(log);
 
-      await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
+      await this.clearDashboardCache(applicantId);
 
       this.websocketGateway.sendPersonalNotification(
         applicantId,
@@ -442,7 +459,7 @@ export class ApplicantService {
       { hasReceipt: true },
     );
 
-    await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
+    await this.clearDashboardCache(applicantId);
 
     return savedReceipt;
   }
@@ -499,7 +516,7 @@ export class ApplicantService {
       );
     }
 
-    await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
+    await this.clearDashboardCache(applicantId);
   }
 
   async submitToApprover(
@@ -541,7 +558,7 @@ export class ApplicantService {
       });
       await manager.save(log);
 
-      await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
+      await this.clearDashboardCache(applicantId);
 
       this.websocketGateway.sendPersonalNotification(
         applicantId,
@@ -637,7 +654,7 @@ export class ApplicantService {
       });
       await manager.save(log);
 
-      await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
+      await this.clearDashboardCache(applicantId);
 
       return savedRequest;
     });
@@ -682,7 +699,47 @@ export class ApplicantService {
       });
       await manager.save(log);
 
-      await this.cacheManager.del(`applicant_dashboard_${applicantId}_1_10`);
+      await this.clearDashboardCache(applicantId);
     });
+  }
+
+  private async clearDashboardCache(applicantId: number) {
+    try {
+      type CacheWithStore = {
+        store?: {
+          keys?: (pattern: string) => Promise<string[]>;
+          client?: {
+            keys?: (pattern: string) => Promise<string[]>;
+          };
+        };
+      };
+
+      const cache = this.cacheManager as unknown as CacheWithStore;
+      const store = cache.store;
+
+      if (store && typeof store.keys === 'function') {
+        const keys = await store.keys(`applicant_dashboard_${applicantId}_*`);
+        if (keys && keys.length > 0) {
+          await Promise.all(keys.map((k: string) => this.cacheManager.del(k)));
+        }
+      } else if (
+        store &&
+        store.client &&
+        typeof store.client.keys === 'function'
+      ) {
+        const keys = await store.client.keys(
+          `applicant_dashboard_${applicantId}_*`,
+        );
+        if (keys && keys.length > 0) {
+          await Promise.all(keys.map((k: string) => this.cacheManager.del(k)));
+        }
+      } else {
+        await this.cacheManager.del(
+          `applicant_dashboard_${applicantId}_1_10_________`,
+        );
+      }
+    } catch (e) {
+      console.warn('Failed to clear cache pattern', e);
+    }
   }
 }
