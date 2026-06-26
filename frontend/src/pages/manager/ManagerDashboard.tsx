@@ -187,7 +187,6 @@ export function ManagerDashboard() {
 
   const statusLabel = (val: number | '') => {
     if (val === '') return t('dashboard.manager.all_statuses');
-    if (val === PaymentStatus.DRAFT) return t('dashboard.manager.status_draft');
     if (val === PaymentStatus.SUBMITTED_MANAGER) return t('dashboard.manager.pending_review');
     if (val === PaymentStatus.MANAGER_REVIEWING) return t('dashboard.manager.reviewing');
     if (val === PaymentStatus.MANAGER_VERIFIED) return t('dashboard.manager.verified');
@@ -304,7 +303,6 @@ export function ManagerDashboard() {
                   <div className="absolute mt-1 w-full bg-white rounded-md shadow-lg border border-slate-200 py-1 z-50">
                     {[
                       { value: '' as const, label: t('dashboard.manager.all_statuses') },
-                      { value: PaymentStatus.DRAFT, label: t('dashboard.manager.status_draft') },
                       { value: PaymentStatus.SUBMITTED_MANAGER, label: t('dashboard.manager.pending_review') },
                       { value: PaymentStatus.MANAGER_REVIEWING, label: t('dashboard.manager.reviewing') },
                       { value: PaymentStatus.MANAGER_VERIFIED, label: t('dashboard.manager.verified') },

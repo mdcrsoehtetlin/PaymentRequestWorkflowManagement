@@ -14,13 +14,7 @@ import { QueryRequestsDto } from './dto/query-requests.dto';
 import { ApproveRequestDto } from './dto/approve-request.dto';
 import { RejectRequestDto } from './dto/reject-request.dto';
 import { StartReviewDto } from './dto/start-review.dto';
-import {
-  ApprovalActionType,
-  PaymentStatus,
-  RoleCode,
-  UserRole,
-} from '../shared/types';
-import { User } from '../shared/entities/user.entity';
+import { ApprovalActionType, PaymentStatus, RoleCode } from '../shared/types';
 
 @Injectable()
 export class ManagerService {
@@ -296,7 +290,6 @@ export class ManagerService {
     dto: ApproveRequestDto,
     ipAddress: string,
     userAgent: string,
-    managerName: string,
   ) {
     this.logger.log(`Verifying request ${id} by manager ${managerId}`);
 
@@ -308,7 +301,7 @@ export class ManagerService {
     }
 
     try {
-      const txResult = await this.dataSource.transaction(
+      await this.dataSource.transaction(
         async (entityManager: EntityManager) => {
           const request = await entityManager.findOne(PaymentRequest, {
             where: {
@@ -343,39 +336,14 @@ export class ManagerService {
           }
 
           const previousStatus = request.statusId;
-          let nextAssigneeId = request.finalApproverUserId;
-
-          if (!nextAssigneeId) {
-            const activeApprover = await entityManager.findOne(User, {
-              where: {
-                roleId: UserRole.APPROVER,
-                isActive: true,
-              },
-              order: { userId: 'ASC' },
-            });
-
-            if (!activeApprover) {
-              throw new BadRequestException({
-                errorCode: 'ERR-MGR-NO-APPROVER',
-                message:
-                  '利用可能な承認者がいません。管理者に連絡してください。',
-              });
-            }
-
-            nextAssigneeId = activeApprover.userId;
-            this.logger.log(
-              `Auto-assigned approver userId=${nextAssigneeId} for request ${id}`,
-            );
-          }
 
           await entityManager.update(
             PaymentRequest,
             { id },
             {
-              statusId: PaymentStatus.SUBMITTED_APPROVER,
-              submittedToApproverDate: new Date(),
-              finalApproverUserId: nextAssigneeId,
-              currentAssignedToUserId: nextAssigneeId,
+              statusId: PaymentStatus.MANAGER_VERIFIED,
+              managerVerificationDate: new Date(),
+              currentAssignedToUserId: managerId,
               modifiedDate: new Date(),
             },
           );
@@ -385,46 +353,18 @@ export class ManagerService {
             actionTakenByUserId: managerId,
             actionTypeId: ApprovalActionType.MGR_VERIFIED,
             previousStatusId: previousStatus,
-            newStatusId: PaymentStatus.SUBMITTED_APPROVER,
+            newStatusId: PaymentStatus.MANAGER_VERIFIED,
             comment: dto.comment || '承認されました。',
             ipAddress,
             userAgent,
           });
-
-          return {
-            previousStatus,
-            requestNumber: request.requestNumber,
-            nextAssigneeId,
-          };
         },
       );
 
       try {
-        this.websocketGateway.sendPersonalNotification(
-          txResult.nextAssigneeId,
-          'statusUpdate',
-          {
-            event: 'statusUpdate',
-            paymentRequestId: id,
-            requestNumber: txResult.requestNumber,
-            previousStatusId: txResult.previousStatus,
-            newStatusId: PaymentStatus.SUBMITTED_APPROVER,
-            actionByUserId: managerId,
-            actionByName: managerName,
-            comment: dto.comment || null,
-            timestamp: new Date().toISOString(),
-          },
-        );
-
         this.websocketGateway.sendStatusUpdate(RoleCode.MANAGER, {
           event: 'queueChange',
           action: 'VERIFIED',
-          requestId: id,
-        });
-
-        this.websocketGateway.sendStatusUpdate(RoleCode.APPROVER, {
-          event: 'queueChange',
-          action: 'NEW_REQUEST',
           requestId: id,
         });
       } catch (wsErr) {
@@ -436,7 +376,7 @@ export class ManagerService {
 
       return {
         success: true,
-        message: '申請を承認し、承認者に転送しました。',
+        message: '申請を確認済みにしました。',
       };
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));

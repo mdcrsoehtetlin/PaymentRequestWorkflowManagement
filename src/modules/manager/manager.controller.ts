@@ -99,14 +99,12 @@ export class ManagerController {
       throw new BadRequestException('有効な申請IDが指定されていません');
     }
     const managerId = user.sub;
-    const managerName = user.fullName;
     return this.managerService.verifyRequest(
       id,
       managerId,
       dto,
       ipAddress,
       userAgent || 'system',
-      managerName,
     );
   }
 
