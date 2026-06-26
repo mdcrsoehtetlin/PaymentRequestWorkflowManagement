@@ -4,7 +4,7 @@ import { ArrowLeft, Send, FileText, AlertCircle, Trash2, Download } from 'lucide
 import { fetchPaymentRequestDetail, submitToManager, submitToApprover, updatePaymentRequest, deleteReceipt, downloadReceipt } from './services/api';
 import apiClient from '../../services/api-client';
 import ReceiptUpload from './components/ReceiptUpload';
-import { STATUS_LABELS_EN, EDITABLE_STATUSES } from '../../types';
+import { STATUS_LABELS_EN, EDITABLE_STATUSES, CURRENCY_CODES } from '../../types';
 
 interface Breakdown { description: string; amount: number | string; }
 interface Log { id: string; comment: string; new_status_id: number; timestamp: string; }
@@ -32,6 +32,7 @@ interface DetailData {
 
 import { StatusBadge, ConfirmDialog } from '../../components/shared';
 import { useToast } from '../../hooks/useToast';
+import { formatCurrency } from '../../utils/format';
 
 const PaymentRequestDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -176,10 +177,7 @@ const PaymentRequestDetail: React.FC = () => {
     );
   }
 
-  const formatCurrency = (amount: string, currencyId: number) => {
-    const symbol = currencyId === 1 ? '$' : currencyId === 2 ? '€' : '¥';
-    return `${symbol}${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-  };
+
 
   const rejectionLog = data.logs?.find((log) => log.new_status_id === 5 || log.new_status_id === 9);
   const isEditableStatus = [1, 5, 9].includes(data.status_id);
@@ -332,7 +330,7 @@ const PaymentRequestDetail: React.FC = () => {
                           className="w-full px-2 py-1 border border-slate-300 rounded outline-none focus:border-blue-500 text-slate-900 bg-white"
                         />
                       ) : (
-                        <p className="font-medium text-slate-700">{item.description}</p>
+                        <p className="font-medium text-slate-700 truncate min-w-0">{item.description || <span className="italic text-slate-400">No description</span>}</p>
                       )}
                     </div>
                     <div className="ml-4">
@@ -349,8 +347,8 @@ const PaymentRequestDetail: React.FC = () => {
                           className="w-24 px-2 py-1 border border-slate-300 rounded outline-none focus:border-blue-500 text-slate-900 bg-white"
                         />
                       ) : (
-                        <span className="font-semibold text-slate-900">
-                          {formatCurrency(String(item.amount), data.currency_id)}
+                        <span className="font-semibold text-slate-900 whitespace-nowrap">
+                          {formatCurrency(String(item.amount), CURRENCY_CODES[data.currency_id as keyof typeof CURRENCY_CODES] || 'MMK')}
                         </span>
                       )}
                     </div>
@@ -369,10 +367,13 @@ const PaymentRequestDetail: React.FC = () => {
               )}
               <div className="p-5 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
                 <span className="font-medium text-slate-500 text-sm uppercase tracking-wider">Total Amount</span>
-                <span className="text-xl font-bold text-slate-900">
+                <span className="text-xl font-bold text-slate-900 whitespace-nowrap">
                   {isEditing && editData && editData.breakdowns ? 
-                    `$${editData.breakdowns.reduce((sum: number, b) => sum + Number(b.amount), 0).toFixed(2)}` : 
-                    formatCurrency(data.total_amount, data.currency_id)
+                    formatCurrency(
+                      String(editData.breakdowns.reduce((sum: number, b) => sum + Number(b.amount), 0)),
+                      CURRENCY_CODES[editData.currency_id as keyof typeof CURRENCY_CODES] || 'MMK'
+                    ) : 
+                    formatCurrency(data.total_amount, CURRENCY_CODES[data.currency_id as keyof typeof CURRENCY_CODES] || 'MMK')
                   }
                 </span>
               </div>
@@ -552,10 +553,10 @@ const PaymentRequestDetail: React.FC = () => {
                 <div className="space-y-2">
                   {data.receipts.map((r) => (
                     <div key={r.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 group">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-slate-400" />
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">{r.file_name}</p>
+                      <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
+                        <FileText className="w-5 h-5 text-slate-400 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-slate-900 truncate" title={r.file_name}>{r.file_name}</p>
                           <p className="text-xs text-slate-500">{(r.file_size / 1024).toFixed(1)} KB</p>
                         </div>
                       </div>

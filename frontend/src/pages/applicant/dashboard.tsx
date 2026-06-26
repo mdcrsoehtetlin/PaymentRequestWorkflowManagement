@@ -44,6 +44,7 @@ const ApplicantDashboard: React.FC = () => {
 
   // Filter state
   const [filters, setFilters] = useState<Record<string, string | number>>({});
+  const [activeKpi, setActiveKpi] = useState<string | undefined>(undefined);
 
   const {
     data,
@@ -55,8 +56,24 @@ const ApplicantDashboard: React.FC = () => {
     handleDelete
   } = usePaymentRequests(limit, lastUpdate, filters);
 
+  const handleKpiClick = (kpi: string | undefined) => {
+    setActiveKpi(kpi);
+    setFilters(prev => {
+      const newFilters = { ...prev };
+      if (kpi) {
+        newFilters.kpi = kpi;
+        delete newFilters.status; // KPI overrides explicit status filter
+      } else {
+        delete newFilters.kpi;
+      }
+      return newFilters;
+    });
+    setPage(1);
+  };
+
   const handleClearFilters = () => {
     setFilters({});
+    setActiveKpi(undefined);
     setPage(1);
   };
 
@@ -149,10 +166,42 @@ const ApplicantDashboard: React.FC = () => {
 
         {/* KPI Cards */}
         <DashboardKpiGrid>
-          <KpiCard label="Total Requests" count={kpis.total_requests} icon={<FileEdit />} colorClasses="bg-slate-100 text-slate-600" />
-          <KpiCard label="Pending Review" count={kpis.pending_review} icon={<Send />} colorClasses="bg-blue-50 text-blue-600" />
-          <KpiCard label="Approved" count={kpis.approved} icon={<CheckCircle />} colorClasses="bg-emerald-50 text-emerald-600" />
-          <KpiCard label="Rejected" count={kpis.rejected} icon={<XCircle />} colorClasses="bg-red-50 text-red-600" />
+          <div className={activeKpi === undefined ? 'ring-2 ring-slate-400 rounded-xl' : ''}>
+            <KpiCard 
+              label="Total Requests" 
+              count={kpis.total_requests} 
+              icon={<FileEdit />} 
+              colorClasses="bg-slate-100 text-slate-600 border border-slate-200" 
+              onClick={() => handleKpiClick(undefined)} 
+            />
+          </div>
+          <div className={activeKpi === 'pending_review' ? 'ring-2 ring-blue-400 rounded-xl' : ''}>
+            <KpiCard 
+              label="Pending Review" 
+              count={kpis.pending_review} 
+              icon={<Send />} 
+              colorClasses="bg-blue-50 text-blue-600 border border-blue-200" 
+              onClick={() => handleKpiClick('pending_review')} 
+            />
+          </div>
+          <div className={activeKpi === 'approved' ? 'ring-2 ring-emerald-400 rounded-xl' : ''}>
+            <KpiCard 
+              label="Approved" 
+              count={kpis.approved} 
+              icon={<CheckCircle />} 
+              colorClasses="bg-emerald-50 text-emerald-600 border border-emerald-200" 
+              onClick={() => handleKpiClick('approved')} 
+            />
+          </div>
+          <div className={activeKpi === 'rejected' ? 'ring-2 ring-red-400 rounded-xl' : ''}>
+            <KpiCard 
+              label="Rejected" 
+              count={kpis.rejected} 
+              icon={<XCircle />} 
+              colorClasses="bg-red-50 text-red-600 border border-red-200" 
+              onClick={() => handleKpiClick('rejected')} 
+            />
+          </div>
         </DashboardKpiGrid>
 
         {/* Search & Filter Bar */}
@@ -163,6 +212,10 @@ const ApplicantDashboard: React.FC = () => {
             const formattedFilters = { ...newFilters };
             if (formattedFilters.status) {
               formattedFilters.status = parseInt(formattedFilters.status as string, 10);
+              setActiveKpi(undefined); // Clear KPI if explicit status chosen
+              delete formattedFilters.kpi;
+            } else if (activeKpi) {
+              formattedFilters.kpi = activeKpi; // Preserve active KPI if no explicit status
             }
             // Remove empty filters
             Object.keys(formattedFilters).forEach(key => {

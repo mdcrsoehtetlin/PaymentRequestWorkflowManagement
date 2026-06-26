@@ -95,6 +95,7 @@ export class ApplicantController {
     @Query('maxAmount') maxAmount?: number,
     @Query('branch') branch?: string,
     @Query('desiredDate') desiredDate?: string,
+    @Query('kpi') kpi?: string,
   ): Promise<DashboardResponseDto> {
     const applicantId = Number(req.user.sub);
     return this.applicantService.getDashboardData(
@@ -109,6 +110,7 @@ export class ApplicantController {
       maxAmount ? Number(maxAmount) : undefined,
       branch,
       desiredDate,
+      kpi,
     );
   }
 
