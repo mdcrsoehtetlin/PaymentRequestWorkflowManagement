@@ -79,16 +79,18 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
 
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             {roleConfig.menuItems.length === 0 ? (
-              <NavLink
-                to={dashboardPath}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-800 text-white'
-                      : 'text-blue-100 hover:bg-blue-800 hover:text-white'
-                  }`
-                }
+              <a
+                href={dashboardPath}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (window.location.pathname === dashboardPath) {
+                    window.dispatchEvent(new CustomEvent('dashboard-refresh'));
+                  } else {
+                    navigate(dashboardPath);
+                  }
+                  onClose();
+                }}
+                className="block px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-800 text-white transition-colors"
               >
                 {t('sidebar.dashboard')}
               </NavLink>
@@ -96,15 +98,17 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
               roleConfig.menuItems.map((item) => (
                 <NavLink
                   key={item.label}
-                  to={item.path}
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-blue-800 text-white'
-                        : 'text-blue-100 hover:bg-blue-800 hover:text-white'
-                    }`
-                  }
+                  href={item.path}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (window.location.pathname === item.path) {
+                      window.dispatchEvent(new CustomEvent('dashboard-refresh'));
+                    } else {
+                      navigate(item.path);
+                    }
+                    onClose();
+                  }}
+                  className="block px-4 py-2.5 rounded-lg text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
                 >
                   {item.label}
                 </NavLink>

@@ -9,6 +9,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  ParseBoolPipe,
   BadRequestException,
   Put,
   Delete,
@@ -96,6 +97,7 @@ export class ApplicantController {
     @Query('branch') branch?: string,
     @Query('desiredDate') desiredDate?: string,
     @Query('kpi') kpi?: string,
+    @Query('refresh', new ParseBoolPipe({ optional: true })) refresh?: boolean,
   ): Promise<DashboardResponseDto> {
     const applicantId = Number(req.user.sub);
     return this.applicantService.getDashboardData(
@@ -111,6 +113,7 @@ export class ApplicantController {
       branch,
       desiredDate,
       kpi,
+      refresh,
     );
   }
 
@@ -165,8 +168,25 @@ export class ApplicantController {
         id: l.approvalLogId,
         comment: l.comment,
         new_status_id: l.newStatusId,
+        action_type_id: l.actionTypeId,
         timestamp: l.timestamp,
       })),
+    };
+  }
+
+  @Post(':id/comments')
+  async addComment(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body('comment') comment: string,
+  ) {
+    if (!comment || !comment.trim()) {
+      throw new BadRequestException('Comment is required');
+    }
+    const applicantId = Number(req.user.sub);
+    await this.applicantService.addComment(applicantId, Number(id), comment);
+    return {
+      message: 'Comment added successfully',
     };
   }
 
