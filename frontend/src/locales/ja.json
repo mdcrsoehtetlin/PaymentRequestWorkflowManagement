@@ -13,6 +13,7 @@
     "manager": {
       "title": "マネージャーダッシュボード",
       "welcome_message": "ダッシュボードへようこそ。ここではチームから提出された支払申請を検証できます。",
+      "refresh": "更新",
       "total_assigned": "総割当件数",
       "pending_review": "レビュー待ち",
       "reviewing": "レビュー中",
@@ -33,16 +34,54 @@
       "applicant": "申請者",
       "amount": "金額",
       "application_date": "申請日",
+      "urgent": "緊急",
       "status": "ステータス",
       "loading": "読み込み中...",
       "no_requests": "該当する支払申請がありません。",
       "unregistered": "N/A",
+      "select_request": "リクエストを選択して詳細を表示",
+      "select_request_hint": "支払リクエストを選択すると、内訳、添付された領収書を確認し、承認/差し戻しの操作を行えます。",
+      "loading_details": "リクエスト詳細を読み込み中...",
+      "last_updated": "最終更新:",
+      "employee_number": "社員番号",
+      "department_branch": "部署 / 拠点",
+      "desired_payment_date": "希望支払日",
+      "payment_type": "支払タイプ",
+      "payment_method": "支払方法",
+      "bank_account_phone": "銀行口座 / 電話番号",
+      "purpose": "目的",
+      "payment_breakdown": "支払内訳",
+      "date": "日付",
+      "description": "説明",
+      "total_amount": "合計金額",
+      "receipt_attachments": "領収書添付",
+      "no_receipts": "領収書ファイルが添付されていません。",
+      "preview": "プレビュー",
+      "download": "ダウンロード",
+      "download_error": "領収書のダウンロードに失敗しました。",
+      "approval_history": "承認プロセス履歴",
+      "comment_label": "コメント（承認は任意 / 差し戻しの場合は理由を入力してください >= 10文字）",
+      "comment_placeholder": "検証結果についてのコメント、または差し戻しの理由を入力してください。",
+      "max_chars": "最大500文字",
+      "reject": "差し戻し",
+      "approve": "承認",
+      "fetch_error": "支払申請の取得に失敗しました。",
+      "detail_fetch_error": "申請詳細の取得に失敗しました。",
+      "approve_success": "リクエストが承認されました。",
+      "reject_success": "リクエストが差し戻されました。",
+      "conflict_warning": "このリクエストは別のユーザーによって更新されました。最新の状態を読み込みます。",
+      "approve_error": "承認に失敗しました。",
+      "reject_error": "差し戻しに失敗しました。",
       "back_to_list": "リストに戻る",
       "request_not_found": "指定された支払申請が見つかりません。",
       "request_not_found_title": "申請が見つかりません",
       "request_not_found_detail": "お探しの支払申請は存在しないか、削除された可能性があります。",
-      "detail_fetch_error": "申請詳細の取得に失敗しました。",
-      "fetch_error": "支払申請の取得に失敗しました。"
+      "comment_max_error": "コメントは500文字以下にしてください。",
+      "rejection_reason_min_error": "差し戻しの理由は10文字以上で入力してください。",
+      "rejection_reason_max_error": "差し戻しの理由は500文字以下にしてください。",
+      "no_branch": "N/A",
+      "other": "その他",
+      "bank_transfer": "銀行振込"
     },
     "approver": {
       "title": "承認者ダッシュボード",
@@ -55,6 +94,772 @@
     "admin": {
       "title": "管理者ダッシュボード",
       "welcome_message": "ダッシュボードへようこそ。ここではユーザーとシステム設定を管理できます。"
+    }
+  },
+  "common": {
+    "status": {
+      "draft": "下書き",
+      "submitted_manager": "マネージャーに提出済み",
+      "manager_reviewing": "マネージャー確認中",
+      "manager_verified": "マネージャー確認済み",
+      "rejected_manager": "マネージャーにより差し戻し",
+      "submitted_approver": "承認者に提出済み",
+      "approver_reviewing": "承認者確認中",
+      "approved": "承認済み",
+      "rejected_approver": "承認者により差し戻し",
+      "paid": "支払済み"
+    },
+    "action": {
+      "created": "作成",
+      "edited": "編集",
+      "submitted": "提出",
+      "mgr_review_start": "マネージャー確認開始",
+      "mgr_verified": "マネージャー確認",
+      "mgr_rejected": "マネージャー差戻し",
+      "appr_review_start": "承認者確認開始",
+      "approved": "承認",
+      "appr_rejected": "承認者差戻し",
+      "payment_completed": "支払完了",
+      "cancelled": "キャンセル",
+      "draft_saved": "下書き保存"
+    },
+    "payment_type": {
+      "expense_reimburse": "経費精算",
+      "service_payment": "サービス支払",
+      "advance_payment": "仮払い",
+      "reimbursement": "精算払い",
+      "direct_vendor_payment": "仕入先直接支払",
+      "other": "その他"
+    },
+    "payment_method": {
+      "bank_transfer": "銀行振込",
+      "cash": "現金",
+      "check": "小切手"
+    },
+    "currency": {
+      "MMK": "MMK",
+      "USD": "USD",
+      "JPY": "JPY",
+      "THB": "THB"
+    },
+    "role": {
+      "applicant": "申請者",
+      "manager": "マネージャー",
+      "approver": "承認者",
+      "accounting": "経理",
+      "admin": "管理者"
+    },
+    "branch": {
+      "yangon": "ヤンゴン",
+      "mandalay": "マンダレー",
+      "naypyidaw": "ネーピードー"
+    },
+    "active": "有効",
+    "inactive": "無効",
+    "unknown": "不明",
+    "all": "すべて",
+    "search": "検索",
+    "clear_filters": "フィルタをクリア",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "yes": "はい",
+    "no": "いいえ",
+    "close": "閉じる",
+    "save": "保存",
+    "edit": "編集",
+    "submit": "提出",
+    "back": "戻る",
+    "loading": "読み込み中...",
+    "processing": "処理中...",
+    "rows": "件",
+    "showing": "表示中",
+    "of": "/",
+    "results": "件",
+    "previous": "前へ",
+    "next": "次へ",
+    "no_description": "説明なし",
+    "items": "件",
+    "total": "合計",
+    "date": "日付",
+    "description": "説明",
+    "amount": "金額",
+    "status": "ステータス",
+    "action": "操作",
+    "open": "開く",
+    "download_all_receipts": "領収書をすべてダウンロード ({{count}}件)",
+    "back_to_list": "リストに戻る",
+    "back_to_dashboard": "ダッシュボードに戻る"
+  },
+  "applicant": {
+    "dashboard": {
+      "title": "申請者ダッシュボード",
+      "description": "支払申請を管理・追跡します",
+      "new_request": "新規申請",
+      "kpi": {
+        "total_requests": "総申請数",
+        "pending_review": "レビュー待ち",
+        "approved": "承認済み",
+        "rejected": "差し戻し"
+      },
+      "columns": {
+        "request_no": "申請番号",
+        "purpose": "目的",
+        "application_date": "申請日",
+        "desired_date": "希望日",
+        "amount": "金額",
+        "status": "ステータス",
+        "action": "操作"
+      },
+      "empty_message": "支払申請が見つかりません。",
+      "delete_draft": {
+        "title": "下書きを削除",
+        "message": "この下書きを削除してもよろしいですか？この操作は元に戻せません。",
+        "confirm": "削除"
+      }
+    },
+    "detail": {
+      "title": "申請詳細",
+      "created_on": "作成日",
+      "go_back": "戻る",
+      "buttons": {
+        "cancel": "キャンセル",
+        "save_changes": "変更を保存",
+        "saving": "保存中...",
+        "edit_request": "申請を編集",
+        "submit_to_manager": "マネージャーに提出",
+        "submitting": "提出中...",
+        "submit_to_approver": "最終承認者に提出",
+        "comment": "コメント"
+      },
+      "rejection_banner": {
+        "title": "申請が差し戻されました",
+        "no_comment": "コメントなし",
+        "guidance": "フィードバックに対応するために申請を編集し、再提出してください。"
+      },
+      "fields": {
+        "purpose": "目的 / 用途",
+        "payment_content": "支払申請内容",
+        "application_date": "申請日",
+        "desired_payment_date": "希望支払日",
+        "target_manager": "対象マネージャー",
+        "select_manager": "マネージャーを選択",
+        "payment_type": "支払タイプ",
+        "currency": "通貨",
+        "payment_method": "支払方法",
+        "bank_account_phone": "銀行口座 / 電話",
+        "receipts_attached": "領収書添付"
+      },
+      "breakdown": {
+        "title": "明細項目",
+        "add_item": "+ 項目を追加",
+        "no_description": "説明なし",
+        "total_amount": "合計金額"
+      },
+      "activity_log": "活動履歴",
+      "status_changed_to": "ステータス変更",
+      "reply_to_rejection": {
+        "title": "差し戻しへの返信",
+        "placeholder": "更新内容についてコメントを追加..."
+      },
+      "details_section": "詳細",
+      "receipts": {
+        "title": "領収書",
+        "no_receipts": "領収書が添付されていません。",
+        "download": "領収書をダウンロード",
+        "delete": "領収書を削除",
+        "failed_download": "領収書のダウンロードに失敗しました",
+        "confirm_delete": {
+          "title": "領収書を削除",
+          "message": "この領収書を削除してもよろしいですか？この操作は元に戻せません。",
+          "confirm": "削除"
+        }
+      },
+      "errors": {
+        "not_found": "リクエストが見つからないか、アクセスが拒否されました。",
+        "failed_load_details": "詳細の読み込みに失敗しました",
+        "failed_load_managers": "マネージャーの読み込みに失敗しました",
+        "failed_submit": "リクエストの提出に失敗しました",
+        "failed_submit_approver": "承認者への提出に失敗しました",
+        "failed_update": "リクエストの更新に失敗しました"
+      },
+      "success": {
+        "submitted": "マネージャーに正常に提出されました",
+        "saved": "変更が正常に保存されました"
+      },
+      "user_id_prefix": "ユーザーID: "
+    },
+    "form": {
+      "title": "新規支払申請",
+      "description": "承認用の下書きを作成",
+      "validation_errors_heading": "以下のエラーを修正してください:",
+      "fields": {
+        "purpose": "目的 / 用途",
+        "purpose_placeholder": "例: Q3マーケティングキャンペーン費用",
+        "payment_content": "支払申請内容",
+        "content_placeholder": "申請の詳細説明...",
+        "target_manager": "対象マネージャー",
+        "loading_managers": "マネージャー読み込み中...",
+        "payment_type": "支払タイプ",
+        "payment_method": "支払方法",
+        "currency": "通貨",
+        "bank_account_phone": "銀行口座 / 電話",
+        "bank_placeholder": "銀行口座番号または電話番号を入力",
+        "application_date": "申請日",
+        "desired_payment_date": "希望支払日",
+        "receipt_present": "領収書の有無"
+      },
+      "employee_info": "社員情報",
+      "employee_number": "社員番号",
+      "name": "氏名",
+      "branch": "拠点",
+      "department": "部署",
+      "actions_section": "操作",
+      "buttons": {
+        "save_draft": "下書きを保存",
+        "saving": "保存中...",
+        "submit_to_manager": "マネージャーに提出",
+        "save_first": "提出前にまず下書きを保存してください"
+      },
+      "receipt_section": {
+        "title": "領収書",
+        "instruction": "添付する領収書ファイルを選択してください。下書き保存時にアップロードされます。",
+        "selected": "選択中: "
+      },
+      "total_amount": "合計金額",
+      "validation": {
+        "at_least_one_item": "明細項目は1件以上必要です。",
+        "application_date_future": "申請日は今日以前の日付を入力してください。",
+        "desired_date_past": "希望支払日は今日以降を入力してください。",
+        "purpose_required": "目的 / 用途を入力してください。",
+        "purpose_max": "目的は255文字以内で入力してください。",
+        "content_required": "支払申請内容を入力してください。",
+        "content_max": "支払申請内容は1000文字以内で入力してください。",
+        "manager_required": "対象マネージャーを選択してください。",
+        "currency_required": "通貨を選択してください。",
+        "payment_type_required": "支払タイプを選択してください。",
+        "payment_method_required": "支払方法を選択してください。",
+        "bank_account_required": "この支払方法には銀行口座/電話情報が必要です。",
+        "receipt_required": "領収書ファイルを添付してから下書きを保存して提出してください。",
+        "amount_min": "明細項目の金額はすべて0より大きくしてください。",
+        "amount_max": "明細項目の金額は1,000,000,000以下にしてください。"
+      },
+      "success": {
+        "draft_updated": "下書きが正常に更新されました。",
+        "draft_saved": "下書きが正常に保存されました。",
+        "submitted": "リクエストがマネージャーに正常に提出されました。"
+      },
+      "errors": {
+        "failed_save": "下書きの保存に失敗しました。もう一度お試しください。",
+        "failed_submit": "提出に失敗しました。すべてのフィールドを確認して再度お試しください。",
+        "managers_load": "有効なマネージャーリストを読み込めませんでした"
+      },
+      "save_first_warning": "提出前にまず下書きを保存してください。"
+    },
+    "receipt_upload": {
+      "uploading": "アップロード中...",
+      "drag_hint": "クリックまたはドラッグでファイルをアップロード",
+      "constraints": "PDF、JPG、PNGのみ。最大10MB。",
+      "size_error": "ファイルサイズが10MBの制限を超えています。",
+      "type_error": "無効なファイルタイプです。PDF、JPEG、PNGのみ許可されています。",
+      "failed_upload": "領収書のアップロードに失敗しました"
+    },
+    "breakdown_table": {
+      "title": "支払内訳",
+      "add_item": "項目を追加",
+      "columns": {
+        "description": "説明",
+        "amount": "金額"
+      },
+      "desc_placeholder": "説明...",
+      "amount_placeholder": "0.00"
+    },
+    "validation": {
+      "application_date_past": "申請日は本日以前の日付を入力してください",
+      "purpose_required": "目的を入力してください（最大500文字）",
+      "application_date_required": "申請日を入力してください",
+      "desired_date_required": "支払希望日を入力してください",
+      "content_required": "申請内容を入力してください（最大1000文字）",
+      "currency_required": "通貨を選択してください",
+      "payment_type_required": "支払種別を選択してください",
+      "payment_method_required": "支払方法を選択してください",
+      "manager_required": "担当マネージャーを選択してください",
+      "bank_account_required": "銀行口座情報を入力してください",
+      "breakdown_count": "明細は1件以上15件以内で入力してください"
+    }
+  },
+  "manager": {
+    "dashboard": {
+      "title": "マネージャーダッシュボード",
+      "description": "チームから提出された支払申請を検証",
+      "filters": {
+        "status": "ステータス",
+        "date": "日付",
+        "search_placeholder": "申請者名で検索..."
+      },
+      "columns": {
+        "request_no": "申請番号",
+        "applicant": "申請者",
+        "amount": "金額",
+        "application_date": "申請日",
+        "desired_date": "希望日",
+        "status": "ステータス",
+        "action": "操作",
+        "no": "No."
+      },
+      "buttons": {
+        "view_detail": "詳細を見る",
+        "clear_filters": "フィルタをクリア"
+      },
+      "empty_message": "該当する支払申請がありません。",
+      "pagination": {
+        "showing": "表示中",
+        "of": "/",
+        "results": "件",
+        "previous": "前へ",
+        "next": "次へ",
+        "rows": "件"
+      }
+    },
+    "detail": {
+      "title": "申請詳細",
+      "breakdown_no": "No.",
+      "fields": {
+        "request_number": "リクエスト番号",
+        "applied": "申請日:",
+        "applicant": "申請者",
+        "employee_number": "社員番号",
+        "department": "部署",
+        "branch": "拠点",
+        "email": "メールアドレス",
+        "desired_payment_date": "希望支払日",
+        "purpose": "目的",
+        "payment_type": "支払タイプ",
+        "payment_method": "支払方法",
+        "bank_account_phone": "銀行口座 / 電話",
+        "currency": "通貨",
+        "total": "合計"
+      },
+      "breakdown": {
+        "title": "明細項目",
+        "columns": {
+          "no": "#",
+          "date": "日付",
+          "description": "説明",
+          "qty": "数量",
+          "unit_price": "単価",
+          "amount": "金額"
+        },
+        "empty": "明細項目がありません。"
+      },
+      "receipts": {
+        "title": "領収書ファイル",
+        "download_all": "領収書をすべてダウンロード ({{count}}件)",
+        "empty": "領収書ファイルが添付されていません。"
+      },
+      "approval_history": "承認履歴",
+      "empty_history": "承認履歴がありません。"
+    },
+    "action_panel": {
+      "title": "操作",
+      "description": "このリクエストを承認または差し戻します。",
+      "buttons": {
+        "approve": "承認",
+        "reject": "差し戻し",
+        "submit_rejection": "差し戻しを提出",
+        "cancel": "キャンセル"
+      },
+      "rejection_comment": "差し戻しコメント",
+      "rejection_placeholder": "差し戻しの理由を入力（10文字以上）...",
+      "comment_min_error": "コメントは10文字以上で入力してください ({{length}}/10)",
+      "confirm_rejection": {
+        "title": "差し戻しの確認",
+        "message": "このリクエストを差し戻してもよろしいですか？\n\nコメント: \"{{comment}}\"",
+        "confirm": "差し戻し",
+        "cancel": "キャンセル"
+      }
+    },
+    "success": {
+      "approve": "リクエストが正常に承認されました。",
+      "reject": "リクエストが正常に差し戻されました。"
+    },
+    "errors": {
+      "approve": "承認に失敗しました。",
+      "reject": "差し戻しに失敗しました。",
+      "load_details": "リクエスト詳細の読み込みに失敗しました。"
+    }
+  },
+  "approver": {
+    "dashboard": {
+      "title": "承認者ダッシュボード",
+      "description": "最終承認の決定を行います",
+      "kpi": {
+        "total": "合計",
+        "pending": "保留中",
+        "under_review": "レビュー中",
+        "desired_date_alert": "希望日アラート"
+      },
+      "back_to_queue": "キューに戻る"
+    },
+    "detail": {
+      "empty_state": "リストからリクエストを選択して詳細を表示してください。",
+      "fields": {
+        "request_number": "リクエスト番号",
+        "applied": "申請日:",
+        "applicant": "申請者",
+        "employee_number": "社員番号",
+        "department": "部署",
+        "branch": "拠点",
+        "email": "メールアドレス",
+        "desired_payment_date": "希望支払日",
+        "purpose": "目的"
+      },
+      "breakdown": {
+        "title": "明細項目",
+        "columns": {
+          "no": "#",
+          "date": "日付",
+          "description": "説明",
+          "qty": "数量",
+          "unit_price": "単価",
+          "amount": "金額"
+        },
+        "total": "合計",
+        "empty": "明細項目がありません。"
+      },
+      "receipts": {
+        "title": "領収書ファイル",
+        "download_all": "領収書をすべてダウンロード ({{count}}件)",
+        "empty": "領収書ファイルが添付されていません。"
+      },
+      "approval_history": "承認履歴",
+      "empty_history": "承認履歴がありません。"
+    },
+    "action_panel": {
+      "title": "操作",
+      "description": "このリクエストを承認または差し戻します。",
+      "buttons": {
+        "approve": "承認",
+        "reject": "差し戻し",
+        "submit_rejection": "差し戻しを提出",
+        "cancel": "キャンセル"
+      },
+      "rejection_comment": "差し戻しコメント",
+      "rejection_placeholder": "差し戻しの理由を入力（10文字以上）...",
+      "comment_min_error": "コメントは10文字以上で入力してください ({{length}}/10)",
+      "confirm_rejection": {
+        "title": "差し戻しの確認",
+        "message": "このリクエストを差し戻してもよろしいですか？\n\nコメント: \"{{comment}}\"",
+        "confirm": "差し戻し",
+        "cancel": "キャンセル"
+      },
+      "approved_comment": "承認"
+    },
+    "filters": {
+      "search": "検索",
+      "search_placeholder": "リクエスト番号、申請者、目的",
+      "branch": "拠点",
+      "all_branches": "すべての拠点",
+      "desired_date": "希望日",
+      "status": "ステータス",
+      "all_statuses": "すべてのステータス"
+    },
+    "table": {
+      "columns": {
+        "request_no": "申請番号",
+        "applicant": "申請者",
+        "branch": "拠点",
+        "application_date": "申請日",
+        "desired_date": "希望日",
+        "amount": "金額",
+        "status": "ステータス",
+        "action": "操作"
+      },
+      "view_details": "詳細を見る",
+      "empty_message": "保留中のリクエストはありません"
+    },
+    "timeline": {
+      "empty": "承認履歴がありません。",
+      "action_label": "操作 {{actionTypeId}}"
+    },
+    "success": {
+      "approve": "リクエストが正常に承認されました。",
+      "reject": "リクエストが正常に差し戻されました。"
+    },
+    "errors": {
+      "approve": "承認に失敗しました。",
+      "reject": "差し戻しに失敗しました。",
+      "load_details": "リクエスト詳細の読み込みに失敗しました。"
+    }
+  },
+  "accounting": {
+    "dashboard": {
+      "title": "経理ダッシュボード",
+      "description": "承認された申請の支払処理",
+      "filters": {
+        "search": "検索",
+        "search_placeholder": "申請番号、申請者名...",
+        "branch": "拠点",
+        "all_branches": "すべての拠点",
+        "status": "ステータス",
+        "all_statuses": "すべてのステータス",
+        "approved": "承認済み",
+        "paid": "支払済み",
+        "desired_date": "希望日"
+      },
+      "kpi": {
+        "total": "合計",
+        "pending": "保留中",
+        "mandalay_alerts": "マンダレー警告",
+        "desired_date_alerts": "希望日警告"
+      },
+      "refresh": "更新"
+    },
+    "queue_table": {
+      "loading": "キュー読み込み中...",
+      "columns": {
+        "request_no": "申請番号",
+        "applicant": "申請者",
+        "branch": "拠点",
+        "application_date": "申請日",
+        "desired_date": "希望日",
+        "amount": "金額",
+        "status": "ステータス",
+        "action": "操作"
+      },
+      "view_detail": "詳細を見る",
+      "empty_message": "保留中の承認済み支払リクエストはありません。",
+      "pagination": {
+        "showing": "表示中",
+        "of": "/",
+        "results": "件",
+        "previous": "前へ",
+        "next": "次へ",
+        "rows": "件"
+      }
+    },
+    "detail": {
+      "loading": "支払詳細を読み込み中...",
+      "not_found": "支払リクエストが見つかりません。",
+      "back_to_dashboard": "ダッシュボードに戻る",
+      "paid_badge": "支払済み",
+      "subtitle": "支払リクエストの詳細は経理レビュー用の読み取り専用です。",
+      "close_aria": "支払詳細を閉じる",
+      "alerts": {
+        "total_mismatch": "合計不一致を検出",
+        "total_mismatch_detail": "ヘッダー合計 ({{headerTotal}}) が明細合計 ({{breakdownSum}}) と一致しません",
+        "missing_receipts": "領収書が不足しています",
+        "missing_receipts_detail": "このリクエストは領収書が必要としていますが、有効なデジタル領収書ファイルが添付されていません。"
+      },
+      "sections": {
+        "applicant": "申請者",
+        "payment": "支払",
+        "request_context": "申請内容",
+        "breakdown_items": "明細項目",
+        "receipt_files": "領収書ファイル",
+        "approval_timeline": "承認タイムライン"
+      },
+      "fields": {
+        "name": "氏名",
+        "employee": "社員",
+        "branch": "拠点",
+        "department": "部署",
+        "email": "メールアドレス",
+        "total": "合計",
+        "method": "方法",
+        "type": "種別",
+        "application": "申請",
+        "desired_date": "希望日",
+        "bank_info": "銀行情報",
+        "purpose": "目的",
+        "request_content": "申請内容"
+      },
+      "receipts": {
+        "empty": "領収書ファイルが添付されていません。",
+        "download_all": "領収書をすべてダウンロード ({{count}}件)",
+        "open": "開く"
+      },
+      "timeline": {
+        "empty": "承認履歴が記録されていません。",
+        "action_label": "操作 {{actionTypeId}}"
+      },
+      "comment": {
+        "label": "経理コメント（任意）",
+        "placeholder": "監査ログに記録するコメントを追加..."
+      },
+      "buttons": {
+        "back_to_list": "リストに戻る",
+        "download_all": "領収書をすべてダウンロード ({{count}}件)",
+        "close": "閉じる",
+        "mark_as_paid": "支払済みにする"
+      },
+      "paid_info": "この支払は完了しました。これ以上の操作はできません。"
+    },
+    "completion_dialog": {
+      "title": "支払完了の確認",
+      "request": "リクエスト",
+      "amount_to_pay": "支払金額",
+      "warning_irreversible": "この操作は元に戻せません。",
+      "warning_detail": "支払済みにすると、リクエストのステータスは変更できません。すべての金額と領収書が確認済みであることを確認してください。",
+      "buttons": {
+        "cancel": "キャンセル",
+        "processing": "処理中...",
+        "confirm": "確認して支払済みにする"
+      }
+    },
+    "branch_alert": {
+      "mandalay": "重要: Toe Sanと現金支払について調整してください",
+      "default": "標準銀行振込処理"
+    },
+    "success": {
+      "paid": "支払が正常に支払済みに設定されました。"
+    },
+    "errors": {
+      "load_details": "支払詳細の読み込みに失敗しました。",
+      "complete_payment": "支払の完了に失敗しました。",
+      "fetch_queue": "キューの取得エラー"
+    }
+  },
+  "admin": {
+    "sidebar": {
+      "user_management": "ユーザー管理",
+      "master_data": "マスターデータ",
+      "audit_logs": "監査ログ"
+    },
+    "user_management": {
+      "title": "ユーザーアカウント管理",
+      "description": "アプリケーションユーザーの管理、役割の割り当て、アクセスの切り替え",
+      "create_button": "新規ユーザー登録",
+      "registered_count": "登録ユーザー数",
+      "empty_message": "ユーザーが見つかりません",
+      "columns": {
+        "employee_number": "社員番号",
+        "full_name": "氏名",
+        "email": "メールアドレス",
+        "branch": "拠点",
+        "role": "役割",
+        "status": "ステータス",
+        "actions": "操作"
+      },
+      "role": {
+        "applicant": "申請者",
+        "manager": "マネージャー",
+        "approver": "承認者",
+        "accounting": "経理",
+        "admin": "管理者",
+        "unknown": "不明"
+      },
+      "status": {
+        "active": "有効",
+        "inactive": "無効"
+      },
+      "actions": {
+        "edit": "編集",
+        "password_reset": "パスワードリセット"
+      },
+      "filters": {
+        "keyword": "キーワード",
+        "keyword_placeholder": "社員番号または氏名で検索",
+        "role": "役割",
+        "status": "ステータス"
+      }
+    },
+    "master_data": {
+      "title": "マスターデータ設定",
+      "description": "システムのルックアップテーブルを確認できます",
+      "empty_message": "データがありません",
+      "categories": {
+        "currencies": "通貨",
+        "roles": "役割",
+        "statuses": "ステータス",
+        "payment_types": "支払タイプ",
+        "payment_methods": "支払方法"
+      }
+    },
+    "audit_log": {
+      "title": "監査ログ",
+      "description": "グローバルトランザクション履歴を確認できます",
+      "empty_message": "該当するログが見つかりません",
+      "filters": {
+        "request_number": "リクエスト番号",
+        "request_number_placeholder": "番号を入力",
+        "actor_name": "実行者名",
+        "actor_name_placeholder": "名前で検索",
+        "action_type": "アクション種別",
+        "start_date": "開始日",
+        "end_date": "終了日",
+        "date_error": "開始日は終了日より後に設定できません"
+      },
+      "columns": {
+        "request_number": "リクエスト番号",
+        "actor": "実行者",
+        "action": "アクション",
+        "ip_address": "IPアドレス",
+        "date_time": "日時",
+        "view_detail": "詳細を見る"
+      },
+      "action_label": {
+        "created": "作成",
+        "edited": "編集",
+        "submitted": "提出",
+        "mgr_review_start": "マネージャー確認開始",
+        "mgr_review": "マネージャー確認",
+        "mgr_rejected": "マネージャー差戻し",
+        "appr_review_start": "承認者確認開始",
+        "approved": "承認",
+        "appr_rejected": "承認者差戻し",
+        "payment_completed": "支払完了",
+        "unknown": "不明"
+      }
+    },
+    "metadata_detail": {
+      "title": "ログ詳細",
+      "labels": {
+        "log_id": "ログID",
+        "request_number": "リクエスト番号",
+        "actor": "実行者",
+        "action": "アクション",
+        "date_time": "日時",
+        "ip_address": "IPアドレス",
+        "user_agent": "ユーザーエージェント",
+        "comment": "コメント"
+      }
+    },
+    "user_form": {
+      "title_create": "新規ユーザー登録",
+      "title_edit": "ユーザー詳細編集",
+      "title_reset": "パスワードリセット",
+      "labels": {
+        "employee_number": "社員番号",
+        "full_name": "氏名",
+        "email": "メールアドレス",
+        "branch": "拠点",
+        "role": "役割"
+      },
+      "role_options": {
+        "applicant": "申請者",
+        "manager": "マネージャー",
+        "approver": "承認者",
+        "accounting": "経理",
+        "admin": "管理者"
+      },
+      "buttons": {
+        "cancel": "キャンセル",
+        "processing": "処理中...",
+        "create": "登録",
+        "save": "変更を保存",
+        "reset": "リセット"
+      },
+      "reset_confirm": {
+        "prompt_suffix": "のパスワードをリセットしますか？",
+        "warning": "新しい一時パスワードが生成され、現在のセッションは無効になります。"
+      },
+      "password_result": {
+        "generated": "一時パスワードが生成されました",
+        "copy": "コピー",
+        "notice": "このパスワードは一度しか表示されません。安全な場所に記録してください。",
+        "close": "閉じる"
+      },
+      "error": "操作に失敗しました"
     }
   }
 }

@@ -25,6 +25,7 @@ import {
   Paperclip,
   Check,
   RotateCcw,
+  Download,
 } from 'lucide-react';
 
 interface AxiosErrorResponse {
@@ -279,6 +280,26 @@ export function ManagerRequestDetail() {
     }
   };
 
+  const handleDownloadReceipt = async (requestId: number, receiptId: number, fileName: string) => {
+    try {
+      const response = await apiClient.get(
+        `/manager/requests/${requestId}/receipts/${receiptId}/download`,
+        { responseType: 'blob' },
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed', error);
+      triggerToast('error', t('dashboard.manager.download_error'));
+    }
+  };
+
   const formatCurrency = (amount: string, currencyId: number) => {
     const code = CURRENCY_CODES[currencyId as keyof typeof CURRENCY_CODES] || 'MMK';
     const val = parseFloat(amount) || 0;
@@ -485,18 +506,27 @@ export function ManagerRequestDetail() {
                         {file.originalFileName}
                       </span>
                       <span className="text-[10px] text-slate-400 shrink-0">
-                        ({(parseInt(file.fileSize) / 1024).toFixed(1)} KB)
+                        ({file.fileSize ? (parseInt(String(file.fileSize), 10) / 1024).toFixed(1) : '0'} KB)
                       </span>
                     </div>
-                    <a
-                      href={file.fileStoragePath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 font-semibold shrink-0"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      {t('dashboard.manager.preview')}
-                    </a>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href={file.fileStoragePath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 font-semibold"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        {t('dashboard.manager.preview')}
+                      </a>
+                      <button
+                        onClick={() => handleDownloadReceipt(request.paymentRequestId, file.receiptFileId, file.originalFileName)}
+                        className="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 font-semibold"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        {t('dashboard.manager.download')}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

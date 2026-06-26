@@ -37,6 +37,7 @@ export class AccountingController {
     @Query('branch') branch?: string,
     @Query('desiredDate') desiredDate?: string,
     @Query('filter') filter?: string,
+    @Query('statusId') statusId?: string,
   ) {
     return this.accountingService.findApprovedRequests(
       page,
@@ -45,6 +46,7 @@ export class AccountingController {
       branch,
       desiredDate,
       filter,
+      statusId ? Number(statusId) : undefined,
     );
   }
 

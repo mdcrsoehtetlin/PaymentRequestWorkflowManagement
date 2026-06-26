@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import type { PaymentRequest } from '../services/accounting.service';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { formatDate } from '../../../utils/format';
 
 interface Props {
   data: PaymentRequest[];
@@ -42,7 +43,7 @@ export const AccountingQueueTable: FC<Props> = ({
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Request #</th>
+              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Request No.</th>
               <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Applicant</th>
               <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Branch</th>
               <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Application Date</th>
@@ -74,10 +75,10 @@ export const AccountingQueueTable: FC<Props> = ({
                   <td className="px-4 py-3 text-sm text-slate-700">{req.applicantName}</td>
                   <td className="px-4 py-3 text-sm text-slate-700">{req.branch}</td>
                   <td className="px-4 py-3 text-sm text-slate-700">
-                    {new Date(req.applicationDate).toLocaleDateString()}
+                    {formatDate(req.applicationDate)}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700">
-                    {new Date(req.desiredPaymentDate).toLocaleDateString()}
+                    {formatDate(req.desiredPaymentDate)}
                   </td>
                   <td className="px-4 py-3 text-sm font-medium text-slate-900">
                     {Number(req.totalAmount).toLocaleString()} {req.currencyCode}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Copy, Check } from 'lucide-react';
 import { apiClient } from '../../../services/api-client';
 
@@ -22,14 +23,6 @@ interface UserFormModalProps {
 
 const BRANCHES = ['Yangon', 'Mandalay', 'Naypyidaw'];
 
-const ROLE_OPTIONS = [
-  { value: 1, label: '申請者' },
-  { value: 2, label: 'マネージャー' },
-  { value: 3, label: '承認者' },
-  { value: 4, label: '経理' },
-  { value: 5, label: '管理者' },
-];
-
 /**
  * @description Modal component for creating, editing users, and resetting passwords.
  * Supports three modes: create, edit, and reset.
@@ -41,6 +34,7 @@ export function UserFormModal({
   onClose,
   onSuccess,
 }: UserFormModalProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     employeeNumber: '',
     fullName: '',
@@ -79,6 +73,14 @@ export function UserFormModal({
     return () => clearTimeout(timer);
   }, [mode, user, isOpen]);
 
+  const roleOptions = [
+    { value: 1, label: t('admin.user_form.role_options.applicant') },
+    { value: 2, label: t('admin.user_form.role_options.manager') },
+    { value: 3, label: t('admin.user_form.role_options.approver') },
+    { value: 4, label: t('admin.user_form.role_options.accounting') },
+    { value: 5, label: t('admin.user_form.role_options.admin') },
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -115,7 +117,7 @@ export function UserFormModal({
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { message?: string } } };
       setError(
-        apiError.response?.data?.message ?? '操作に失敗しました',
+        apiError.response?.data?.message ?? t('admin.user_form.error'),
       );
     } finally {
       setIsLoading(false);
@@ -134,10 +136,10 @@ export function UserFormModal({
 
   const title =
     mode === 'create'
-      ? '新規ユーザー登録'
+      ? t('admin.user_form.title_create')
       : mode === 'edit'
-        ? 'ユーザー詳細編集'
-        : 'パスワードリセット';
+        ? t('admin.user_form.title_edit')
+        : t('admin.user_form.title_reset');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -157,7 +159,7 @@ export function UserFormModal({
             <div className="text-center">
               <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
                 <p className="text-sm text-emerald-700 mb-2">
-                  一時パスワードが生成されました
+                  {t('admin.user_form.password_result.generated')}
                 </p>
                 <div className="flex items-center justify-center gap-2">
                   <code className="text-lg font-mono font-bold text-emerald-800 bg-white px-3 py-1 rounded border border-emerald-200">
@@ -166,7 +168,7 @@ export function UserFormModal({
                   <button
                     onClick={handleCopyPassword}
                     className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded transition-colors"
-                    title="コピー"
+                    title={t('admin.user_form.password_result.copy')}
                   >
                     {copied ? (
                       <Check className="w-4 h-4" />
@@ -177,13 +179,13 @@ export function UserFormModal({
                 </div>
               </div>
               <p className="text-xs text-slate-500 mb-4">
-                このパスワードは一度しか表示されません。安全な場所に記録してください。
+                {t('admin.user_form.password_result.notice')}
               </p>
               <button
                 onClick={onSuccess}
                 className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium"
               >
-                閉じる
+                {t('admin.user_form.password_result.close')}
               </button>
             </div>
           ) : (
@@ -193,7 +195,7 @@ export function UserFormModal({
                   {mode === 'edit' && (
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-slate-700 mb-1">
-                        社員番号
+                        {t('admin.user_form.labels.employee_number')}
                       </label>
                       <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-slate-50">
                         <span className="px-2 py-2 text-sm text-slate-400 bg-slate-50 border-r border-slate-300 select-none">EMP-</span>
@@ -208,7 +210,7 @@ export function UserFormModal({
                   )}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      氏名 <span className="text-red-500">*</span>
+                      {t('admin.user_form.labels.full_name')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -225,7 +227,7 @@ export function UserFormModal({
                   </div>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      メールアドレス <span className="text-red-500">*</span>
+                      {t('admin.user_form.labels.email')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
@@ -243,7 +245,7 @@ export function UserFormModal({
                   </div>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      拠点 <span className="text-red-500">*</span>
+                      {t('admin.user_form.labels.branch')} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={formData.branch}
@@ -265,7 +267,7 @@ export function UserFormModal({
                   </div>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      役割 <span className="text-red-500">*</span>
+                      {t('admin.user_form.labels.role')} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={formData.roleId}
@@ -277,7 +279,7 @@ export function UserFormModal({
                       }
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
                     >
-                      {ROLE_OPTIONS.map((r) => (
+                      {roleOptions.map((r) => (
                         <option key={r.value} value={r.value}>
                           {r.label}
                         </option>
@@ -290,10 +292,10 @@ export function UserFormModal({
               {mode === 'reset' && user && (
                 <div className="text-center py-4">
                   <p className="text-sm text-slate-600">
-                    <span className="font-medium">{user.fullName}</span> のパスワードをリセットしますか？
+                    <span className="font-medium">{user.fullName}</span> {t('admin.user_form.reset_confirm.prompt_suffix')}
                   </p>
                   <p className="text-xs text-slate-500 mt-2">
-                    新しい一時パスワードが生成され、現在のセッションは無効になります。
+                    {t('admin.user_form.reset_confirm.warning')}
                   </p>
                 </div>
               )}
@@ -310,7 +312,7 @@ export function UserFormModal({
                   onClick={onClose}
                    className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
                 >
-                  キャンセル
+                  {t('admin.user_form.buttons.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -318,12 +320,12 @@ export function UserFormModal({
                   className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 transition-colors text-sm font-medium"
                 >
                   {isLoading
-                    ? '処理中...'
+                    ? t('admin.user_form.buttons.processing')
                     : mode === 'create'
-                      ? '登録'
+                      ? t('admin.user_form.buttons.create')
                       : mode === 'edit'
-                        ? '変更を保存'
-                        : 'リセット'}
+                        ? t('admin.user_form.buttons.save')
+                        : t('admin.user_form.buttons.reset')}
                 </button>
               </div>
             </form>

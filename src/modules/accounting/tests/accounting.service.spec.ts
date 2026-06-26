@@ -79,7 +79,7 @@ describe('AccountingService', () => {
   });
 
   describe('findApprovedRequests', () => {
-    it('should return paginated data with default filter (pending)', async () => {
+    it('should return paginated data with default filter (all statuses 8 + 10)', async () => {
       const qb = createMockQueryBuilder();
       const mockRequest = {
         id: 100,
@@ -96,8 +96,8 @@ describe('AccountingService', () => {
 
       const result = await service.findApprovedRequests(1, 10);
 
-      expect(qb.where).toHaveBeenCalledWith('pr.status_id = :statusId', {
-        statusId: 8,
+      expect(qb.where).toHaveBeenCalledWith('pr.status_id IN (:...statusIds)', {
+        statusIds: [8, 10],
       });
       expect(result.data).toHaveLength(1);
       expect(result.data[0].paymentRequestId).toBe(100);
@@ -121,6 +121,25 @@ describe('AccountingService', () => {
 
       expect(qb.where).toHaveBeenCalledWith('pr.status_id IN (:...statusIds)', {
         statusIds: [8, 10],
+      });
+    });
+
+    it('should apply pending filter (status 8 only)', async () => {
+      const qb = createMockQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+      paymentRequestRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findApprovedRequests(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        'pending',
+      );
+
+      expect(qb.where).toHaveBeenCalledWith('pr.status_id = :statusId', {
+        statusId: 8,
       });
     });
 
@@ -162,6 +181,26 @@ describe('AccountingService', () => {
 
       expect(qb.where).toHaveBeenCalledWith('pr.status_id = :statusId', {
         statusId: 8,
+      });
+    });
+
+    it('should apply explicit statusId filter over KPI filter', async () => {
+      const qb = createMockQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+      paymentRequestRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findApprovedRequests(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        10,
+      );
+
+      expect(qb.where).toHaveBeenCalledWith('pr.status_id = :statusId', {
+        statusId: 10,
       });
     });
 

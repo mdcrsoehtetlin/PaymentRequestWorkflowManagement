@@ -77,20 +77,25 @@ export class AccountingService {
     branch?: string,
     desiredDate?: string,
     filter?: string,
+    statusId?: number,
   ) {
     this.logger.log(
-      `Fetching approved requests page ${page} size ${pageSize} filter=${filter ?? 'none'}`,
+      `Fetching approved requests page ${page} size ${pageSize} filter=${filter ?? 'none'} statusId=${statusId ?? 'none'}`,
     );
 
     const queryBuilder = this.paymentRequestRepository
       .createQueryBuilder('pr')
       .leftJoinAndSelect('pr.applicant', 'applicant');
 
-    // Apply KPI filter
-    if (filter === 'total') {
+    // Apply status filter: explicit statusId takes priority over KPI filter
+    if (statusId) {
+      queryBuilder.where('pr.status_id = :statusId', { statusId });
+    } else if (filter === 'total') {
       queryBuilder.where('pr.status_id IN (:...statusIds)', {
         statusIds: [8, 10],
       });
+    } else if (filter === 'pending') {
+      queryBuilder.where('pr.status_id = :statusId', { statusId: 8 });
     } else if (filter === 'mandalay') {
       queryBuilder
         .where('pr.status_id = :statusId', { statusId: 8 })
@@ -102,8 +107,10 @@ export class AccountingService {
           "pr.desired_payment_date <= CURRENT_DATE + INTERVAL '3 days'",
         );
     } else {
-      // default: pending (status 8 only)
-      queryBuilder.where('pr.status_id = :statusId', { statusId: 8 });
+      // default: all (status 8 + 10)
+      queryBuilder.where('pr.status_id IN (:...statusIds)', {
+        statusIds: [8, 10],
+      });
     }
 
     queryBuilder.andWhere('pr.is_deleted = :isDeleted', { isDeleted: false });
