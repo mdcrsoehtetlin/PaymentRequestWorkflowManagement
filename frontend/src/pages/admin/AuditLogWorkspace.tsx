@@ -310,8 +310,8 @@ export function AuditLogWorkspace() {
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-slate-200 mt-4 pt-4">
+        {/* Divider — hidden on mobile, visible on sm+ */}
+        <div className="hidden sm:block border-t border-slate-200 mt-4 pt-4">
           <div className="flex justify-end gap-3">
             <button
               type="button"
@@ -334,6 +334,30 @@ export function AuditLogWorkspace() {
               Clear Filters
             </button>
           </div>
+        </div>
+
+        {/* Buttons — visible only on mobile, left-aligned */}
+        <div className="flex sm:hidden gap-3 mt-4">
+          <button
+            type="button"
+            onClick={handleSearch}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 whitespace-nowrap transition-all duration-200"
+          >
+            <Search className="w-4 h-4" />
+            Search
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={!hasActiveFilters}
+            className={`rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+              hasActiveFilters
+                ? 'text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer'
+                : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
+            }`}
+          >
+            Clear Filters
+          </button>
         </div>
       </div>
       {dateError && (

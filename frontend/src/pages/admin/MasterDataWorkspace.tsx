@@ -93,7 +93,7 @@ export function MasterDataWorkspace() {
 
       {/* Category Selector */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.value}
