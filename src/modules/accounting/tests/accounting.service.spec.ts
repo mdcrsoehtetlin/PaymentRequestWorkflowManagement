@@ -165,6 +165,26 @@ describe('AccountingService', () => {
       });
     });
 
+    it('should apply explicit statusId filter over KPI filter', async () => {
+      const qb = createMockQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+      paymentRequestRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findApprovedRequests(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        10,
+      );
+
+      expect(qb.where).toHaveBeenCalledWith('pr.status_id = :statusId', {
+        statusId: 10,
+      });
+    });
+
     it('should apply search filter', async () => {
       const qb = createMockQueryBuilder();
       qb.getManyAndCount.mockResolvedValue([[], 0]);
