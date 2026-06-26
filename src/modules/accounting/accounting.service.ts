@@ -77,17 +77,20 @@ export class AccountingService {
     branch?: string,
     desiredDate?: string,
     filter?: string,
+    statusId?: number,
   ) {
     this.logger.log(
-      `Fetching approved requests page ${page} size ${pageSize} filter=${filter ?? 'none'}`,
+      `Fetching approved requests page ${page} size ${pageSize} filter=${filter ?? 'none'} statusId=${statusId ?? 'none'}`,
     );
 
     const queryBuilder = this.paymentRequestRepository
       .createQueryBuilder('pr')
       .leftJoinAndSelect('pr.applicant', 'applicant');
 
-    // Apply KPI filter
-    if (filter === 'total') {
+    // Apply status filter: explicit statusId takes priority over KPI filter
+    if (statusId) {
+      queryBuilder.where('pr.status_id = :statusId', { statusId });
+    } else if (filter === 'total') {
       queryBuilder.where('pr.status_id IN (:...statusIds)', {
         statusIds: [8, 10],
       });

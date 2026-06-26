@@ -49,7 +49,9 @@ export function useAccountingWebSockets(
         if (payload.event === 'statusUpdate') {
           // If status transitions to APPROVED (8)
           if (payload.newStatusId === 8) {
-            info(`New payment request approved: ${payload.requestNumber || `#${payload.paymentRequestId}`}`);
+            info(
+              `New payment request approved: ${payload.requestNumber || `#${payload.paymentRequestId}`}`,
+            );
           }
           onRefreshRef.current();
         } else if (payload.event === 'row-removed') {
@@ -68,7 +70,6 @@ export function useAccountingWebSockets(
       wsService.off('connect', handleConnect);
       wsService.off('disconnect', handleDisconnect);
       wsService.off('request:status-changed', handleStatusChanged);
-      wsService.disconnect();
     };
   }, [userId, role, info]);
 

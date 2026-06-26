@@ -90,6 +90,7 @@ export const getApprovedRequests = async (
   branch?: string,
   desiredDate?: string,
   filter?: string,
+  statusId?: number,
 ): Promise<PaginatedResponse<PaymentRequest>> => {
   const params: Record<string, string> = {
     page: page.toString(),
@@ -99,6 +100,7 @@ export const getApprovedRequests = async (
   if (branch) params.branch = branch;
   if (desiredDate) params.desiredDate = desiredDate;
   if (filter) params.filter = filter;
+  if (statusId) params.statusId = statusId.toString();
 
   const response = await apiClient.get<PaginatedResponse<PaymentRequest>>(
     '/accounting/payment-requests',
