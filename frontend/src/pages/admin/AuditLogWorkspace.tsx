@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Eye, Search } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
+import { SearchFilterBar, type FilterField } from '../../components/shared/SearchFilterBar';
 import { apiClient } from '../../services/api-client';
 import { MetadataDetailPanel } from './components/MetadataDetailPanel';
 
@@ -28,6 +29,8 @@ interface AuditLogResponse {
     totalPages: number;
   };
 }
+
+type Filters = Record<string, string>;
 
 const ACTION_OPTIONS = [
   { value: '', label: 'すべて' },
@@ -63,7 +66,7 @@ const ACTION_LABELS: Record<number, string> = {
 export function AuditLogWorkspace() {
   const [logs, setLogs] = useState<AuditLogRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     startDate: '',
     endDate: '',
     actionTypeId: '',
@@ -77,14 +80,6 @@ export function AuditLogWorkspace() {
     totalPages: 0,
   });
   const [dateError, setDateError] = useState('');
-  const filtersRef = useRef(filters);
-  const paginationRef = useRef(pagination);
-  useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
-  useEffect(() => {
-    paginationRef.current = pagination;
-  }, [pagination]);
   const [selectedLog, setSelectedLog] = useState<AuditLogRecord | null>(null);
   const [sorting, setSorting] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
     sortBy: '',
@@ -104,24 +99,16 @@ export function AuditLogWorkspace() {
   };
 
   const doFetchLogs = useCallback(async () => {
-    const f = filtersRef.current;
-    const p = paginationRef.current;
     setIsLoading(true);
-    setDateError('');
     try {
-      if (f.startDate && f.endDate && f.startDate > f.endDate) {
-        setDateError('開始日は終了日より後に設定できません');
-        setIsLoading(false);
-        return;
-      }
       const params = new URLSearchParams();
-      if (f.startDate) params.set('startDate', f.startDate);
-      if (f.endDate) params.set('endDate', f.endDate);
-      if (f.actionTypeId) params.set('actionTypeId', f.actionTypeId);
-      if (f.requestNumber) params.set('requestNumber', f.requestNumber);
-      if (f.actorName) params.set('actorName', f.actorName);
-      params.set('page', String(p.page));
-      params.set('pageSize', String(p.pageSize));
+      if (filters.startDate) params.set('startDate', filters.startDate);
+      if (filters.endDate) params.set('endDate', filters.endDate);
+      if (filters.actionTypeId) params.set('actionTypeId', filters.actionTypeId);
+      if (filters.requestNumber) params.set('requestNumber', filters.requestNumber);
+      if (filters.actorName) params.set('actorName', filters.actorName);
+      params.set('page', String(pagination.page));
+      params.set('pageSize', String(pagination.pageSize));
 
       const response = await apiClient.get<AuditLogResponse>(
         `/admin/audit-logs?${params.toString()}`,
@@ -137,19 +124,58 @@ export function AuditLogWorkspace() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [filters, pagination.page, pagination.pageSize]);
 
-  const handleSearch = useCallback(() => {
-    doFetchLogs();
-  }, [doFetchLogs]);
+  const filterFields: FilterField[] = [
+    { key: 'requestNumber', label: 'リクエスト番号', type: 'text', placeholder: 'PRF-...' },
+    { key: 'actorName', label: '実行者名', type: 'text', placeholder: '名前で検索' },
+    {
+      key: 'actionTypeId',
+      label: 'アクション種別',
+      type: 'select',
+      placeholder: 'すべて',
+      options: ACTION_OPTIONS,
+    },
+    { key: 'startDate', label: '開始日', type: 'date' },
+    { key: 'endDate', label: '終了日', type: 'date' },
+  ];
+
+  const handleApply = (values: Record<string, string | number>) => {
+    let requestNumber = String(values.requestNumber ?? '');
+    if (requestNumber.startsWith('PRF-')) {
+      requestNumber = requestNumber.slice(4);
+    }
+    const startDate = String(values.startDate ?? '');
+    const endDate = String(values.endDate ?? '');
+    if (startDate && endDate && startDate > endDate) {
+      setDateError('開始日は終了日より後に設定できません');
+      return;
+    }
+    setDateError('');
+    setFilters({
+      startDate,
+      endDate,
+      actionTypeId: String(values.actionTypeId ?? ''),
+      requestNumber,
+      actorName: String(values.actorName ?? ''),
+    });
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleClear = () => {
+    setFilters({ startDate: '', endDate: '', actionTypeId: '', requestNumber: '', actorName: '' });
+    setDateError('');
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
 
   const isInitialLoad = useRef(true);
   useEffect(() => {
     if (isInitialLoad.current) {
       isInitialLoad.current = false;
-      doFetchLogs();
     }
-  }, [doFetchLogs]);
+    doFetchLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, pagination.page, pagination.pageSize]);
 
   const sortedLogs = useMemo(() => {
     if (!sorting.sortBy) return logs;
@@ -222,111 +248,15 @@ export function AuditLogWorkspace() {
       </div>
 
       {/* Search Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-        <div className="flex items-end gap-4">
-          <div className="w-48">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              リクエスト番号
-            </label>
-            <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
-              <span className="px-2 py-2 text-sm text-slate-500 bg-slate-50 border-r border-slate-300 select-none">PRF-</span>
-              <input
-                type="text"
-                value={filters.requestNumber}
-                onChange={(e) => {
-                  setFilters((prev) => ({ ...prev, requestNumber: e.target.value }));
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
-                placeholder="番号を入力"
-                className="w-full px-2 py-2 text-sm outline-none border-0"
-              />
-            </div>
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              実行者名
-            </label>
-            <input
-              type="text"
-              value={filters.actorName}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, actorName: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                }
-              }}
-              placeholder="名前で検索"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-          <div className="w-36">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              アクション種別
-            </label>
-            <select
-              value={filters.actionTypeId}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, actionTypeId: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500"
-            >
-              {ACTION_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="w-44">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              開始日
-            </label>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, startDate: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-          <div className="w-44">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              終了日
-            </label>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, endDate: e.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-          <button
-            onClick={handleSearch}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Search className="w-4 h-4" />
-            検索
-          </button>
-        </div>
-        {dateError && (
-          <p className="mt-2 text-sm text-red-600">{dateError}</p>
-        )}
-      </div>
+      <SearchFilterBar
+        fields={filterFields}
+        values={filters}
+        onApply={handleApply}
+        onClear={handleClear}
+      />
+      {dateError && (
+        <p className="mb-4 text-sm text-red-600">{dateError}</p>
+      )}
 
       <div className="flex gap-6">
         {/* Audit Log Grid */}
