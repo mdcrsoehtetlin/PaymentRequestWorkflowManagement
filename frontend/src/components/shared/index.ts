@@ -9,6 +9,7 @@
 
 // Layout
 export { DashboardKpiGrid } from './DashboardKpiGrid';
+export { ScrollToTop } from './ScrollToTop';
 
 // Data Display
 export { DataTable } from './DataTable';

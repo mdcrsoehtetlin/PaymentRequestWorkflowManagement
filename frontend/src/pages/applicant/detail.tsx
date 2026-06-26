@@ -7,7 +7,7 @@ import ReceiptUpload from './components/ReceiptUpload';
 import { STATUS_LABELS_EN, EDITABLE_STATUSES, CURRENCY_CODES } from '../../types';
 
 interface Breakdown { description: string; amount: number | string; }
-interface Log { id: string; comment: string; new_status_id: number; timestamp: string; }
+interface Log { id: string; comment: string; new_status_id: number; action_type_id: number; timestamp: string; }
 interface Receipt { id: string; file_name: string; file_size: number; }
 interface DetailData {
   id: string;
@@ -179,7 +179,12 @@ const PaymentRequestDetail: React.FC = () => {
 
 
 
-  const rejectionLog = data.logs?.find((log) => log.new_status_id === 5 || log.new_status_id === 9);
+  const reversedLogs = data.logs ? [...data.logs].reverse() : [];
+  const rejectionLog = reversedLogs.find((log) => log.action_type_id === 6 || log.action_type_id === 9);
+  const editLogAfterRejection = rejectionLog ? reversedLogs.find((log) => log.action_type_id === 2 && new Date(log.timestamp) > new Date(rejectionLog.timestamp)) : null;
+  const hasBeenEditedSinceRejection = !!editLogAfterRejection;
+  const isRejectedStatus = data.status_id === 5 || data.status_id === 9;
+
   const isEditableStatus = [1, 5, 9].includes(data.status_id);
 
   return (
@@ -233,7 +238,8 @@ const PaymentRequestDetail: React.FC = () => {
                   Edit Request
                 </button>
               )}
-              {data.status_id === 1 && (
+              {[1, 5, 9].includes(data.status_id) && 
+                (data.status_id === 1 || hasBeenEditedSinceRejection) && (
                 <button 
                   onClick={handleSubmit}
                   disabled={submitting}
@@ -264,7 +270,7 @@ const PaymentRequestDetail: React.FC = () => {
           </div>
         )}
 
-        {!isEditing && rejectionLog && (
+        {!isEditing && isRejectedStatus && rejectionLog && !hasBeenEditedSinceRejection && (
           <div className="bg-orange-50 border border-orange-200 text-orange-800 px-5 py-4 rounded-xl flex items-start gap-3 shadow-sm">
             <AlertCircle className="w-6 h-6 shrink-0 mt-0.5 text-orange-500" />
             <div>

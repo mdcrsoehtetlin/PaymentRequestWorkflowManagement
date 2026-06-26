@@ -81,7 +81,11 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
                 href={dashboardPath}
                 onClick={(e) => {
                   e.preventDefault();
-                  navigate(dashboardPath);
+                  if (window.location.pathname === dashboardPath) {
+                    window.dispatchEvent(new CustomEvent('dashboard-refresh'));
+                  } else {
+                    navigate(dashboardPath);
+                  }
                   onClose();
                 }}
                 className="block px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-800 text-white transition-colors"
@@ -95,7 +99,11 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
                   href={item.path}
                   onClick={(e) => {
                     e.preventDefault();
-                    navigate(item.path);
+                    if (window.location.pathname === item.path) {
+                      window.dispatchEvent(new CustomEvent('dashboard-refresh'));
+                    } else {
+                      navigate(item.path);
+                    }
                     onClose();
                   }}
                   className="block px-4 py-2.5 rounded-lg text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"

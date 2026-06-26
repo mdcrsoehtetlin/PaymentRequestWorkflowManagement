@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import { AdminRoute } from './components/guards/AdminRoute';
 import { ToastContainer } from './components/shared/Toast';
+import { ScrollToTop } from './components/shared/ScrollToTop';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ApplicantDashboard } from './pages/applicant/ApplicantDashboard';
 import { ManagerDashboard } from './pages/manager/ManagerDashboard';
@@ -21,6 +22,7 @@ export default function App() {
     <AuthProvider>
       <ToastContainer />
       <Router>
+        <ScrollToTop />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           

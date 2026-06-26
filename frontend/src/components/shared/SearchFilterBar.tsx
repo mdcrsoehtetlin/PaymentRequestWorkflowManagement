@@ -68,7 +68,10 @@ export function SearchFilterBar({
 
   const inputClasses = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 disabled:bg-slate-100 disabled:cursor-not-allowed';
 
-  const hasActiveFilters = Object.values(localValues).some((val) => val !== '' && val !== undefined && val !== null);
+  const hasActiveFilters = fields.some((field) => {
+    const val = localValues[field.key];
+    return val !== '' && val !== undefined && val !== null;
+  });
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm mb-6">
