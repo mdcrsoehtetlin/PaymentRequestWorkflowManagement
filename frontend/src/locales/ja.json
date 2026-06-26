@@ -42,7 +42,9 @@
       "request_not_found_title": "申請が見つかりません",
       "request_not_found_detail": "お探しの支払申請は存在しないか、削除された可能性があります。",
       "detail_fetch_error": "申請詳細の取得に失敗しました。",
-      "fetch_error": "支払申請の取得に失敗しました。"
+      "fetch_error": "支払申請の取得に失敗しました。",
+      "download": "ダウンロード",
+      "download_error": "領収書のダウンロードに失敗しました。"
     },
     "approver": {
       "title": "承認者ダッシュボード",
