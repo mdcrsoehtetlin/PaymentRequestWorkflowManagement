@@ -25,19 +25,14 @@ const readStoredFilter = (): KpiFilter | null => {
   return 'pending';
 };
 
-export const useAccountingQueue = () => {
+export const useAccountingQueue = (
+  filters: Record<string, string | number>,
+) => {
   const [data, setData] = useState<PaymentRequest[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const [searchInput, setSearchInput] = useState('');
-  const [branchInput, setBranchInput] = useState('');
-  const [desiredDateInput, setDesiredDateInput] = useState('');
-
-  const [appliedSearch, setAppliedSearch] = useState('');
-  const [appliedBranch, setAppliedBranch] = useState('');
-  const [appliedDesiredDate, setAppliedDesiredDate] = useState('');
   const [kpiFilter, setKpiFilter] = useState<KpiFilter | null>(
     readStoredFilter,
   );
@@ -65,10 +60,11 @@ export const useAccountingQueue = () => {
       const response = await getApprovedRequests(
         page,
         pageSize,
-        appliedSearch,
-        appliedBranch,
-        appliedDesiredDate,
+        String(filters.search ?? ''),
+        String(filters.branch ?? ''),
+        String(filters.desiredDate ?? ''),
         kpiFilter ?? undefined,
+        filters.status ? Number(filters.status) : undefined,
       );
       setData(response.data);
       setTotal(response.meta.total);
@@ -77,16 +73,9 @@ export const useAccountingQueue = () => {
     } finally {
       setLoading(false);
     }
-  }, [
-    page,
-    pageSize,
-    appliedSearch,
-    appliedBranch,
-    appliedDesiredDate,
-    kpiFilter,
-  ]);
+  }, [page, pageSize, filters, kpiFilter]);
 
-  // Auto-fetch on any change to page, pageSize, or applied filters
+  // Auto-fetch on any change to page, pageSize, or filters
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -95,10 +84,11 @@ export const useAccountingQueue = () => {
         const response = await getApprovedRequests(
           page,
           pageSize,
-          appliedSearch,
-          appliedBranch,
-          appliedDesiredDate,
+          String(filters.search ?? ''),
+          String(filters.branch ?? ''),
+          String(filters.desiredDate ?? ''),
           kpiFilter ?? undefined,
+          filters.status ? Number(filters.status) : undefined,
         );
         setData(response.data);
         setTotal(response.meta.total);
@@ -109,51 +99,19 @@ export const useAccountingQueue = () => {
       }
     };
     load();
-  }, [
-    page,
-    pageSize,
-    appliedSearch,
-    appliedBranch,
-    appliedDesiredDate,
-    kpiFilter,
-  ]);
-
-  const submitSearch = useCallback(() => {
-    setAppliedSearch(searchInput);
-    setAppliedBranch(branchInput);
-    setAppliedDesiredDate(desiredDateInput);
-    setPage(1);
-  }, [searchInput, branchInput, desiredDateInput]);
-
-  const clearFilters = useCallback(() => {
-    setSearchInput('');
-    setBranchInput('');
-    setDesiredDateInput('');
-    setAppliedSearch('');
-    setAppliedBranch('');
-    setAppliedDesiredDate('');
-    setPage(1);
-  }, []);
+  }, [page, pageSize, filters, kpiFilter]);
 
   return {
     data,
     total,
     page,
     pageSize,
-    searchInput,
-    branchInput,
-    desiredDateInput,
     kpiFilter,
     loading,
     error,
     setPage,
     setPageSize,
-    setSearchInput,
-    setBranchInput,
-    setDesiredDateInput,
     setKpiFilter,
-    submitSearch,
-    clearFilters,
     refreshQueue: fetchQueue,
   };
 };
