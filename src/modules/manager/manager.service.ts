@@ -81,7 +81,10 @@ export class ManagerService {
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.applicant', 'applicant')
       .where('request.managerUserId = :managerId', { managerId })
-      .andWhere('request.isDeleted = false');
+      .andWhere('request.isDeleted = false')
+      .andWhere('request.statusId != :draftStatus', {
+        draftStatus: PaymentStatus.DRAFT,
+      });
 
     if (statusId) {
       qb.andWhere('request.statusId = :statusId', { statusId });
