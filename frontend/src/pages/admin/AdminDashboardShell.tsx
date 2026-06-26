@@ -1,77 +1,45 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { LogOut, Shield } from 'lucide-react';
+import { Sidebar } from '../../components/layout/Sidebar';
+import { LanguageSwitcher } from '../../components/shared/LanguageSwitcher';
+import { Menu } from 'lucide-react';
 
 /**
  * @description Persistent split-dashboard shell for the admin panel.
- * Left sidebar with navigation, right side swaps workspace via React Router sub-routes.
+ * Uses shared Sidebar component with mobile overlay support.
  */
 export function AdminDashboardShell() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const navItems = [
-    { to: '/admin/users', label: 'ユーザー管理' },
-    { to: '/admin/master-data', label: 'マスターデータ' },
-    { to: '/admin/audit-logs', label: '監査ログ' },
-  ];
+  if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-slate-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-blue-900 text-white flex flex-col shadow-lg">
-        <div className="px-6 py-5 border-b border-blue-800">
-          <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6" />
-            <span className="text-lg font-bold">Admin Console</span>
-          </div>
-          <p className="text-xs text-blue-200 mt-1">PRWM System</p>
-        </div>
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Shared Sidebar */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        currentRole={user.role as string}
+      />
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-blue-700 text-white'
-                    : 'text-blue-100 hover:bg-blue-700/50 hover:text-white'
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="px-3 py-4 border-t border-blue-800">
-          <div className="px-3 py-2 text-sm text-blue-200">
-            <p className="font-medium text-white">{user?.fullName}</p>
-            <p className="text-xs">{user?.email}</p>
-          </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 md:ml-64 transition-all duration-300">
+        <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
           <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 mt-2 text-sm text-blue-100 hover:bg-blue-700/50 rounded-lg transition-colors"
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg md:hidden focus:outline-none focus:ring-2 focus:ring-slate-200"
           >
-            <LogOut className="w-4 h-4" />
-            ログアウト
+            <Menu className="w-6 h-6" />
           </button>
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <main className="flex-1 overflow-auto">
+          <div />
+          <LanguageSwitcher />
+        </header>
         <div className="p-6">
           <Outlet />
         </div>
-      </main>
+      </div>
     </div>
   );
 }

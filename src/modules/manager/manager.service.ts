@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
 import { PaymentRequest } from '../shared/entities/payment-request.entity';
+import { ReceiptFile } from '../shared/entities/receipt-file.entity';
 import { AuditLogService } from '../shared/services/audit-log.service';
 import { WebsocketGateway } from '../shared/websocket.gateway';
 import { QueryRequestsDto } from './dto/query-requests.dto';
@@ -23,6 +24,8 @@ export class ManagerService {
   constructor(
     @InjectRepository(PaymentRequest)
     private readonly paymentRequestRepository: Repository<PaymentRequest>,
+    @InjectRepository(ReceiptFile)
+    private readonly receiptFileRepository: Repository<ReceiptFile>,
     private readonly dataSource: DataSource,
     private readonly auditLogService: AuditLogService,
     private readonly websocketGateway: WebsocketGateway,
@@ -49,11 +52,18 @@ export class ManagerService {
           'paymentRequest',
         ]),
       ),
-      receiptFiles: (receipts ?? []).map((file) =>
-        this.omitCircularRefs(file as unknown as Record<string, unknown>, [
-          'paymentRequest',
-        ]),
-      ),
+      receiptFiles: (receipts ?? []).map((file) => ({
+        receiptFileId: file.id,
+        paymentRequestId: file.paymentRequestId,
+        originalFileName: file.originalFileName,
+        storedFileName: file.storedFileName,
+        fileStoragePath: file.storage_key,
+        fileSize: file.file_size != null ? String(file.file_size) : null,
+        mimeType: file.mime_type,
+        uploadedByUserId: file.uploadedByUserId,
+        uploadedDate: file.uploadedDate,
+        isDeleted: file.isDeleted,
+      })),
       approvalLogs: (approvalLogs ?? []).map((log) => ({
         ...this.omitCircularRefs(log as any, [
           'payment_request',
@@ -81,7 +91,10 @@ export class ManagerService {
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.applicant', 'applicant')
       .where('request.managerUserId = :managerId', { managerId })
-      .andWhere('request.isDeleted = false');
+      .andWhere('request.isDeleted = false')
+      .andWhere('request.statusId != :draftStatus', {
+        draftStatus: PaymentStatus.DRAFT,
+      });
 
     if (statusId) {
       qb.andWhere('request.statusId = :statusId', { statusId });
@@ -108,6 +121,24 @@ export class ManagerService {
       ...r,
       paymentRequestId: r.id,
     }));
+  }
+
+  async downloadReceipt(
+    managerId: number,
+    requestId: number,
+    receiptId: number,
+  ): Promise<ReceiptFile> {
+    const request = await this.paymentRequestRepository.findOne({
+      where: { id: requestId, managerUserId: managerId, isDeleted: false },
+    });
+    if (!request) throw new NotFoundException('指定された申請が見つかりません');
+
+    const receipt = await this.receiptFileRepository.findOne({
+      where: { id: receiptId, paymentRequestId: requestId, isDeleted: false },
+    });
+    if (!receipt) throw new NotFoundException('領収書が見つかりません');
+
+    return receipt;
   }
 
   async getRequestDetails(id: number, managerId: number) {
