@@ -11,7 +11,13 @@ import {
   Ip,
   Headers,
   BadRequestException,
+  NotFoundException,
+  Res,
+  Logger,
 } from '@nestjs/common';
+import { createReadStream, existsSync } from 'fs';
+import { Response } from 'express';
+import { StreamableFile } from '@nestjs/common';
 import { ManagerService } from './manager.service';
 import { JwtAuthGuard } from '../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../shared/guards/roles.guard';
@@ -27,6 +33,8 @@ import { StartReviewDto } from './dto/start-review.dto';
 @Roles(RoleCode.MANAGER)
 @Controller('manager/requests')
 export class ManagerController {
+  private readonly logger = new Logger(ManagerController.name);
+
   constructor(private readonly managerService: ManagerService) {}
 
   /**
@@ -54,6 +62,49 @@ export class ManagerController {
   ) {
     const managerId = user.sub;
     return this.managerService.getRequestDetails(id, managerId);
+  }
+
+  /**
+   * @description Downloads a receipt file for a specific payment request.
+   */
+  @Get(':id/receipts/:receiptId/download')
+  async downloadReceipt(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('receiptId', ParseIntPipe) receiptId: number,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const managerId = user.sub;
+    this.logger.log(
+      `Downloading receipt ${receiptId} for request ${id} by manager ${managerId}`,
+    );
+
+    const receipt = await this.managerService.downloadReceipt(
+      managerId,
+      id,
+      receiptId,
+    );
+
+    if (!receipt.storage_key) {
+      this.logger.error(
+        `Receipt ${receiptId} has no storage_key (file_storage_path)`,
+      );
+      throw new NotFoundException('領収書ファイルのパスが見つかりません');
+    }
+
+    if (!existsSync(receipt.storage_key)) {
+      this.logger.error(
+        `Receipt file not found on disk: ${receipt.storage_key}`,
+      );
+      throw new NotFoundException('領収書ファイルがストレージに見つかりません');
+    }
+
+    const file = createReadStream(receipt.storage_key);
+    res.set({
+      'Content-Type': receipt.mime_type || 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(receipt.originalFileName || 'receipt')}"`,
+    });
+    return new StreamableFile(file);
   }
 
   /**
