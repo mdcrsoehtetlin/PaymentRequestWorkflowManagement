@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Eye } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { SearchFilterBar, type FilterField } from '../../components/shared/SearchFilterBar';
@@ -98,34 +98,6 @@ export function AuditLogWorkspace() {
     }
   };
 
-  const doFetchLogs = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filters.startDate) params.set('startDate', filters.startDate);
-      if (filters.endDate) params.set('endDate', filters.endDate);
-      if (filters.actionTypeId) params.set('actionTypeId', filters.actionTypeId);
-      if (filters.requestNumber) params.set('requestNumber', filters.requestNumber);
-      if (filters.actorName) params.set('actorName', filters.actorName);
-      params.set('page', String(pagination.page));
-      params.set('pageSize', String(pagination.pageSize));
-
-      const response = await apiClient.get<AuditLogResponse>(
-        `/admin/audit-logs?${params.toString()}`,
-      );
-      setLogs(response.data.data);
-      setPagination((prev) => ({
-        ...prev,
-        totalItems: response.data.meta.totalItems,
-        totalPages: response.data.meta.totalPages,
-      }));
-    } catch (error) {
-      console.error('Failed to fetch audit logs:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters, pagination.page, pagination.pageSize]);
-
   const filterFields: FilterField[] = [
     { key: 'requestNumber', label: 'リクエスト番号', type: 'text', placeholder: 'PRF-...' },
     { key: 'actorName', label: '実行者名', type: 'text', placeholder: '名前で検索' },
@@ -173,8 +145,41 @@ export function AuditLogWorkspace() {
     if (isInitialLoad.current) {
       isInitialLoad.current = false;
     }
-    doFetchLogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const controller = new AbortController();
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filters.startDate) params.set('startDate', filters.startDate);
+        if (filters.endDate) params.set('endDate', filters.endDate);
+        if (filters.actionTypeId) params.set('actionTypeId', filters.actionTypeId);
+        if (filters.requestNumber) params.set('requestNumber', filters.requestNumber);
+        if (filters.actorName) params.set('actorName', filters.actorName);
+        params.set('page', String(pagination.page));
+        params.set('pageSize', String(pagination.pageSize));
+
+        const response = await apiClient.get<AuditLogResponse>(
+          `/admin/audit-logs?${params.toString()}`,
+          { signal: controller.signal },
+        );
+        setLogs(response.data.data);
+        setPagination((prev) => ({
+          ...prev,
+          totalItems: response.data.meta.totalItems,
+          totalPages: response.data.meta.totalPages,
+        }));
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error('Failed to fetch audit logs:', error);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
+    load();
+    return () => controller.abort();
   }, [filters, pagination.page, pagination.pageSize]);
 
   const sortedLogs = useMemo(() => {

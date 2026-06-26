@@ -140,8 +140,39 @@ export function UserManagementWorkspace() {
     if (isInitialLoad.current) {
       isInitialLoad.current = false;
     }
-    fetchUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const controller = new AbortController();
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filters.keyword) params.set('keyword', filters.keyword);
+        if (filters.roleId) params.set('roleId', filters.roleId);
+        if (filters.isActive) params.set('isActive', filters.isActive);
+        params.set('page', String(pagination.page));
+        params.set('pageSize', String(pagination.pageSize));
+
+        const response = await apiClient.get<UsersResponse>(
+          `/admin/users?${params.toString()}`,
+          { signal: controller.signal },
+        );
+        setUsers(response.data.data);
+        setPagination((prev) => ({
+          ...prev,
+          totalItems: response.data.meta.totalItems,
+          totalPages: response.data.meta.totalPages,
+        }));
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error('Failed to fetch users:', error);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
+    load();
+    return () => controller.abort();
   }, [filters, pagination.page, pagination.pageSize]);
 
   const handleToggleActive = async (user: UserRecord) => {
