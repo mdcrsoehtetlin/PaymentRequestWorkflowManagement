@@ -93,7 +93,7 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
                 className="block px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-800 text-white transition-colors"
               >
                 {t('sidebar.dashboard')}
-              </NavLink>
+              </a>
             ) : (
               roleConfig.menuItems.map((item) => (
                 <NavLink
