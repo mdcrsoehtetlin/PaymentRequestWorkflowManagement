@@ -9,6 +9,7 @@ import { PaymentRequest } from './entities/payment-request.entity';
 import { PaymentBreakdownItem } from './entities/payment-breakdown-item.entity';
 import { ApprovalLog } from './entities/approval-log.entity';
 import { ReceiptFile } from './entities/receipt-file.entity';
+import { Notification } from './entities/notification.entity';
 
 // Gateway
 import { WebsocketGateway } from './websocket.gateway';
@@ -18,6 +19,7 @@ import { RequestNumberService } from './services/request-number.service';
 import { FileUploadService } from './services/file-upload.service';
 import { AuditLogService } from './services/audit-log.service';
 import { RedisService } from './services/redis.service';
+import { NotificationService } from './services/notification.service';
 
 /**
  * @description SharedModule — the foundation layer for all feature modules.
@@ -38,6 +40,7 @@ import { RedisService } from './services/redis.service';
       PaymentBreakdownItem,
       ApprovalLog,
       ReceiptFile,
+      Notification,
     ]),
   ],
   providers: [
@@ -58,6 +61,7 @@ import { RedisService } from './services/redis.service';
     FileUploadService,
     AuditLogService,
     RedisService,
+    NotificationService,
   ],
   exports: [
     TypeOrmModule,
@@ -67,6 +71,7 @@ import { RedisService } from './services/redis.service';
     FileUploadService,
     AuditLogService,
     RedisService,
+    NotificationService,
   ],
 })
 export class SharedModule {}

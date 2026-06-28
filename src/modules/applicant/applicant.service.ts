@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -23,12 +24,15 @@ import {
   UploadedFile,
 } from '../shared/services/file-upload.service';
 import { WebsocketGateway } from '../shared/websocket.gateway';
+import { NotificationService } from '../shared/services/notification.service';
 
 /**
  * Service handling applicant payment request logic
  */
 @Injectable()
 export class ApplicantService {
+  private readonly logger = new Logger(ApplicantService.name);
+
   constructor(
     @InjectRepository(PaymentRequest)
     private readonly paymentRequestRepo: Repository<PaymentRequest>,
@@ -42,6 +46,7 @@ export class ApplicantService {
     private readonly requestNumberService: RequestNumberService,
     private readonly fileUploadService: FileUploadService,
     private readonly websocketGateway: WebsocketGateway,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async getActiveManagers(): Promise<
@@ -404,6 +409,29 @@ export class ApplicantService {
           timestamp: log.timestamp.toISOString(),
         },
       );
+
+      // Notify the assigned manager
+      if (request.managerUserId) {
+        try {
+          const applicant = await this.userRepo.findOne({
+            where: { userId: applicantId },
+          });
+          const applicantName = applicant?.fullName || 'Applicant';
+          const amount = Number(savedRequest.totalAmount) || 0;
+
+          await this.notificationService.create(request.managerUserId, {
+            paymentRequestId: Number(savedRequest.id),
+            title: 'New Payment Request',
+            message: `${applicantName} has submitted a new payment request for ${amount.toLocaleString()} MMK.`,
+            link: `/manager/requests/${savedRequest.id}`,
+          });
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.warn(
+            `Failed to send notification to manager ${request.managerUserId}: ${message}`,
+          );
+        }
+      }
 
       return savedRequest;
     });

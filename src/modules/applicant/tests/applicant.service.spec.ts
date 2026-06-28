@@ -12,6 +12,7 @@ import { User } from '../../shared/entities/user.entity';
 import { RequestNumberService } from '../../shared/services/request-number.service';
 import { FileUploadService } from '../../shared/services/file-upload.service';
 import { WebsocketGateway } from '../../shared/websocket.gateway';
+import { NotificationService } from '../../shared/services/notification.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 /**
@@ -95,6 +96,13 @@ describe('ApplicantService', () => {
         {
           provide: WebsocketGateway,
           useValue: mockWebsocketGateway,
+        },
+        {
+          provide: NotificationService,
+          useValue: {
+            sendNotification: jest.fn(),
+            sendBulkNotification: jest.fn(),
+          },
         },
       ],
     }).compile();

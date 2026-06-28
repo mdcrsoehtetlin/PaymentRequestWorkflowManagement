@@ -300,7 +300,10 @@ export class ManagerService {
         this.websocketGateway.sendStatusUpdate(RoleCode.MANAGER, {
           event: 'queueChange',
           action: 'REVIEW_START',
-          requestId: id,
+          paymentRequestId: id,
+          requestNumber: updatedRequest.requestNumber,
+          newStatusId: PaymentStatus.MANAGER_REVIEWING,
+          timestamp: new Date().toISOString(),
         });
       } catch (wsErr) {
         this.logger.warn(
@@ -392,11 +395,18 @@ export class ManagerService {
         },
       );
 
+      const verifiedRequest = await this.paymentRequestRepository.findOne({
+        where: { id },
+      });
+
       try {
         this.websocketGateway.sendStatusUpdate(RoleCode.MANAGER, {
           event: 'queueChange',
           action: 'VERIFIED',
-          requestId: id,
+          paymentRequestId: id,
+          requestNumber: verifiedRequest?.requestNumber,
+          newStatusId: PaymentStatus.MANAGER_VERIFIED,
+          timestamp: new Date().toISOString(),
         });
       } catch (wsErr) {
         this.logger.warn(
@@ -530,7 +540,10 @@ export class ManagerService {
         this.websocketGateway.sendStatusUpdate(RoleCode.MANAGER, {
           event: 'queueChange',
           action: 'REJECTED',
-          requestId: id,
+          paymentRequestId: id,
+          requestNumber: txResult.requestNumber,
+          newStatusId: PaymentStatus.REJECTED_MANAGER,
+          timestamp: new Date().toISOString(),
         });
       } catch (wsErr) {
         this.logger.warn(

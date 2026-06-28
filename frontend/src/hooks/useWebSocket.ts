@@ -1,5 +1,11 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { wsService } from '../services/websocket.service';
+import {
+  fetchNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  type BackendNotification,
+} from '../services/notification-api';
 
 export interface StatusUpdatePayload {
   paymentRequestId: number | string;
@@ -20,9 +26,27 @@ export interface NotificationPayload {
 
 export interface FrontendNotification {
   id: string;
+  backendId?: number;
   isRead: boolean;
   payload: StatusUpdatePayload | NotificationPayload;
   timestamp: string;
+  title?: string;
+  link?: string;
+}
+
+function mapBackendNotification(n: BackendNotification): FrontendNotification {
+  return {
+    id: `backend-${n.id}`,
+    backendId: n.id,
+    isRead: n.isRead,
+    payload: {
+      message: n.message,
+      timestamp: n.createdDate,
+    },
+    timestamp: n.createdDate,
+    title: n.title,
+    link: n.link || undefined,
+  };
 }
 
 export function useWebSocket(userId?: number, role?: string) {
@@ -30,17 +54,32 @@ export function useWebSocket(userId?: number, role?: string) {
     [],
   );
   const [unreadCount, setUnreadCount] = useState(0);
+  const loadedRef = useRef(false);
 
+  // Load persisted notifications from API on mount
+  useEffect(() => {
+    if (!userId || loadedRef.current) return;
+    loadedRef.current = true;
+
+    fetchNotifications()
+      .then((data) => {
+        const mapped = data.notifications.map(mapBackendNotification);
+        setNotifications(mapped);
+        setUnreadCount(data.unreadCount);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch notifications', err);
+      });
+  }, [userId]);
+
+  // Connect WebSocket
   useEffect(() => {
     if (userId && role) {
       wsService.connect(userId, role);
     }
-    return () => {
-      // Intentionally not disconnecting here to avoid breaking shared singleton
-      // connection when individual components unmount.
-    };
   }, [userId, role]);
 
+  // Listen for real-time WebSocket notifications
   useEffect(() => {
     const handleStatusUpdate = (data: unknown) => {
       const payload = data as StatusUpdatePayload;
@@ -57,16 +96,52 @@ export function useWebSocket(userId?: number, role?: string) {
     };
 
     const handleNotification = (data: unknown) => {
-      const payload = data as NotificationPayload;
-      setNotifications((prev) => [
-        {
-          id: Math.random().toString(36).substring(2, 9),
-          isRead: false,
-          payload,
-          timestamp: payload.timestamp || new Date().toISOString(),
-        },
-        ...prev,
-      ]);
+      const payload = data as {
+        notificationId?: number;
+        paymentRequestId?: number;
+        title?: string;
+        message?: string;
+        link?: string;
+        timestamp?: string;
+      };
+
+      // Avoid duplicates: check if this backend notification is already loaded
+      if (payload.notificationId) {
+        const backendKey = `backend-${payload.notificationId}`;
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === backendKey)) return prev;
+          return [
+            {
+              id: backendKey,
+              backendId: payload.notificationId,
+              isRead: false,
+              payload: {
+                message: payload.message || '',
+                timestamp: payload.timestamp,
+              },
+              timestamp: payload.timestamp || new Date().toISOString(),
+              title: payload.title,
+              link: payload.link,
+            },
+            ...prev,
+          ];
+        });
+      } else {
+        setNotifications((prev) => [
+          {
+            id: Math.random().toString(36).substring(2, 9),
+            isRead: false,
+            payload: {
+              message: payload.message || '',
+              timestamp: payload.timestamp,
+            },
+            timestamp: payload.timestamp || new Date().toISOString(),
+            title: payload.title,
+            link: payload.link,
+          },
+          ...prev,
+        ]);
+      }
       setUnreadCount((prev) => prev + 1);
     };
 
@@ -103,21 +178,37 @@ export function useWebSocket(userId?: number, role?: string) {
     [],
   );
 
-  const markAsRead = useCallback((id: string) => {
-    setNotifications((prev) => {
-      const index = prev.findIndex((n) => n.id === id);
-      if (index === -1 || prev[index].isRead) return prev;
+  const markAsRead = useCallback(
+    (id: string) => {
+      setNotifications((prev) => {
+        const index = prev.findIndex((n) => n.id === id);
+        if (index === -1 || prev[index].isRead) return prev;
 
-      const next = [...prev];
-      next[index] = { ...next[index], isRead: true };
-      return next;
-    });
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-  }, []);
+        const next = [...prev];
+        next[index] = { ...next[index], isRead: true };
+        return next;
+      });
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+
+      // Persist to backend
+      const notif = notifications.find((n) => n.id === id);
+      if (notif?.backendId) {
+        markNotificationAsRead(notif.backendId).catch((err) => {
+          console.error('Failed to mark notification as read', err);
+        });
+      }
+    },
+    [notifications],
+  );
 
   const markAllAsRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     setUnreadCount(0);
+
+    // Persist to backend
+    markAllNotificationsAsRead().catch((err) => {
+      console.error('Failed to mark all notifications as read', err);
+    });
   }, []);
 
   const clearNotifications = useCallback(() => {

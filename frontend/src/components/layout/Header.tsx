@@ -106,10 +106,10 @@ export function Header({ onMenuToggle, notificationCount = 0, notifications = []
                   <div className="flex flex-col">
                     {notifications.map((noti) => {
                       const payload = noti.payload;
-                      let url = '#';
-                      if (userRole && 'paymentRequestId' in payload) {
+                      let url = noti.link || '#';
+                      if (!noti.link && userRole && 'paymentRequestId' in payload) {
                         const rolePath = userRole.toLowerCase();
-                        url = rolePath === 'accounting' 
+                        url = rolePath === 'accounting'
                           ? `/accounting/payment/${payload.paymentRequestId}`
                           : `/${rolePath}/requests/${payload.paymentRequestId}`;
                       }
