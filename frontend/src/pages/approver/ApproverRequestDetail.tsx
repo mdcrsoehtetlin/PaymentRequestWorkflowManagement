@@ -1,4 +1,5 @@
 import { Download, ExternalLink, FileText } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../utils/format';
 import type { ApproverRequestDetailView, PaymentBreakdownItem } from './types';
 import { ApproverActionPanel } from './components/ApproverActionPanel';
@@ -23,6 +24,8 @@ interface ApproverRequestDetailProps {
 }
 
 export function ApproverRequestDetail({ request, isLoading, onApprove, onReject }: ApproverRequestDetailProps) {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -38,7 +41,7 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
   if (!request) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-slate-500">
-        Select a request from the list to view details.
+        {t('approver.detail.empty_state')}
       </div>
     );
   }
@@ -48,67 +51,67 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm text-slate-500">Request Number</p>
+            <p className="text-sm text-slate-500">{t('approver.detail.fields.request_number')}</p>
             <h2 className="text-2xl font-semibold text-slate-900">{request.requestNumber}</h2>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
             <ApproverStatusBadge statusId={request.statusId} />
-            <span className="text-sm text-slate-500">Applied: {formatDate(request.applicationDate)}</span>
+            <span className="text-sm text-slate-500">{t('approver.detail.fields.applied')} {formatDate(request.applicationDate)}</span>
           </div>
         </div>
 
         <div className="grid gap-4 mt-6 sm:grid-cols-2">
           <div>
-            <p className="text-sm text-slate-500">Applicant</p>
+            <p className="text-sm text-slate-500">{t('approver.detail.fields.applicant')}</p>
             <p className="mt-1 text-slate-900">{request.applicant?.fullName ?? '—'}</p>
           </div>
           <div>
-            <p className="text-sm text-slate-500">Employee Number</p>
+            <p className="text-sm text-slate-500">{t('approver.detail.fields.employee_number')}</p>
             <p className="mt-1 text-slate-900 font-semibold">{request.applicant?.employeeNumber ?? '—'}</p>
           </div>
         </div>
 
         <div className="grid gap-4 mt-4 sm:grid-cols-2">
           <div>
-            <p className="text-sm text-slate-500">Department</p>
+            <p className="text-sm text-slate-500">{t('approver.detail.fields.department')}</p>
             <p className="mt-1 text-slate-900">{request.applicant?.department ?? '—'}</p>
           </div>
           <div>
-            <p className="text-sm text-slate-500">Branch</p>
+            <p className="text-sm text-slate-500">{t('approver.detail.fields.branch')}</p>
             <p className="mt-1 text-slate-900">{request.applicant?.branch ?? '—'}</p>
           </div>
         </div>
 
         <div className="grid gap-4 mt-4 sm:grid-cols-2">
           <div>
-            <p className="text-sm text-slate-500">Email</p>
+            <p className="text-sm text-slate-500">{t('approver.detail.fields.email')}</p>
             <p className="mt-1 text-slate-900">{request.applicant?.email ?? '—'}</p>
           </div>
           <div>
-            <p className="text-sm text-slate-500">Desired Payment Date</p>
+            <p className="text-sm text-slate-500">{t('approver.detail.fields.desired_payment_date')}</p>
             <p className="mt-1 text-slate-900">{formatDate(request.desiredPaymentDate)}</p>
           </div>
         </div>
 
-        <p className="text-sm text-slate-500 mt-4">Purpose</p>
+        <p className="text-sm text-slate-500 mt-4">{t('approver.detail.fields.purpose')}</p>
         <p className="mt-2 text-slate-900 whitespace-pre-wrap">{request.purpose}</p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Breakdown Items</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">{t('approver.detail.breakdown.title')}</h3>
             {request.breakdownItems && request.breakdownItems.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 text-left text-slate-500">
-                      <th className="pb-2 font-medium">#</th>
-                      <th className="pb-2 font-medium">Date</th>
-                      <th className="pb-2 font-medium">Description</th>
-                      <th className="pb-2 font-medium text-right">Qty</th>
-                      <th className="pb-2 font-medium text-right">Unit Price</th>
-                      <th className="pb-2 font-medium text-right">Amount</th>
+                      <th className="pb-2 font-medium">{t('approver.detail.breakdown.columns.no')}</th>
+                      <th className="pb-2 font-medium">{t('approver.detail.breakdown.columns.date')}</th>
+                      <th className="pb-2 font-medium">{t('approver.detail.breakdown.columns.description')}</th>
+                      <th className="pb-2 font-medium text-right">{t('approver.detail.breakdown.columns.qty')}</th>
+                      <th className="pb-2 font-medium text-right">{t('approver.detail.breakdown.columns.unit_price')}</th>
+                      <th className="pb-2 font-medium text-right">{t('approver.detail.breakdown.columns.amount')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -125,19 +128,19 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-slate-300 font-semibold">
-                      <td colSpan={5} className="py-2 text-right text-slate-900">Total</td>
+                      <td colSpan={5} className="py-2 text-right text-slate-900">{t('approver.detail.breakdown.total')}</td>
                       <td className="py-2 text-right text-slate-900">{approverCurrency(request.totalAmount, request.currencyCode)}</td>
                     </tr>
                   </tfoot>
                 </table>
               </div>
             ) : (
-              <p className="text-sm text-slate-500">No breakdown items.</p>
+              <p className="text-sm text-slate-500">{t('approver.detail.breakdown.empty')}</p>
             )}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Receipt Files</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">{t('approver.detail.receipts.title')}</h3>
             {request.receiptFiles && request.receiptFiles.length > 0 ? (
               <>
                 <div className="mb-3">
@@ -158,7 +161,7 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
                     className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
                     <Download className="h-4 w-4" />
-                    Download All Receipts ({request.receiptFiles.length})
+                    {t('approver.detail.receipts.download_all', { count: request.receiptFiles.length })}
                   </button>
                 </div>
                 <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
@@ -179,12 +182,12 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
                 </ul>
               </>
             ) : (
-              <p className="text-sm text-slate-500">No receipt files attached.</p>
+              <p className="text-sm text-slate-500">{t('approver.detail.receipts.empty')}</p>
             )}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Approval History</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">{t('approver.detail.approval_history')}</h3>
             <ApproverApprovalTimeline logs={request.approvalLogs} />
           </div>
         </div>
