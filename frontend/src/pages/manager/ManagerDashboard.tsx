@@ -37,6 +37,7 @@ export function ManagerDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [allRequests, setAllRequests] = useState<PaymentRequestWithApplicant[]>([]);
   const [requests, setRequests] = useState<PaymentRequestWithApplicant[]>([]);
   const [isListLoading, setIsListLoading] = useState(true);
 
@@ -62,7 +63,24 @@ export function ManagerDashboard() {
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch on mount and whenever active filters change
+  // Always fetch the full unfiltered dataset for KPI counters
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAll = async () => {
+      try {
+        const response = await apiClient.get<PaymentRequestWithApplicant[]>('/manager/requests');
+        if (!cancelled) setAllRequests(response.data);
+      } catch {
+        // KPI counts will show 0 — non-critical
+      }
+    };
+
+    loadAll();
+    return () => { cancelled = true; };
+  }, [refreshKey, location.pathname]);
+
+  // Fetch filtered data for the table
   useEffect(() => {
     let cancelled = false;
 
@@ -154,11 +172,11 @@ export function ManagerDashboard() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const totalCount = requests.filter(r => r.managerUserId === user?.sub).length;
-  const pendingCount = requests.filter(r => r.statusId === PaymentStatus.SUBMITTED_MANAGER).length;
-  const reviewingCount = requests.filter(r => r.statusId === PaymentStatus.MANAGER_REVIEWING).length;
-  const verifiedCount = requests.filter(r => r.statusId === PaymentStatus.MANAGER_VERIFIED).length;
-  const rejectedCount = requests.filter(r => r.statusId === PaymentStatus.REJECTED_MANAGER).length;
+  const totalCount = allRequests.filter(r => r.managerUserId === user?.sub).length;
+  const pendingCount = allRequests.filter(r => r.statusId === PaymentStatus.SUBMITTED_MANAGER).length;
+  const reviewingCount = allRequests.filter(r => r.statusId === PaymentStatus.MANAGER_REVIEWING).length;
+  const verifiedCount = allRequests.filter(r => r.statusId === PaymentStatus.MANAGER_VERIFIED).length;
+  const rejectedCount = allRequests.filter(r => r.statusId === PaymentStatus.REJECTED_MANAGER).length;
 
 
   const totalResults = requests.length;
