@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import type { AxiosError } from 'axios';
@@ -19,7 +19,7 @@ import { approverService } from './services/approver.service';
 import { RefreshButton } from '../../components/shared/RefreshButton';
 
 const useApproverFilterFields = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   return useMemo<FilterField[]>(() => [
     { key: 'search', label: t('approver.filters.search'), type: 'text', placeholder: t('approver.filters.search_placeholder') },
     { key: 'branch', label: t('approver.filters.branch'), type: 'select', options: [
@@ -36,11 +36,11 @@ const useApproverFilterFields = () => {
       { value: '8', label: t('approver.status.approved') },
       { value: '9', label: t('approver.status.rejected_approver') },
     ], placeholder: t('approver.filters.all_statuses') },
-  ], [t, i18n.language]);
+  ], [t]);
 };
 
 export function ApproverDashboard() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { success, error } = useToast();
   const approverFilterFields = useApproverFilterFields();
   const {
@@ -128,12 +128,12 @@ export function ApproverDashboard() {
     return () => clearTimeout(timer);
   }, [detailError, clearRequestDetail]);
 
-  const handleRowClick = async (item: { paymentRequestId: number }) => {
+  const handleRowClick = useCallback(async (item: { paymentRequestId: number }) => {
     previousFilterRef.current = sidebarFilter;
     setSelectedRequestId(item.paymentRequestId);
     await loadRequestDetail(item.paymentRequestId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, [sidebarFilter, loadRequestDetail]);
 
   const columns: Column<ApproverRequestListItem & { applicantFullName: string; applicantBranch: string }>[] = useMemo(() => [
     {
@@ -190,7 +190,7 @@ export function ApproverDashboard() {
         </button>
       ),
     },
-  ], [handleRowClick, t, i18n.language]);
+  ], [handleRowClick, t]);
 
   const tableRows = useMemo(() =>
     requests.map((item) => ({
@@ -264,14 +264,7 @@ export function ApproverDashboard() {
     approverService.fetchSummary().then(setSummary).catch(() => {});
   };
 
-  const handleBackToDashboard = () => {
-    clearRequestDetail();
-    setSelectedRequestId(null);
-    setFilterValues({});
-    setSidebarFilter(6);
-    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: 6, showAll: false });
-    approverService.fetchSummary().then(setSummary).catch(() => {});
-  };
+
 
   const handleApprove = async (payload: { comment?: string; accountingUserId?: number }) => {
     if (!selectedRequestId) return;
@@ -305,7 +298,7 @@ export function ApproverDashboard() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={handleBackToDashboard}
+                onClick={handleBack}
                 className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
