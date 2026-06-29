@@ -489,16 +489,43 @@
     }
   },
   "approver": {
+    "status": {
+      "draft": "下書き",
+      "submitted_manager": "マネージャーに提出済み",
+      "manager_reviewing": "マネージャーレビュー中",
+      "manager_verified": "マネージャー確認済み",
+      "rejected_manager": "マネージャーにより差し戻し",
+      "submitted_approver": "承認者に提出済み",
+      "approver_reviewing": "承認者レビュー中",
+      "approved": "承認済み",
+      "rejected_approver": "承認者により差し戻し",
+      "paid": "支払済み"
+    },
+    "action": {
+      "created": "作成済み",
+      "edited": "編集済み",
+      "submitted": "提出済み",
+      "mgr_review_start": "マネージャーレビュー開始",
+      "mgr_verified": "マネージャー確認済み",
+      "mgr_rejected": "マネージャーにより差し戻し",
+      "appr_review_start": "承認者レビュー開始",
+      "approved": "承認済み",
+      "appr_rejected": "承認者により差し戻し",
+      "payment_completed": "支払い完了",
+      "cancelled": "キャンセル済み",
+      "draft_saved": "下書き保存済み"
+    },
     "dashboard": {
       "title": "承認者ダッシュボード",
       "description": "最終承認の決定を行います",
       "kpi": {
-        "total": "合計",
-        "pending": "保留中",
+        "total": "合計リクエスト",
+        "pending": "保留中リクエスト",
         "under_review": "レビュー中",
         "desired_date_alert": "希望日アラート"
       },
-      "back_to_queue": "キューに戻る"
+      "back_to_queue": "キューに戻る",
+      "back_to_dashboard": "ダッシュボードに戻る"
     },
     "detail": {
       "empty_state": "リストからリクエストを選択して詳細を表示してください。",
@@ -557,8 +584,8 @@
     "filters": {
       "search": "検索",
       "search_placeholder": "リクエスト番号、申請者、目的",
-      "branch": "拠点",
-      "all_branches": "すべての拠点",
+      "branch": "支店",
+      "all_branches": "すべての支店",
       "desired_date": "希望日",
       "status": "ステータス",
       "all_statuses": "すべてのステータス"
@@ -567,7 +594,7 @@
       "columns": {
         "request_no": "申請番号",
         "applicant": "申請者",
-        "branch": "拠点",
+        "branch": "支店",
         "application_date": "申請日",
         "desired_date": "希望日",
         "amount": "金額",

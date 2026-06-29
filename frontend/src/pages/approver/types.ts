@@ -1,6 +1,7 @@
 import type { UserSummary, PaymentRequestDetailView } from '../../types';
 import { PaymentStatus, ApprovalActionType } from '../../types';
 
+export { PaymentStatus };
 export type { PaymentBreakdownItem } from '../../types';
 
 export interface ApproverUserSummary extends UserSummary {

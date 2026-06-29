@@ -1,19 +1,20 @@
+import { useTranslation } from 'react-i18next';
 import { formatDateTime } from '../../../utils/format';
 import { ACTION_BADGE_COLORS } from '../../../utils/constants';
 import type { ApprovalActionType } from '../../../types';
 
-const ACTION_LABELS_EN: Record<number, string> = {
-  1: 'Created',
-  2: 'Draft Saved',
-  3: 'Rejected',
-  4: 'Returned',
-  5: 'Verified',
-  6: 'Submitted',
-  7: 'Review Started',
-  8: 'Approved',
-  9: 'Rejected',
-  10: 'Payment Completed',
-  11: 'Cancelled',
+const ACTION_I18N_KEY: Record<number, string> = {
+  1: 'approver.action.created',
+  2: 'approver.action.draft_saved',
+  3: 'approver.action.mgr_rejected',
+  4: 'approver.action.mgr_rejected',
+  5: 'approver.action.mgr_verified',
+  6: 'approver.action.submitted',
+  7: 'approver.action.appr_review_start',
+  8: 'approver.action.approved',
+  9: 'approver.action.appr_rejected',
+  10: 'approver.action.payment_completed',
+  11: 'approver.action.cancelled',
 };
 
 interface TimelineLog {
@@ -32,8 +33,10 @@ interface ApproverApprovalTimelineProps {
 }
 
 export function ApproverApprovalTimeline({ logs }: ApproverApprovalTimelineProps) {
+  const { t } = useTranslation();
+
   if (!logs || logs.length === 0) {
-    return <p className="text-sm text-slate-500 italic">No approval history available.</p>;
+    return <p className="text-sm text-slate-500 italic">{t('approver.timeline.empty')}</p>;
   }
 
   return (
@@ -41,7 +44,8 @@ export function ApproverApprovalTimeline({ logs }: ApproverApprovalTimelineProps
       {logs.map((log) => {
         const isRejection = log.actionTypeId === 3 || log.actionTypeId === 9;
         const badgeColor = ACTION_BADGE_COLORS[log.actionTypeId as ApprovalActionType] || 'bg-slate-100 text-slate-800';
-        const actionLabel = ACTION_LABELS_EN[log.actionTypeId] || 'Unknown';
+        const i18nKey = ACTION_I18N_KEY[log.actionTypeId];
+        const actionLabel = i18nKey ? t(i18nKey) : t('approver.action.created');
 
         return (
           <div key={log.approvalLogId} className="relative pl-6">
