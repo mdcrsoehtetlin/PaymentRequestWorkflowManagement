@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -54,6 +55,7 @@ export const PaymentDetailModal: FC<Props> = ({
   onClose,
   onComplete,
 }) => {
+  const { t } = useTranslation();
   const [details, setDetails] = useState<AccountingPaymentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -77,7 +79,7 @@ export const PaymentDetailModal: FC<Props> = ({
         }
       } catch {
         if (isMounted) {
-          setToast({ message: 'Failed to load request details.', type: 'error' });
+          setToast({ message: t('accounting.errors.load_details'), type: 'error' });
         }
       } finally {
         if (isMounted) {
@@ -91,7 +93,7 @@ export const PaymentDetailModal: FC<Props> = ({
     return () => {
       isMounted = false;
     };
-  }, [requestId]);
+  }, [requestId, t]);
 
   useEffect(() => {
     if (!toast) {
@@ -122,11 +124,11 @@ export const PaymentDetailModal: FC<Props> = ({
       setSubmitting(true);
       await completePayment(requestId, comment.trim() || undefined);
       setShowConfirmDialog(false);
-      setToast({ message: 'Payment marked as PAID successfully.', type: 'success' });
+      setToast({ message: t('accounting.success.paid'), type: 'success' });
       window.setTimeout(() => onComplete(), 1200);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to complete payment.';
+        error instanceof Error ? error.message : t('accounting.errors.complete_payment');
       setShowConfirmDialog(false);
       setToast({ message, type: 'error' });
     } finally {
@@ -139,7 +141,7 @@ export const PaymentDetailModal: FC<Props> = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
         <div className="flex w-full max-w-4xl items-center gap-3 rounded-lg bg-white p-8 shadow-2xl">
           <Loader2 className="h-5 w-5 animate-spin text-blue-600" aria-hidden="true" />
-          <span className="text-sm text-slate-600">Loading payment details...</span>
+          <span className="text-sm text-slate-600">{t('accounting.detail.loading')}</span>
         </div>
       </div>
     );
@@ -163,14 +165,14 @@ export const PaymentDetailModal: FC<Props> = ({
                 {details.requestNumber}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Payment request details are read-only for accounting review.
+                {t('accounting.detail.subtitle')}
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
               className="rounded-md p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              aria-label="Close payment detail"
+              aria-label={t('accounting.detail.close_aria')}
             >
               <X className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -186,10 +188,9 @@ export const PaymentDetailModal: FC<Props> = ({
               >
                 <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0" aria-hidden="true" />
                 <div>
-                  <p className="text-sm font-semibold">Total Mismatch Detected</p>
+                  <p className="text-sm font-semibold">{t('accounting.detail.alerts.total_mismatch')}</p>
                   <p className="mt-1 text-sm">
-                    Header total ({totalAmount.toLocaleString()}) does not match
-                    breakdown sum ({gridSum.toLocaleString()}){' '}
+                    {t('accounting.detail.alerts.total_mismatch_detail', { headerTotal: totalAmount.toLocaleString(), breakdownSum: gridSum.toLocaleString() })}{' '}
                     {details.paymentDetails.currencyCode}.
                   </p>
                 </div>
@@ -203,10 +204,9 @@ export const PaymentDetailModal: FC<Props> = ({
               >
                 <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0" aria-hidden="true" />
                 <div>
-                  <p className="text-sm font-semibold">Missing Receipts</p>
+                  <p className="text-sm font-semibold">{t('accounting.detail.alerts.missing_receipts')}</p>
                   <p className="mt-1 text-sm">
-                    This request is flagged as requiring receipts, but no active
-                    digital receipt files are attached.
+                    {t('accounting.detail.alerts.missing_receipts_detail')}
                   </p>
                 </div>
               </div>
@@ -215,27 +215,27 @@ export const PaymentDetailModal: FC<Props> = ({
             <section className="grid gap-4 md:grid-cols-2">
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <h3 className="mb-3 text-sm font-semibold uppercase text-slate-700">
-                  Applicant
+                  {t('accounting.detail.sections.applicant')}
                 </h3>
                 <dl className="space-y-2 text-sm">
                   <div className="flex gap-3">
-                    <dt className="w-28 text-slate-500">Name</dt>
+                    <dt className="w-28 text-slate-500">{t('accounting.detail.fields.name')}</dt>
                     <dd className="font-medium text-slate-900">{details.applicant.fullName}</dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="w-28 text-slate-500">Employee</dt>
+                    <dt className="w-28 text-slate-500">{t('accounting.detail.fields.employee')}</dt>
                     <dd className="text-slate-900">{details.applicant.employeeNumber}</dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="w-28 text-slate-500">Branch</dt>
-                    <dd className="text-slate-900">{details.applicant.branch}</dd>
+                    <dt className="w-28 text-slate-500">{t('accounting.detail.fields.branch')}</dt>
+                    <dd className="text-slate-900">{t(`common.branch.${details.applicant.branch.toLowerCase()}`, details.applicant.branch)}</dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="w-28 text-slate-500">Department</dt>
+                    <dt className="w-28 text-slate-500">{t('accounting.detail.fields.department')}</dt>
                     <dd className="text-slate-900">{details.applicant.department ?? '-'}</dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="w-28 text-slate-500">Email</dt>
+                    <dt className="w-28 text-slate-500">{t('accounting.detail.fields.email')}</dt>
                     <dd className="break-all text-slate-900">{details.applicant.email}</dd>
                   </div>
                 </dl>
@@ -243,37 +243,37 @@ export const PaymentDetailModal: FC<Props> = ({
 
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <h3 className="mb-3 text-sm font-semibold uppercase text-slate-700">
-                  Payment
+                  {t('accounting.detail.sections.payment')}
                 </h3>
                 <dl className="space-y-2 text-sm">
                   <div className="flex gap-3">
-                    <dt className="w-32 text-slate-500">Total</dt>
+                    <dt className="w-32 text-slate-500">{t('accounting.detail.fields.total')}</dt>
                     <dd className="font-bold text-slate-900">
                       {totalAmount.toLocaleString()} {details.paymentDetails.currencyCode}
                     </dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="w-32 text-slate-500">Method</dt>
+                    <dt className="w-32 text-slate-500">{t('accounting.detail.fields.method')}</dt>
                     <dd className="text-slate-900">{details.paymentDetails.paymentMethodName}</dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="w-32 text-slate-500">Type</dt>
+                    <dt className="w-32 text-slate-500">{t('accounting.detail.fields.type')}</dt>
                     <dd className="text-slate-900">{details.paymentDetails.paymentTypeName}</dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="w-32 text-slate-500">Application</dt>
+                    <dt className="w-32 text-slate-500">{t('accounting.detail.fields.application')}</dt>
                     <dd className="text-slate-900">
                       {formatDate(details.paymentDetails.applicationDate)}
                     </dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="w-32 text-slate-500">Desired Date</dt>
+                    <dt className="w-32 text-slate-500">{t('accounting.detail.fields.desired_date')}</dt>
                     <dd className="text-slate-900">
                       {formatDate(details.paymentDetails.desiredPaymentDate)}
                     </dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="w-32 text-slate-500">Bank Info</dt>
+                    <dt className="w-32 text-slate-500">{t('accounting.detail.fields.bank_info')}</dt>
                     <dd className="text-slate-900">
                       {details.paymentDetails.bankAccountInfo ?? '-'}
                     </dd>
@@ -284,15 +284,15 @@ export const PaymentDetailModal: FC<Props> = ({
 
             <section>
               <h3 className="mb-3 text-sm font-semibold uppercase text-slate-800">
-                Request Context
+                {t('accounting.detail.sections.request_context')}
               </h3>
               <div className="space-y-3 rounded-lg border border-slate-200 p-4 text-sm text-slate-800">
                 <div>
-                  <p className="font-medium text-slate-600">Purpose</p>
+                  <p className="font-medium text-slate-600">{t('accounting.detail.fields.purpose')}</p>
                   <p className="mt-1 whitespace-pre-wrap">{details.paymentDetails.purpose}</p>
                 </div>
                 <div>
-                  <p className="font-medium text-slate-600">Request Content</p>
+                  <p className="font-medium text-slate-600">{t('accounting.detail.fields.request_content')}</p>
                   <p className="mt-1 whitespace-pre-wrap">
                     {details.paymentDetails.requestContent}
                   </p>
@@ -302,7 +302,7 @@ export const PaymentDetailModal: FC<Props> = ({
 
             <section>
               <h3 className="mb-3 text-sm font-semibold uppercase text-slate-800">
-                Breakdown Items
+                {t('accounting.detail.sections.breakdown_items')}
               </h3>
               <ReadOnlyBreakdownGrid
                 items={details.breakdownItems}
@@ -312,11 +312,11 @@ export const PaymentDetailModal: FC<Props> = ({
 
             <section>
               <h3 className="mb-3 text-sm font-semibold uppercase text-slate-800">
-                Receipt Files
+                {t('accounting.detail.sections.receipt_files')}
               </h3>
               <div className="rounded-lg border border-slate-200">
                 {details.receiptFiles.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-500">No receipt files attached.</p>
+                  <p className="p-4 text-sm text-slate-500">{t('accounting.detail.receipts.empty')}</p>
                 ) : (
                   <ul className="divide-y divide-slate-100">
                     {details.receiptFiles.map((file) => (
@@ -339,7 +339,7 @@ export const PaymentDetailModal: FC<Props> = ({
                           rel="noreferrer"
                           className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
-                          Open
+                          {t('accounting.detail.receipts.open')}
                           <ExternalLink className="h-4 w-4" aria-hidden="true" />
                         </a>
                       </li>
@@ -351,17 +351,17 @@ export const PaymentDetailModal: FC<Props> = ({
 
             <section>
               <h3 className="mb-3 text-sm font-semibold uppercase text-slate-800">
-                Approval Timeline
+                {t('accounting.detail.sections.approval_timeline')}
               </h3>
               <ol className="space-y-3 rounded-lg border border-slate-200 p-4">
                 {details.approvalTimeline.length === 0 ? (
-                  <li className="text-sm text-slate-500">No approval history recorded.</li>
+                  <li className="text-sm text-slate-500">{t('accounting.detail.timeline.empty')}</li>
                 ) : (
                   details.approvalTimeline.map((item) => (
                     <li key={item.id} className="border-l-2 border-blue-200 pl-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-sm font-semibold text-slate-900">
-                          {ACTION_LABELS_EN[item.actionTypeId as ApprovalActionType] ?? `Action ${item.actionTypeId}`}
+                          {ACTION_LABELS_EN[item.actionTypeId as ApprovalActionType] ?? t('accounting.detail.timeline.action_label', { actionTypeId: item.actionTypeId })}
                         </p>
                         <time className="text-xs text-slate-500" dateTime={item.timestamp}>
                           {formatDateTime(item.timestamp)}
@@ -386,13 +386,13 @@ export const PaymentDetailModal: FC<Props> = ({
                 className="mb-2 block text-sm font-semibold uppercase text-slate-800"
                 htmlFor="accounting-comment"
               >
-                Accounting Comment (Optional)
+                {t('accounting.detail.comment.label')}
               </label>
               <textarea
                 id="accounting-comment"
                 className="w-full resize-none rounded-lg border border-slate-300 p-3 text-sm outline-none transition-shadow focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                 rows={3}
-                placeholder="Add a comment to be recorded in the audit log..."
+                placeholder={t('accounting.detail.comment.placeholder')}
                 value={comment}
                 onChange={(event) => setComment(event.target.value)}
                 maxLength={500}
@@ -411,7 +411,7 @@ export const PaymentDetailModal: FC<Props> = ({
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Back to List
+                {t('accounting.detail.buttons.back_to_list')}
               </button>
               {details.receiptFiles.length > 0 && (
                 <button
@@ -431,7 +431,7 @@ export const PaymentDetailModal: FC<Props> = ({
                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   <Download className="h-4 w-4" aria-hidden="true" />
-                  Download All Receipts ({details.receiptFiles.length})
+                  {t('accounting.detail.buttons.download_all', { count: details.receiptFiles.length })}
                 </button>
               )}
             </div>
@@ -441,7 +441,7 @@ export const PaymentDetailModal: FC<Props> = ({
                 onClick={onClose}
                 className="rounded-lg border border-slate-300 px-5 py-2 font-medium text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                Close
+                {t('accounting.detail.buttons.close')}
               </button>
               <button
                 id="open-complete-payment-dialog"
@@ -449,7 +449,7 @@ export const PaymentDetailModal: FC<Props> = ({
                 onClick={() => setShowConfirmDialog(true)}
                 className="rounded-lg bg-blue-700 px-5 py-2 font-medium text-white shadow-sm transition-colors hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                Mark as Paid
+                {t('accounting.detail.buttons.mark_as_paid')}
               </button>
             </div>
           </div>

@@ -52,7 +52,7 @@ export function Header({ onMenuToggle, notificationCount = 0, notifications = []
   const getNotificationText = (payload: StatusUpdatePayload | NotificationPayload) => {
     if ('message' in payload) return payload.message;
     const statusKey = getStatusKey(payload.newStatusId);
-    const statusText = statusKey ? t(`common.status.${statusKey}`) : payload.newStatusId;
+    const statusText = statusKey ? t(`common.statuses.${statusKey}`) : payload.newStatusId;
     return `Request ${payload.requestNumber || payload.paymentRequestId} updated to ${statusText}`;
   };
 
@@ -88,17 +88,17 @@ export function Header({ onMenuToggle, notificationCount = 0, notifications = []
           {isOpen && (
             <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50 transform opacity-100 scale-100 transition-all">
               <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                <h3 className="font-bold text-slate-800">Notifications</h3>
+                <h3 className="font-bold text-slate-800">{t('header.notifications')}</h3>
                 <div className="flex items-center gap-2">
                   {notificationCount > 0 && (
                     <button 
                       onClick={onMarkAllAsRead} 
                       className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline"
                     >
-                      Mark all as read
+                      {t('header.mark_all_read')}
                     </button>
                   )}
-                  <span className="text-xs font-medium text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">{notificationCount} new</span>
+                  <span className="text-xs font-medium text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">{t('header.new_count', { count: notificationCount })}</span>
                 </div>
               </div>
               <div className="max-h-[350px] overflow-y-auto">
@@ -150,7 +150,7 @@ export function Header({ onMenuToggle, notificationCount = 0, notifications = []
                 ) : (
                   <div className="p-8 text-center flex flex-col items-center justify-center text-slate-500">
                     <CheckCircle className="w-8 h-8 text-slate-300 mb-2" />
-                    <p className="text-sm">You're all caught up!</p>
+                    <p className="text-sm">{t('header.all_caught_up')}</p>
                   </div>
                 )}
               </div>

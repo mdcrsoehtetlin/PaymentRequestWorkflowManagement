@@ -1,4 +1,5 @@
 import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { AccountingBreakdownItem } from '../services/accounting.service';
 
@@ -10,24 +11,26 @@ interface Props {
 const formatDate = (value: string): string => new Date(value).toLocaleDateString();
 
 export const ReadOnlyBreakdownGrid: FC<Props> = ({ items, currencyCode }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200">
       <table className="w-full border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
             <th className="w-12 p-3 font-semibold text-slate-700">#</th>
-            <th className="p-3 font-semibold text-slate-700">Date</th>
-            <th className="p-3 font-semibold text-slate-700">Description</th>
-            <th className="p-3 text-right font-semibold text-slate-700">Qty</th>
-            <th className="p-3 text-right font-semibold text-slate-700">Unit Price</th>
-            <th className="p-3 text-right font-semibold text-slate-700">Amount</th>
+            <th className="p-3 font-semibold text-slate-700">{t('manager.detail.breakdown.columns.date')}</th>
+            <th className="p-3 font-semibold text-slate-700">{t('manager.detail.breakdown.columns.description')}</th>
+            <th className="p-3 text-right font-semibold text-slate-700">{t('manager.detail.breakdown.columns.qty')}</th>
+            <th className="p-3 text-right font-semibold text-slate-700">{t('manager.detail.breakdown.columns.unit_price')}</th>
+            <th className="p-3 text-right font-semibold text-slate-700">{t('manager.detail.breakdown.columns.amount')}</th>
           </tr>
         </thead>
         <tbody>
           {items.length === 0 ? (
             <tr>
               <td colSpan={6} className="p-4 text-center text-slate-500">
-                No breakdown items recorded.
+                {t('manager.detail.breakdown.empty')}
               </td>
             </tr>
           ) : (
