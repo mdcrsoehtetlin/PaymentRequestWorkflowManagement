@@ -1,4 +1,5 @@
 import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PaymentRequest } from '../services/accounting.service';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
 import { formatDate } from '../../../utils/format';
@@ -24,6 +25,7 @@ export const AccountingQueueTable: FC<Props> = ({
   onPageSizeChange,
   onSelectRequest,
 }) => {
+  const { t } = useTranslation();
   const totalPages = Math.ceil(total / pageSize);
 
   if (loading && data.length === 0) {
@@ -31,7 +33,7 @@ export const AccountingQueueTable: FC<Props> = ({
       <div className="flex justify-center p-8">
         <div className="flex items-center gap-2 text-slate-500">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-          Loading queue...
+          {t('accounting.queue_table.loading')}
         </div>
       </div>
     );
@@ -43,21 +45,21 @@ export const AccountingQueueTable: FC<Props> = ({
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Request No.</th>
-              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Applicant</th>
-              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Branch</th>
-              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Application Date</th>
-              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Desired Date</th>
-              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Amount</th>
-              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Status</th>
-              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">Action</th>
+              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('accounting.queue_table.columns.request_no')}</th>
+              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('accounting.queue_table.columns.applicant')}</th>
+              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('accounting.queue_table.columns.branch')}</th>
+              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('accounting.queue_table.columns.application_date')}</th>
+              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('accounting.queue_table.columns.desired_date')}</th>
+              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('accounting.queue_table.columns.amount')}</th>
+              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('accounting.queue_table.columns.status')}</th>
+              <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('accounting.queue_table.columns.action')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {data.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-500">
-                  No approved payment requests pending.
+                  {t('accounting.queue_table.empty_message')}
                 </td>
               </tr>
             ) : (
@@ -73,7 +75,7 @@ export const AccountingQueueTable: FC<Props> = ({
                     </button>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700">{req.applicantName}</td>
-                  <td className="px-4 py-3 text-sm text-slate-700">{req.branch}</td>
+                  <td className="px-4 py-3 text-sm text-slate-700">{t(`common.branch.${req.branch.toLowerCase()}`, req.branch)}</td>
                   <td className="px-4 py-3 text-sm text-slate-700">
                     {formatDate(req.applicationDate)}
                   </td>
@@ -92,7 +94,7 @@ export const AccountingQueueTable: FC<Props> = ({
                       onClick={() => onSelectRequest(req.paymentRequestId)}
                       className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
-                      View Detail
+                      {t('accounting.queue_table.view_detail')}
                     </button>
                   </td>
                 </tr>
@@ -112,11 +114,11 @@ export const AccountingQueueTable: FC<Props> = ({
             >
               {[10, 20, 50].map((size) => (
                 <option key={size} value={size}>
-                  {size} rows
+                  {size} {t('accounting.queue_table.pagination.rows')}
                 </option>
               ))}
             </select>
-            Showing
+            {t('accounting.queue_table.pagination.showing')}
             <span className="mx-2 font-medium text-slate-900">
               {Math.min((page - 1) * pageSize + 1, total)}
             </span>
@@ -124,7 +126,7 @@ export const AccountingQueueTable: FC<Props> = ({
             <span className="mx-2 font-medium text-slate-900">
               {Math.min(page * pageSize, total)}
             </span>
-            of <span className="mx-1 font-medium text-slate-900">{total}</span> results
+            {t('accounting.queue_table.pagination.of')} <span className="mx-1 font-medium text-slate-900">{total}</span> {t('accounting.queue_table.pagination.results')}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -133,7 +135,7 @@ export const AccountingQueueTable: FC<Props> = ({
               disabled={page <= 1}
               className="rounded border border-slate-300 bg-white px-3 py-1 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
             >
-              Previous
+              {t('accounting.queue_table.pagination.previous')}
             </button>
             <span className="px-2 text-sm text-slate-600">
               {page} / {totalPages || 1}
@@ -143,7 +145,7 @@ export const AccountingQueueTable: FC<Props> = ({
               disabled={page >= totalPages}
               className="rounded border border-slate-300 bg-white px-3 py-1 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
             >
-              Next
+              {t('accounting.queue_table.pagination.next')}
             </button>
           </div>
         </div>

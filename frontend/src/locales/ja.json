@@ -3,7 +3,19 @@
     "dashboard": "ダッシュボード",
     "request_list": "申請一覧",
     "new_request": "新規申請",
-    "logout": "ログアウト"
+    "logout": "ログアウト",
+    "approver_console": "承認者コンソール",
+    "manager_console": "マネージャーコンソール",
+    "accounting_console": "経理コンソール",
+    "admin_console": "管理者コンソール",
+    "applicant_console": "申請者コンソール",
+    "system_name": "PRWMシステム"
+  },
+  "header": {
+    "notifications": "通知",
+    "mark_all_read": "すべて既読にする",
+    "new_count": "{{count}}件の新着",
+    "all_caught_up": "すべて確認済みです！"
   },
   "dashboard": {
     "applicant": {
@@ -97,7 +109,7 @@
     }
   },
   "common": {
-    "status": {
+    "statuses": {
       "draft": "下書き",
       "submitted_manager": "マネージャーに提出済み",
       "manager_reviewing": "マネージャー確認中",

@@ -13,24 +13,24 @@ function useRoleMenuConfig() {
   const { t } = useTranslation();
   return {
     APPROVER: {
-      title: 'Approver Console',
+      title: t('sidebar.approver_console'),
       dashboardPath: '/approver',
       menuItems: [],
     },
     MANAGER: {
-      title: 'Manager Console',
+      title: t('sidebar.manager_console'),
       dashboardPath: '/manager',
       menuItems: [],
     },
     ACCOUNTING: {
-      title: 'Accounting Console',
+      title: t('sidebar.accounting_console'),
       dashboardPath: '/accounting',
       menuItems: [
-        { label: 'Dashboard', path: '/accounting' },
+        { label: t('sidebar.dashboard'), path: '/accounting' },
       ],
     },
     ADMIN: {
-      title: 'Admin Console',
+      title: t('sidebar.admin_console'),
       dashboardPath: '/admin',
       menuItems: [
         { label: t('admin.sidebar.user_management'), path: '/admin/users' },
@@ -39,11 +39,11 @@ function useRoleMenuConfig() {
       ],
     },
     APPLICANT: {
-      title: 'Applicant Console',
+      title: t('sidebar.applicant_console'),
       dashboardPath: '/applicant',
       menuItems: [
-        { label: 'Dashboard', path: '/applicant' },
-        { label: 'New Application', path: '/applicant/form' },
+        { label: t('sidebar.dashboard'), path: '/applicant' },
+        { label: t('sidebar.new_request'), path: '/applicant/form' },
       ],
     },
   };
@@ -75,7 +75,7 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
         <div className="flex flex-col h-full">
           <div className="px-6 py-5 border-b border-blue-800">
             <p className="font-bold text-lg tracking-wider">{title}</p>
-            <p className="text-xs text-blue-300 mt-0.5">PRWM System</p>
+            <p className="text-xs text-blue-300 mt-0.5">{t('sidebar.system_name')}</p>
           </div>
 
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">

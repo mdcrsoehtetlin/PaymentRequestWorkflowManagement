@@ -3,7 +3,19 @@
     "dashboard": "ဒက်ရှ်ဘုတ်",
     "request_list": "လျှောက်လွှာစာရင်း",
     "new_request": "လျှောက်လွှာသစ်",
-    "logout": "အကောင့်ထွက်ရန်"
+    "logout": "အကောင့်ထွက်ရန်",
+    "approver_console": "အတည်ပြုသူ Console",
+    "manager_console": "မန်နေဂျာ Console",
+    "accounting_console": "စာရင်းကိုင် Console",
+    "admin_console": "အက်ဒမင် Console",
+    "applicant_console": "လျှောက်ထားသူ Console",
+    "system_name": "PRWM စနစ်"
+  },
+  "header": {
+    "notifications": "အကြောင်းကြားချက်များ",
+    "mark_all_read": "အားလုံး ဖတ်ပြီးဟု သတ်မှတ်ရန်",
+    "new_count": "အသစ် {{count}} ခု",
+    "all_caught_up": "အားလုံး စစ်ဆေးပြီးပါပြီ!"
   },
   "dashboard": {
     "applicant": {
@@ -100,7 +112,7 @@
     }
   },
   "common": {
-    "status": {
+    "statuses": {
       "draft": "မူကြမ်း",
       "submitted_manager": "မန်နေဂျာထံ တင်ပြပြီး",
       "manager_reviewing": "မန်နေဂျာ စစ်ဆေးနေဆဲ",
