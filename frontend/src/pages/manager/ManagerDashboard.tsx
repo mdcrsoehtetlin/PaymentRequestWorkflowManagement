@@ -41,8 +41,9 @@ export function ManagerDashboard() {
   const [requests, setRequests] = useState<PaymentRequestWithApplicant[]>([]);
   const [isListLoading, setIsListLoading] = useState(true);
 
-  const { filters, page, setFilters, setPage, clearFilters } = useManagerDashboardFilters();
-  const [pageSize, setPageSize] = useState(10);
+  const { filters, setFilters, clearFilters } = useManagerDashboardFilters();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Local staging states (bound to UI inputs, no fetch on change)
   const [localSearchText, setLocalSearchText] = useState(filters.search);
@@ -53,6 +54,26 @@ export function ManagerDashboard() {
   const activeSearch = filters.search;
   const activeStatus = filters.status;
   const activeDate = filters.date;
+
+  // Reset page to 1 during render when filters change
+  const [prevFilters, setPrevFilters] = useState({
+    search: activeSearch,
+    status: activeStatus,
+    date: activeDate,
+  });
+
+  if (
+    prevFilters.search !== activeSearch ||
+    prevFilters.status !== activeStatus ||
+    prevFilters.date !== activeDate
+  ) {
+    setPrevFilters({
+      search: activeSearch,
+      status: activeStatus,
+      date: activeDate,
+    });
+    setCurrentPage(1);
+  }
 
   // Sidebar KPI card filter (tracks which card is visually highlighted)
   const sidebarFilter = filters.status !== '' ? filters.status : undefined;
@@ -180,10 +201,10 @@ export function ManagerDashboard() {
 
 
   const totalResults = requests.length;
-  const totalPages = Math.ceil(totalResults / pageSize);
-  const paginatedRequests = requests.slice((page - 1) * pageSize, page * pageSize);
-  const showStart = totalResults === 0 ? 0 : (page - 1) * pageSize + 1;
-  const showEnd = Math.min(page * pageSize, totalResults);
+  const totalPages = Math.ceil(totalResults / rowsPerPage);
+  const displayedRows = requests.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const showStart = totalResults === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+  const showEnd = Math.min(currentPage * rowsPerPage, totalResults);
 
   const formatCurrency = (amount: string, currencyId: number) => {
     const code = CURRENCY_CODES[currencyId as keyof typeof CURRENCY_CODES] || 'MMK';
@@ -408,7 +429,7 @@ export function ManagerDashboard() {
                     </td>
                   </tr>
                 ) : (
-                  paginatedRequests.map((req) => {
+                  displayedRows.map((req) => {
                     return (
                       <tr
                         key={req.paymentRequestId}
@@ -456,8 +477,8 @@ export function ManagerDashboard() {
             <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3">
               <div className="flex items-center text-sm text-slate-500">
                 <select
-                  value={pageSize}
-                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                  value={rowsPerPage}
+                  onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
                   className="mr-2 rounded border-slate-300 bg-white text-sm text-slate-900"
                 >
                   {[10, 20, 50].map((size) => (
@@ -474,18 +495,18 @@ export function ManagerDashboard() {
               </div>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => setPage(page - 1)}
-                  disabled={page <= 1}
+                  onClick={() => { if (currentPage > 1) setCurrentPage(currentPage - 1); }}
+                  disabled={currentPage <= 1}
                   className="rounded border border-slate-300 bg-white px-3 py-1 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                 >
                   Previous
                 </button>
                 <span className="px-2 text-sm text-slate-600">
-                  {page} / {totalPages || 1}
+                  {currentPage} / {totalPages || 1}
                 </span>
                 <button
-                  onClick={() => setPage(page + 1)}
-                  disabled={page >= totalPages}
+                  onClick={() => { if (currentPage < totalPages) setCurrentPage(currentPage + 1); }}
+                  disabled={currentPage >= totalPages}
                   className="rounded border border-slate-300 bg-white px-3 py-1 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                 >
                   Next
