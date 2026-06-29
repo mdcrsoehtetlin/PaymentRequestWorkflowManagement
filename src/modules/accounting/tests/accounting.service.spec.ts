@@ -7,6 +7,7 @@ import { NotFoundException, ConflictException } from '@nestjs/common';
 import { AccountingService } from '../accounting.service';
 import { PaymentRequest } from '../../shared/entities/payment-request.entity';
 import { AuditLogService } from '../../shared/services/audit-log.service';
+import { NotificationService } from '../../shared/services/notification.service';
 import { WebsocketGateway } from '../../shared/websocket.gateway';
 import { PaymentStatus } from '../../shared/types';
 
@@ -15,6 +16,7 @@ describe('AccountingService', () => {
   let paymentRequestRepo: jest.Mocked<Repository<PaymentRequest>>;
   let dataSource: jest.Mocked<DataSource>;
   let auditLogService: jest.Mocked<AuditLogService>;
+  let notificationService: jest.Mocked<NotificationService>;
   let wsGateway: jest.Mocked<WebsocketGateway>;
   let redis: { del: jest.Mock };
 
@@ -55,6 +57,10 @@ describe('AccountingService', () => {
       sendStatusUpdate: jest.fn(),
     } as unknown as jest.Mocked<WebsocketGateway>;
 
+    notificationService = {
+      create: jest.fn().mockResolvedValue({}),
+    } as unknown as jest.Mocked<NotificationService>;
+
     redis = { del: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -66,6 +72,7 @@ describe('AccountingService', () => {
         },
         { provide: DataSource, useValue: dataSource },
         { provide: AuditLogService, useValue: auditLogService },
+        { provide: NotificationService, useValue: notificationService },
         { provide: WebsocketGateway, useValue: wsGateway },
         { provide: 'REDIS_CLIENT', useValue: redis },
       ],
@@ -570,7 +577,12 @@ describe('AccountingService', () => {
 
     it('should complete payment successfully', async () => {
       const mockManager = {
-        findOne: jest.fn().mockResolvedValue({ id: 100, statusId: 8 }),
+        findOne: jest.fn().mockResolvedValue({
+          id: 100,
+          statusId: 8,
+          applicantUserId: 5,
+          requestNumber: 'PR-2026-001',
+        }),
         update: jest.fn(),
         create: jest.fn().mockReturnValue({}),
         save: jest.fn(),
@@ -601,6 +613,13 @@ describe('AccountingService', () => {
       });
       expect(mockManager.save).toHaveBeenCalled();
       expect(redis.del).toHaveBeenCalledWith('payment_request:payload:100');
+      expect(notificationService.create).toHaveBeenCalledWith(
+        5,
+        expect.objectContaining({
+          paymentRequestId: 100,
+          link: '/applicant/request/100',
+        }),
+      );
       expect(wsGateway.sendStatusUpdate).toHaveBeenCalledTimes(2);
     });
 
@@ -630,7 +649,12 @@ describe('AccountingService', () => {
 
     it('should not throw when Redis eviction fails', async () => {
       const mockManager = {
-        findOne: jest.fn().mockResolvedValue({ id: 100, statusId: 8 }),
+        findOne: jest.fn().mockResolvedValue({
+          id: 100,
+          statusId: 8,
+          applicantUserId: 5,
+          requestNumber: 'PR-2026-001',
+        }),
         update: jest.fn(),
         create: jest.fn().mockReturnValue({}),
         save: jest.fn(),
@@ -650,7 +674,12 @@ describe('AccountingService', () => {
 
     it('should not throw when WebSocket broadcast fails', async () => {
       const mockManager = {
-        findOne: jest.fn().mockResolvedValue({ id: 100, statusId: 8 }),
+        findOne: jest.fn().mockResolvedValue({
+          id: 100,
+          statusId: 8,
+          applicantUserId: 5,
+          requestNumber: 'PR-2026-001',
+        }),
         update: jest.fn(),
         create: jest.fn().mockReturnValue({}),
         save: jest.fn(),

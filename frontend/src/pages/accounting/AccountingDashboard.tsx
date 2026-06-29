@@ -35,6 +35,7 @@ export function AccountingDashboard() {
         { value: '', label: t('accounting.dashboard.filters.all_branches') },
         { value: 'Yangon', label: t('common.branch.yangon') },
         { value: 'Mandalay', label: t('common.branch.mandalay') },
+        { value: 'Naypyitaw', label: t('common.branch.naypyidaw') },
       ],
     },
     {

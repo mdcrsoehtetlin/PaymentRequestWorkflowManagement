@@ -17,6 +17,7 @@ import { ReceiptFile } from '../shared/entities/receipt-file.entity';
 
 // Shared services / types
 import { AuditLogService } from '../shared/services/audit-log.service';
+import { NotificationService } from '../shared/services/notification.service';
 import { WebsocketGateway } from '../shared/websocket.gateway';
 import {
   ApprovalActionType,
@@ -62,6 +63,7 @@ export class AccountingService {
     private readonly paymentRequestRepository: Repository<PaymentRequest>,
     private readonly dataSource: DataSource,
     private readonly auditLogService: AuditLogService,
+    private readonly notificationService: NotificationService,
     private readonly wsGateway: WebsocketGateway,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
   ) {}
@@ -132,11 +134,10 @@ export class AccountingService {
       });
     }
 
-    // Sort: desired_payment_date ASC, application_date ASC, request_number ASC
+    // Sort: approvalDate DESC NULLS LAST, id DESC
     queryBuilder
-      .orderBy('pr.desiredPaymentDate', 'ASC')
-      .addOrderBy('pr.applicationDate', 'ASC')
-      .addOrderBy('pr.requestNumber', 'ASC');
+      .orderBy('pr.approvalDate', 'DESC', 'NULLS LAST')
+      .addOrderBy('pr.id', 'DESC');
 
     const [data, total] = await queryBuilder
       .skip((page - 1) * pageSize)
@@ -342,6 +343,8 @@ export class AccountingService {
   /**
    * Atomically marks a request as PAID, writes an immutable audit log,
    * evicts the Redis cache entry, and broadcasts the WebSocket row-removed event.
+   * Also creates a persistent Notification for the applicant so it survives
+   * page refresh and re-login.
    */
   async completePayment(
     id: number,
@@ -350,6 +353,10 @@ export class AccountingService {
     this.logger.log(
       `Completing payment ${id} by accounting user ${ctx.accountingUserId}`,
     );
+
+    // Capture fields needed for post-transaction notifications
+    let applicantUserId: number;
+    let requestNumber: string;
 
     await this.dataSource.transaction(async (manager) => {
       // 1. Lock and fetch the request inside the transaction
@@ -374,6 +381,9 @@ export class AccountingService {
           `Payment request ${id} has already been marked as PAID`,
         );
       }
+
+      applicantUserId = request.applicantUserId;
+      requestNumber = request.requestNumber;
 
       const previousStatusId = request.statusId;
 
@@ -410,7 +420,22 @@ export class AccountingService {
       );
     }
 
-    // 6. WebSocket: broadcast statusUpdate and row-removed to ACCOUNTING room
+    // 6. Persistent notification to applicant (saved to DB + real-time WS push)
+    //    This survives page refresh and re-login, matching the manager dashboard pattern.
+    try {
+      await this.notificationService.create(applicantUserId!, {
+        paymentRequestId: id,
+        title: '支払い完了',
+        message: `申請 ${requestNumber!} の支払いが完了しました。`,
+        link: `/applicant/request/${id}`,
+      });
+    } catch (err) {
+      this.logger.warn(
+        `Persistent notification failed for request ${id}: ${String(err)}`,
+      );
+    }
+
+    // 7. WebSocket: broadcast statusUpdate and row-removed to ACCOUNTING room
     try {
       this.wsGateway.sendStatusUpdate(RoleCode.ACCOUNTING, {
         event: 'statusUpdate',
