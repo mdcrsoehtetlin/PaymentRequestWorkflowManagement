@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Info } from 'lucide-react';
 
 interface Props {
@@ -6,6 +7,8 @@ interface Props {
 }
 
 export const BranchAlertBanner: React.FC<Props> = ({ branch }) => {
+  const { t } = useTranslation();
+
   if (branch === 'Mandalay') {
     return (
       <div
@@ -17,7 +20,7 @@ export const BranchAlertBanner: React.FC<Props> = ({ branch }) => {
           aria-hidden="true"
         />
         <p className="text-sm font-semibold">
-          IMPORTANT: Coordinate with Toe San for Cash Payment
+          {t('accounting.branch_alert.mandalay')}
         </p>
       </div>
     );
@@ -32,7 +35,7 @@ export const BranchAlertBanner: React.FC<Props> = ({ branch }) => {
         className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600"
         aria-hidden="true"
       />
-      <p className="text-sm font-semibold">Standard Bank Transfer Processing</p>
+      <p className="text-sm font-semibold">{t('accounting.branch_alert.default')}</p>
     </div>
   );
 };

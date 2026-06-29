@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 
 interface Props {
@@ -22,6 +23,8 @@ export const PaymentCompletionDialog: React.FC<Props> = ({
   onCancel,
   submitting,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-4"
@@ -35,14 +38,14 @@ export const PaymentCompletionDialog: React.FC<Props> = ({
             <CheckCircle2 className="h-5 w-5 text-blue-600" aria-hidden="true" />
           </div>
           <h2 id="payment-completion-title" className="text-lg font-bold text-slate-900">
-            Confirm Payment Completion
+            {t('accounting.completion_dialog.title')}
           </h2>
         </div>
 
         <div className="mb-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <p className="mb-1 text-sm text-slate-600">Request</p>
+          <p className="mb-1 text-sm text-slate-600">{t('accounting.completion_dialog.request')}</p>
           <p className="text-base font-semibold text-slate-900">{requestNumber}</p>
-          <p className="mb-1 mt-2 text-sm text-slate-600">Amount to be paid</p>
+          <p className="mb-1 mt-2 text-sm text-slate-600">{t('accounting.completion_dialog.amount_to_pay')}</p>
           <p className="text-xl font-bold text-slate-900">
             {Number(totalAmount).toLocaleString()} {currencyCode}
           </p>
@@ -52,8 +55,7 @@ export const PaymentCompletionDialog: React.FC<Props> = ({
           <p className="flex items-start gap-2 text-sm text-amber-900">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
             <span>
-              <strong>This action is irreversible.</strong> Once marked as paid, the request
-              status cannot be changed. Ensure all amounts and receipts have been verified.
+              <strong>{t('accounting.completion_dialog.warning_irreversible')}</strong> {t('accounting.completion_dialog.warning_detail')}
             </span>
           </p>
         </div>
@@ -65,7 +67,7 @@ export const PaymentCompletionDialog: React.FC<Props> = ({
             disabled={submitting}
             className="rounded-lg border border-slate-300 px-5 py-2 font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            Cancel
+            {t('accounting.completion_dialog.buttons.cancel')}
           </button>
           <button
             id="confirm-complete-payment"
@@ -81,10 +83,10 @@ export const PaymentCompletionDialog: React.FC<Props> = ({
             {submitting ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Processing...
+                {t('accounting.completion_dialog.buttons.processing')}
               </span>
             ) : (
-              'Confirm and Mark as Paid'
+              t('accounting.completion_dialog.buttons.confirm')
             )}
           </button>
         </div>

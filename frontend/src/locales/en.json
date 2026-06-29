@@ -3,7 +3,19 @@
     "dashboard": "Dashboard",
     "request_list": "Application List",
     "new_request": "New Application",
-    "logout": "Logout"
+    "logout": "Logout",
+    "approver_console": "Approver Console",
+    "manager_console": "Manager Console",
+    "accounting_console": "Accounting Console",
+    "admin_console": "Admin Console",
+    "applicant_console": "Applicant Console",
+    "system_name": "PRWM System"
+  },
+  "header": {
+    "notifications": "Notifications",
+    "mark_all_read": "Mark all as read",
+    "new_count": "{{count}} new",
+    "all_caught_up": "You're all caught up!"
   },
   "dashboard": {
     "applicant": {
@@ -97,7 +109,7 @@
     }
   },
   "common": {
-    "status": {
+    "statuses": {
       "draft": "Draft",
       "submitted_manager": "Submitted to Manager",
       "manager_reviewing": "Manager Reviewing",

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CalendarClock, CheckCircle, Clock, RefreshCw } from 'lucide-react';
@@ -14,45 +14,45 @@ import { useAccountingQueue, type KpiFilter } from './hooks/useAccountingQueue';
 import { useAccountingWebSockets } from './hooks/useAccountingWebSockets';
 import { getSummaryCounts, type SummaryCounts } from './services/accounting.service';
 
-const accountingFilterFields: FilterField[] = [
-  {
-    key: 'search',
-    label: 'Search',
-    type: 'text',
-      placeholder: 'Request No, Applicant Name...',
-  },
-  {
-    key: 'branch',
-    label: 'Branch',
-    type: 'select',
-    options: [
-      { value: '', label: 'All Branches' },
-      { value: 'Yangon', label: 'Yangon' },
-      { value: 'Mandalay', label: 'Mandalay' },
-    ],
-  },
-  {
-    key: 'status',
-    label: 'Status',
-    type: 'select',
-    options: [
-      { value: '', label: 'All Statuses' },
-      { value: '8', label: 'Approved' },
-      { value: '10', label: 'Paid' },
-    ],
-  },
-  {
-    key: 'desiredDate',
-    label: 'Desired Date',
-    type: 'date',
-  },
-];
-
 export function AccountingDashboard() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<Record<string, string | number>>({});
+
+  const accountingFilterFields: FilterField[] = useMemo(() => [
+    {
+      key: 'search',
+      label: t('accounting.dashboard.filters.search'),
+      type: 'text',
+      placeholder: t('accounting.dashboard.filters.search_placeholder'),
+    },
+    {
+      key: 'branch',
+      label: t('accounting.dashboard.filters.branch'),
+      type: 'select',
+      options: [
+        { value: '', label: t('accounting.dashboard.filters.all_branches') },
+        { value: 'Yangon', label: t('common.branch.yangon') },
+        { value: 'Mandalay', label: t('common.branch.mandalay') },
+      ],
+    },
+    {
+      key: 'status',
+      label: t('accounting.dashboard.filters.status'),
+      type: 'select',
+      options: [
+        { value: '', label: t('accounting.dashboard.filters.all_statuses') },
+        { value: '8', label: t('accounting.dashboard.filters.approved') },
+        { value: '10', label: t('accounting.dashboard.filters.paid') },
+      ],
+    },
+    {
+      key: 'desiredDate',
+      label: t('accounting.dashboard.filters.desired_date'),
+      type: 'date',
+    },
+  ], [t]);
 
   const {
     data,
@@ -111,7 +111,7 @@ export function AccountingDashboard() {
   }> = [
     {
       filter: 'total',
-      label: 'Total',
+      label: t('accounting.dashboard.kpi.total'),
       count: summary?.total ?? 0,
       icon: <CheckCircle />,
       activeColor: 'bg-emerald-200 text-emerald-950 border-2 border-emerald-600 ring-2 ring-emerald-400 shadow-md',
@@ -119,7 +119,7 @@ export function AccountingDashboard() {
     },
     {
       filter: 'pending',
-      label: 'Pending',
+      label: t('accounting.dashboard.kpi.pending'),
       count: summary?.pending ?? 0,
       icon: <Clock />,
       activeColor: 'bg-blue-200 text-blue-950 border-2 border-blue-600 ring-2 ring-blue-400 shadow-md',
@@ -127,7 +127,7 @@ export function AccountingDashboard() {
     },
     {
       filter: 'mandalay',
-      label: 'Mandalay Alerts',
+      label: t('accounting.dashboard.kpi.mandalay_alerts'),
       count: summary?.mandalayAlerts ?? 0,
       icon: <AlertTriangle />,
       activeColor: 'bg-amber-200 text-amber-950 border-2 border-amber-600 ring-2 ring-amber-400 shadow-md',
@@ -135,7 +135,7 @@ export function AccountingDashboard() {
     },
     {
       filter: 'desiredDate',
-      label: 'Desired Date Alerts',
+      label: t('accounting.dashboard.kpi.desired_date_alerts'),
       count: summary?.desiredDateAlerts ?? 0,
       icon: <CalendarClock />,
       activeColor: 'bg-rose-200 text-rose-950 border-2 border-rose-600 ring-2 ring-rose-400 shadow-md',
@@ -162,7 +162,7 @@ export function AccountingDashboard() {
             className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-300 hover:bg-slate-50 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('accounting.dashboard.refresh')}
           </button>
         </div>
       </div>
