@@ -91,7 +91,13 @@ export function ManagerDashboard() {
     const loadAll = async () => {
       try {
         const response = await apiClient.get<PaymentRequestWithApplicant[]>('/manager/requests');
-        if (!cancelled) setAllRequests(response.data);
+        if (!cancelled) {
+          const sorted = response.data.sort((a, b) => {
+            const diff = new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime();
+            return diff !== 0 ? diff : b.paymentRequestId - a.paymentRequestId;
+          });
+          setAllRequests(sorted);
+        }
       } catch {
         // KPI counts will show 0 — non-critical
       }
@@ -101,7 +107,6 @@ export function ManagerDashboard() {
     return () => { cancelled = true; };
   }, [refreshKey, location.pathname]);
 
-  // Fetch filtered data for the table
   useEffect(() => {
     let cancelled = false;
 
@@ -117,7 +122,13 @@ export function ManagerDashboard() {
         if (activeSearch) params.applicant = activeSearch;
 
         const response = await apiClient.get<PaymentRequestWithApplicant[]>('/manager/requests', { params });
-        if (!cancelled) setRequests(response.data);
+        if (!cancelled) {
+          const sorted = response.data.sort((a, b) => {
+            const diff = new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime();
+            return diff !== 0 ? diff : b.paymentRequestId - a.paymentRequestId;
+          });
+          setRequests(sorted);
+        }
       } catch (error) {
         if (!cancelled) {
           console.error('Failed to fetch requests', error);
