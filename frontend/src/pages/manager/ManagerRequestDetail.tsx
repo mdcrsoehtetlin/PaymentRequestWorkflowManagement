@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import apiClient from '../../services/api-client';
@@ -145,6 +145,13 @@ export function ManagerRequestDetail() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const returnFilters = (location.state as { returnFilters?: string })?.returnFilters ?? '';
+
+  const navigateToManager = () => {
+    navigate(returnFilters ? `/manager?${returnFilters}` : '/manager');
+  };
 
   const [request, setRequest] = useState<DetailedPaymentRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -226,7 +233,7 @@ export function ManagerRequestDetail() {
       });
 
       triggerToast('success', t('dashboard.manager.approve_success'));
-      navigate('/manager');
+      navigateToManager();
     } catch (error) {
       console.error('Verification failed', error);
       const axiosError = error as AxiosErrorResponse;
@@ -265,7 +272,7 @@ export function ManagerRequestDetail() {
       });
 
       triggerToast('success', t('dashboard.manager.reject_success'));
-      navigate('/manager');
+      navigateToManager();
     } catch (error) {
       console.error('Rejection failed', error);
       const axiosError = error as AxiosErrorResponse;
@@ -328,7 +335,7 @@ export function ManagerRequestDetail() {
             {t('dashboard.manager.request_not_found_detail')}
           </p>
           <button
-            onClick={() => navigate('/manager')}
+            onClick={() => navigateToManager()}
             className="px-5 py-2.5 bg-blue-900 text-white rounded-lg hover:bg-blue-800 text-sm font-semibold transition-colors"
           >
             {t('dashboard.manager.back_to_list')}
@@ -345,7 +352,7 @@ export function ManagerRequestDetail() {
           <FileText className="h-16 w-16 text-slate-300" />
           <p className="text-slate-500 font-medium">{t('dashboard.manager.detail_fetch_error')}</p>
           <button
-            onClick={() => navigate('/manager')}
+            onClick={() => navigateToManager()}
             className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 text-sm font-medium"
           >
             {t('dashboard.manager.back_to_list')}
@@ -360,7 +367,7 @@ export function ManagerRequestDetail() {
       <div className="space-y-6">
         {/* Back Button */}
         <button
-          onClick={() => navigate('/manager')}
+          onClick={() => navigateToManager()}
           className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useManagerDashboardFilters } from '../../hooks/useManagerDashboardFilters';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import apiClient from '../../services/api-client';
 import { wsService } from '../../services/websocket.service';
@@ -39,27 +40,27 @@ export function ManagerDashboard() {
   const [requests, setRequests] = useState<PaymentRequestWithApplicant[]>([]);
   const [isListLoading, setIsListLoading] = useState(true);
 
-  const [page, setPage] = useState(1);
+  const { filters, page, setFilters, setPage, clearFilters } = useManagerDashboardFilters();
   const [pageSize, setPageSize] = useState(10);
 
   // Local staging states (bound to UI inputs, no fetch on change)
-  const [localSearchText, setLocalSearchText] = useState('');
-  const [localStatus, setLocalStatus] = useState<number | ''>('');
-  const [localDate, setLocalDate] = useState('');
+  const [localSearchText, setLocalSearchText] = useState(filters.search);
+  const [localStatus, setLocalStatus] = useState<number | ''>(filters.status);
+  const [localDate, setLocalDate] = useState(filters.date);
 
-  // Active query states (used by fetch effect)
-  const [activeSearch, setActiveSearch] = useState('');
-  const [activeStatus, setActiveStatus] = useState<number | ''>('');
-  const [activeDate, setActiveDate] = useState('');
+  // Active query states derived from URL params
+  const activeSearch = filters.search;
+  const activeStatus = filters.status;
+  const activeDate = filters.date;
+
+  // Sidebar KPI card filter (tracks which card is visually highlighted)
+  const sidebarFilter = filters.status !== '' ? filters.status : undefined;
 
   // Incremented by WebSocket to trigger re-fetch
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Sidebar KPI card filter (tracks which card is visually highlighted)
-  const [sidebarFilter, setSidebarFilter] = useState<number | undefined>(undefined);
 
   // Fetch on mount and whenever active filters change
   useEffect(() => {
@@ -93,37 +94,32 @@ export function ManagerDashboard() {
   }, [activeStatus, activeDate, activeSearch, refreshKey, location.pathname, t]);
 
   const handleSearch = () => {
-    setActiveSearch(localSearchText);
-    setActiveStatus(localStatus);
-    setActiveDate(localDate);
-    setPage(1);
+    setFilters({
+      search: localSearchText,
+      status: localStatus,
+      date: localDate,
+    });
   };
 
   const handleClearFilters = () => {
     setLocalSearchText('');
     setLocalStatus('');
     setLocalDate('');
-    setActiveSearch('');
-    setActiveStatus('');
-    setActiveDate('');
-    setSidebarFilter(undefined);
-    setPage(1);
+    clearFilters();
   };
 
   const handleSidebarFilter = (newStatusId?: number) => {
-    setSidebarFilter(newStatusId);
     setLocalSearchText('');
     setLocalStatus('');
     setLocalDate('');
-    setActiveSearch('');
-    setActiveStatus(newStatusId ?? '');
-    setActiveDate('');
-    setPage(1);
+    setFilters({ status: newStatusId ?? '', search: '', date: '' });
   };
 
   const handleProcess = (paymentRequestId: number | undefined) => {
     if (paymentRequestId == null) return;
-    navigate(`/manager/requests/${paymentRequestId}`);
+    navigate(`/manager/requests/${paymentRequestId}`, {
+      state: { returnFilters: location.search },
+    });
   };
 
   // WebSocket: trigger re-fetch on real-time status updates
