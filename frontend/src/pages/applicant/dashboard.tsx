@@ -37,14 +37,37 @@ const filterFields: FilterField[] = [
 
 const ApplicantDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [limit, setLimit] = useState(10);
-  
+  const [limit, setLimit] = useState(() => {
+    const saved = sessionStorage.getItem('applicant_dashboard_limit');
+    return saved ? parseInt(saved, 10) : 10;
+  });
+
   const { notifications } = useWebSocket();
   const lastUpdate = notifications[0];
-
+  
   // Filter state
-  const [filters, setFilters] = useState<Record<string, string | number>>({});
-  const [activeKpi, setActiveKpi] = useState<string | undefined>(undefined);
+  const [filters, setFilters] = useState<Record<string, string | number>>(() => {
+    const saved = sessionStorage.getItem('applicant_dashboard_filters');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [activeKpi, setActiveKpi] = useState<string | undefined | null>(() => {
+    const saved = sessionStorage.getItem('applicant_dashboard_activeKpi');
+    if (saved === 'null') return null;
+    if (saved === 'undefined') return undefined;
+    return saved || undefined;
+  });
+
+  React.useEffect(() => {
+    sessionStorage.setItem('applicant_dashboard_limit', limit.toString());
+  }, [limit]);
+
+  React.useEffect(() => {
+    sessionStorage.setItem('applicant_dashboard_filters', JSON.stringify(filters));
+  }, [filters]);
+
+  React.useEffect(() => {
+    sessionStorage.setItem('applicant_dashboard_activeKpi', String(activeKpi));
+  }, [activeKpi]);
 
   const {
     data,
@@ -53,21 +76,31 @@ const ApplicantDashboard: React.FC = () => {
     setPage,
     deleteId,
     setDeleteId,
-    handleDelete
+    handleDelete,
+    loadData
   } = usePaymentRequests(limit, lastUpdate, filters);
 
-  const handleKpiClick = (kpi: string | undefined) => {
+  React.useEffect(() => {
+    const handleSoftRefresh = () => {
+      setFilters({});
+      setActiveKpi(undefined);
+      setPage(1);
+      loadData(true);
+    };
+    window.addEventListener('dashboard-refresh', handleSoftRefresh);
+    return () => window.removeEventListener('dashboard-refresh', handleSoftRefresh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadData]);
+
+  const handleKpiClick = (kpi: string | undefined | null) => {
     setActiveKpi(kpi);
-    setFilters(prev => {
-      const newFilters = { ...prev };
-      if (kpi) {
-        newFilters.kpi = kpi;
-        delete newFilters.status; // KPI overrides explicit status filter
-      } else {
-        delete newFilters.kpi;
-      }
-      return newFilters;
-    });
+    if (kpi === undefined) {
+      setFilters({}); // Total requests = no filters
+    } else if (kpi) {
+      setFilters({ kpi }); // Clear all other filters, keep only KPI
+    } else {
+      setFilters({});
+    }
     setPage(1);
   };
 
@@ -152,9 +185,11 @@ const ApplicantDashboard: React.FC = () => {
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Applicant Dashboard</h1>
-            <p className="text-slate-500 mt-1">Manage and track your payment requests</p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Applicant Dashboard</h1>
+              <p className="text-slate-500 mt-1">Manage and track your payment requests</p>
+            </div>
           </div>
           <button 
             onClick={() => navigate('/applicant/form')}
@@ -210,12 +245,13 @@ const ApplicantDashboard: React.FC = () => {
           values={filters}
           onApply={(newFilters) => {
             const formattedFilters = { ...newFilters };
+            
+            // Set KPI to null to remove focus from all KPI cards including "Total Requests"
+            setActiveKpi(null);
+            delete formattedFilters.kpi;
+
             if (formattedFilters.status) {
               formattedFilters.status = parseInt(formattedFilters.status as string, 10);
-              setActiveKpi(undefined); // Clear KPI if explicit status chosen
-              delete formattedFilters.kpi;
-            } else if (activeKpi) {
-              formattedFilters.kpi = activeKpi; // Preserve active KPI if no explicit status
             }
             // Remove empty filters
             Object.keys(formattedFilters).forEach(key => {
@@ -230,33 +266,28 @@ const ApplicantDashboard: React.FC = () => {
         />
 
         {/* Data Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[400px]">
-          
-          <div className="flex-1 p-0 flex flex-col">
-            <DataTable
-              columns={columns}
-              data={data?.requests.items || []}
-              isLoading={loading}
-              emptyMessage="No payment requests found."
-              onRowClick={(row) => navigate(`/applicant/request/${row.id}`)}
-              pagination={
-                data && data.requests.total > 0
-                  ? {
-                      page,
-                      pageSize: limit,
-                      totalItems: data.requests.total,
-                      totalPages: Math.ceil(data.requests.total / limit),
-                      onPageChange: (newPage) => setPage(newPage),
-                      onPageSizeChange: (newSize) => {
-                        setLimit(newSize);
-                        setPage(1);
-                      },
-                    }
-                  : undefined
-              }
-            />
-          </div>
-        </div>
+        <DataTable
+          columns={columns}
+          data={data?.requests.items || []}
+          isLoading={loading}
+          emptyMessage="No payment requests found."
+          onRowClick={(row) => navigate(`/applicant/request/${row.id}`)}
+          pagination={
+            data && data.requests.total > 0
+              ? {
+                  page,
+                  pageSize: limit,
+                  totalItems: data.requests.total,
+                  totalPages: Math.ceil(data.requests.total / limit),
+                  onPageChange: (newPage) => setPage(newPage),
+                  onPageSizeChange: (newSize) => {
+                    setLimit(newSize);
+                    setPage(1);
+                  },
+                }
+              : undefined
+          }
+        />
       </div>
 
       {/* Delete Modal */}

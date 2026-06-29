@@ -87,6 +87,25 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * @description Deletes keys by pattern.
+   * @param pattern The pattern to match keys.
+   */
+  async delByPattern(pattern: string): Promise<void> {
+    if (!this.isConnected || !this.client) return;
+    try {
+      const keys = await this.client.keys(pattern);
+      if (keys.length > 0) {
+        await Promise.all(keys.map((k) => this.client.del(k)));
+        this.logger.log(
+          `Evicted ${keys.length} keys matching pattern: ${pattern}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed to evict keys by pattern: ${pattern}`, error);
+    }
+  }
+
+  /**
    * @description Sets a key-value pair in Redis.
    * @param key The key to set.
    * @param value The serialized value.

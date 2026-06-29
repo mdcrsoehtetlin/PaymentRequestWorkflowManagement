@@ -1,6 +1,6 @@
 import { LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 interface SidebarProps {
@@ -9,50 +9,53 @@ interface SidebarProps {
   currentRole: string;
 }
 
-const roleMenuConfig: Record<string, { title: string; dashboardPath: string; menuItems: { label: string; path: string }[] }> = {
-  APPROVER: {
-    title: 'Approver Console',
-    dashboardPath: '/approver',
-    menuItems: [],
-  },
-  MANAGER: {
-    title: 'Manager Console',
-    dashboardPath: '/manager',
-    menuItems: [],
-  },
-  ACCOUNTING: {
-    title: 'Accounting Console',
-    dashboardPath: '/accounting',
-    menuItems: [
-      { label: 'Dashboard', path: '/accounting' },
-    ],
-  },
-  ADMIN: {
-    title: 'Admin Console',
-    dashboardPath: '/admin',
-    menuItems: [
-      { label: 'Dashboard', path: '/admin' },
-      { label: 'User Management', path: '/admin/users' },
-      { label: 'Master Data', path: '/admin/master-data' },
-      { label: 'Audit Log', path: '/admin/audit-log' },
-    ],
-  },
-  APPLICANT: {
-    title: 'Applicant Console',
-    dashboardPath: '/applicant',
-    menuItems: [
-      { label: 'Dashboard', path: '/applicant' },
-      { label: 'New Application', path: '/applicant/form' },
-    ],
-  },
-};
+function useRoleMenuConfig() {
+  const { t } = useTranslation();
+  return {
+    APPROVER: {
+      title: 'Approver Console',
+      dashboardPath: '/approver',
+      menuItems: [],
+    },
+    MANAGER: {
+      title: 'Manager Console',
+      dashboardPath: '/manager',
+      menuItems: [],
+    },
+    ACCOUNTING: {
+      title: 'Accounting Console',
+      dashboardPath: '/accounting',
+      menuItems: [
+        { label: 'Dashboard', path: '/accounting' },
+      ],
+    },
+    ADMIN: {
+      title: 'Admin Console',
+      dashboardPath: '/admin',
+      menuItems: [
+        { label: t('admin.sidebar.user_management'), path: '/admin/users' },
+        { label: t('admin.sidebar.master_data'), path: '/admin/master-data' },
+        { label: t('admin.sidebar.audit_logs'), path: '/admin/audit-logs' },
+      ],
+    },
+    APPLICANT: {
+      title: 'Applicant Console',
+      dashboardPath: '/applicant',
+      menuItems: [
+        { label: 'Dashboard', path: '/applicant' },
+        { label: 'New Application', path: '/applicant/form' },
+      ],
+    },
+  };
+}
 
 export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const roleMenuConfig = useRoleMenuConfig();
 
-  const roleConfig = roleMenuConfig[currentRole] ?? roleMenuConfig.APPLICANT;
+  const roleConfig = roleMenuConfig[currentRole as keyof typeof roleMenuConfig] ?? roleMenuConfig.APPLICANT;
   const title = roleConfig.title;
   const dashboardPath = roleConfig.dashboardPath;
 
@@ -81,7 +84,11 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
                 href={dashboardPath}
                 onClick={(e) => {
                   e.preventDefault();
-                  navigate(dashboardPath);
+                  if (window.location.pathname === dashboardPath) {
+                    window.dispatchEvent(new CustomEvent('dashboard-refresh'));
+                  } else {
+                    navigate(dashboardPath);
+                  }
                   onClose();
                 }}
                 className="block px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-800 text-white transition-colors"
@@ -90,18 +97,22 @@ export function Sidebar({ isOpen, onClose, currentRole }: SidebarProps) {
               </a>
             ) : (
               roleConfig.menuItems.map((item) => (
-                <a
+                <NavLink
                   key={item.label}
-                  href={item.path}
+                  to={item.path}
                   onClick={(e) => {
                     e.preventDefault();
-                    navigate(item.path);
+                    if (window.location.pathname === item.path) {
+                      window.dispatchEvent(new CustomEvent('dashboard-refresh'));
+                    } else {
+                      navigate(item.path);
+                    }
                     onClose();
                   }}
                   className="block px-4 py-2.5 rounded-lg text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
                 >
                   {item.label}
-                </a>
+                </NavLink>
               ))
             )}
           </nav>

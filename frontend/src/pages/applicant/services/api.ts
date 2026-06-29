@@ -47,6 +47,7 @@ export interface FetchPaymentRequestsParams {
   branch?: string;
   desiredDate?: string;
   kpi?: string;
+  refresh?: boolean;
 }
 
 export const fetchPaymentRequests = async (

@@ -5,6 +5,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { Cache } from 'cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
 import { PaymentRequest } from '../shared/entities/payment-request.entity';
@@ -65,7 +66,7 @@ export class ManagerService {
         isDeleted: file.isDeleted,
       })),
       approvalLogs: (approvalLogs ?? []).map((log) => ({
-        ...this.omitCircularRefs(log as any, [
+        ...this.omitCircularRefs(log as unknown as Record<string, unknown>, [
           'payment_request',
           'action_taken_by_user',
         ]),
@@ -392,6 +393,8 @@ export class ManagerService {
             ipAddress,
             userAgent,
           });
+
+          return request.applicantUserId;
         },
       );
 
@@ -516,6 +519,7 @@ export class ManagerService {
           return {
             previousStatus,
             requestNumber: request.requestNumber,
+            applicantUserId: request.applicantUserId,
           };
         },
       );

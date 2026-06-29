@@ -74,45 +74,15 @@ export class ApplicantService {
     branch?: string,
     desiredDate?: string,
     kpi?: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    refresh?: boolean,
   ): Promise<DashboardResponseDto> {
-    const cacheKey = `applicant_dashboard_${applicantId}_${page}_${limit}_${search || ''}_${statusId || ''}_${startDate || ''}_${endDate || ''}_${minAmount || ''}_${maxAmount || ''}_${branch || ''}_${desiredDate || ''}_${kpi || ''}`;
-    const cached = await this.cacheManager.get<DashboardResponseDto>(cacheKey);
-    if (cached) return cached;
-
     const kpiQuery = this.paymentRequestRepo
       .createQueryBuilder('pr')
       .select('pr.status_id', 'status_id')
       .addSelect('COUNT(pr.id)', 'count')
       .where('pr.applicant_user_id = :applicantId', { applicantId })
       .andWhere('pr.is_deleted = false');
-
-    if (search) {
-      kpiQuery.andWhere('pr.request_number ILIKE :search', {
-        search: `%${search}%`,
-      });
-    }
-    if (startDate) {
-      kpiQuery.andWhere('pr.application_date >= :startDate', { startDate });
-    }
-    if (endDate) {
-      kpiQuery.andWhere('pr.application_date <= :endDate', { endDate });
-    }
-    if (minAmount !== undefined) {
-      kpiQuery.andWhere('pr.total_amount >= :minAmount', { minAmount });
-    }
-    if (maxAmount !== undefined) {
-      kpiQuery.andWhere('pr.total_amount <= :maxAmount', { maxAmount });
-    }
-    if (branch) {
-      kpiQuery
-        .innerJoin('pr.applicant', 'applicantUser')
-        .andWhere('applicantUser.branch = :branch', { branch });
-    }
-    if (desiredDate) {
-      kpiQuery.andWhere('pr.desired_payment_date = :desiredDate', {
-        desiredDate,
-      });
-    }
 
     kpiQuery.groupBy('pr.status_id');
 
@@ -219,7 +189,6 @@ export class ApplicantService {
       },
     };
 
-    await this.cacheManager.set(cacheKey, response, 300000);
     return response;
   }
 
@@ -329,7 +298,7 @@ export class ApplicantService {
           applicantUserId: applicantId,
           isDeleted: false,
         },
-        relations: ['breakdowns', 'receipts'],
+        relations: ['breakdowns', 'receipts', 'approvalLogs'],
       });
 
       if (!request) throw new NotFoundException('Payment request not found');
@@ -337,6 +306,30 @@ export class ApplicantService {
         throw new BadRequestException(
           'Only Draft or Rejected requests can be submitted to Manager',
         );
+      }
+
+      if ([5, 9].includes(request.statusId)) {
+        if (!request.approvalLogs) {
+          throw new BadRequestException('Approval logs not found');
+        }
+        request.approvalLogs.sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        );
+        const lastRejectionIndex = request.approvalLogs.findIndex(
+          (log) => log.actionTypeId === 6 || log.actionTypeId === 9,
+        );
+        const lastEditIndex = request.approvalLogs.findIndex(
+          (log) => log.actionTypeId === 2,
+        );
+
+        if (lastRejectionIndex !== -1) {
+          if (lastEditIndex === -1 || lastEditIndex > lastRejectionIndex) {
+            throw new BadRequestException(
+              'Request must have been modified before resubmitting',
+            );
+          }
+        }
       }
 
       if (!request.currencyId)
@@ -361,7 +354,7 @@ export class ApplicantService {
         );
 
       const total = request.breakdowns.reduce(
-        (sum, item) => sum + item.amount,
+        (sum, item) => sum + Number(item.amount),
         0,
       );
       if (total <= 0)
@@ -379,6 +372,8 @@ export class ApplicantService {
 
       const previousStatus = request.statusId;
       request.statusId = 2;
+      request.currentAssignedToUserId = request.managerUserId;
+      request.submittedToManagerDate = new Date();
 
       const savedRequest = await manager.save(request);
 
@@ -396,19 +391,22 @@ export class ApplicantService {
 
       await this.clearDashboardCache(applicantId);
 
-      this.websocketGateway.sendPersonalNotification(
-        applicantId,
-        'request:status-changed',
-        {
-          paymentRequestId: Number(savedRequest.id),
-          requestNumber: savedRequest.requestNumber,
-          previousStatusId: request.statusId,
-          newStatusId: 2,
-          actionByUserId: Number(applicantId),
-          actionByUserName: 'Applicant',
-          timestamp: log.timestamp.toISOString(),
-        },
-      );
+      if (savedRequest.managerUserId) {
+        this.websocketGateway.sendPersonalNotification(
+          savedRequest.managerUserId,
+          'statusUpdate',
+          {
+            event: 'statusUpdate',
+            paymentRequestId: Number(savedRequest.id),
+            requestNumber: savedRequest.requestNumber,
+            previousStatusId: previousStatus,
+            newStatusId: 2,
+            actionByUserId: Number(applicantId),
+            actionByUserName: 'Applicant',
+            timestamp: log.timestamp.toISOString(),
+          },
+        );
+      }
 
       // Notify the assigned manager
       if (request.managerUserId) {
@@ -769,5 +767,38 @@ export class ApplicantService {
     } catch (e) {
       console.warn('Failed to clear cache pattern', e);
     }
+  }
+
+  async addComment(
+    applicantId: number,
+    requestId: number,
+    comment: string,
+  ): Promise<void> {
+    return this.dataSource.transaction(async (manager) => {
+      const request = await manager.findOne(PaymentRequest, {
+        where: {
+          id: requestId,
+          applicantUserId: applicantId,
+          isDeleted: false,
+        },
+      });
+      if (!request) {
+        throw new NotFoundException('Payment request not found');
+      }
+
+      const log = manager.create(ApprovalLog, {
+        paymentRequestId: request.id,
+        actionTakenByUserId: Number(applicantId),
+        actionTypeId: 2, // EDITED
+        previousStatusId: request.statusId,
+        newStatusId: request.statusId,
+        comment: comment,
+        ipAddress: '127.0.0.1',
+        userAgent: 'System',
+      });
+      await manager.save(log);
+
+      await this.clearDashboardCache(applicantId);
+    });
   }
 }

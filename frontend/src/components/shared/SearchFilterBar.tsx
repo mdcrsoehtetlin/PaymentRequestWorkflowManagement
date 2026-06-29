@@ -13,6 +13,7 @@ export interface FilterField {
   placeholder?: string;
   options?: { value: string | number; label: string }[];
   colSpan?: number;
+  prefix?: string;
 }
 
 export interface SearchFilterBarProps {
@@ -45,8 +46,18 @@ export function SearchFilterBar({
 
   // Sync when parent values change (e.g., cleared from outside)
   useEffect(() => {
+    const stripped: Record<string, string | number> = {};
+    for (const [key, val] of Object.entries(values)) {
+      const field = fields.find((f) => f.key === key);
+      if (field?.prefix && typeof val === 'string' && val.startsWith(field.prefix)) {
+        stripped[key] = val.slice(field.prefix.length);
+      } else {
+        stripped[key] = val;
+      }
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLocalValues(values);
+    setLocalValues(stripped);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values]);
 
   const handleChange = (key: string, value: string | number) => {
@@ -54,7 +65,16 @@ export function SearchFilterBar({
   };
 
   const handleSearch = () => {
-    onApply(localValues);
+    const withPrefix: Record<string, string | number> = {};
+    for (const [key, val] of Object.entries(localValues)) {
+      const field = fields.find((f) => f.key === key);
+      if (field?.prefix && typeof val === 'string' && val && !val.startsWith(field.prefix)) {
+        withPrefix[key] = `${field.prefix}${val}`;
+      } else {
+        withPrefix[key] = val;
+      }
+    }
+    onApply(withPrefix);
   };
 
   const handleClear = () => {
@@ -68,7 +88,10 @@ export function SearchFilterBar({
 
   const inputClasses = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 disabled:bg-slate-100 disabled:cursor-not-allowed';
 
-  const hasActiveFilters = Object.values(localValues).some((val) => val !== '' && val !== undefined && val !== null);
+  const hasActiveFilters = fields.some((field) => {
+    const val = localValues[field.key];
+    return val !== '' && val !== undefined && val !== null;
+  });
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm mb-6">
@@ -82,13 +105,20 @@ export function SearchFilterBar({
               <span className="block">{field.label}</span>
               
               {field.type === 'text' && (
-                <input
-                  type="text"
-                  value={String(localValues[field.key] ?? '')}
-                  placeholder={field.placeholder}
-                  className={inputClasses}
-                  onChange={(e) => handleChange(field.key, e.target.value)}
-                />
+                <div className="flex">
+                  {field.prefix && (
+                    <span className="inline-flex items-center rounded-l-lg border border-r-0 border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 whitespace-nowrap">
+                      {field.prefix}
+                    </span>
+                  )}
+                  <input
+                    type="text"
+                    value={String(localValues[field.key] ?? '')}
+                    placeholder={field.placeholder}
+                    className={`${inputClasses} ${field.prefix ? 'rounded-l-none' : ''}`}
+                    onChange={(e) => handleChange(field.key, e.target.value)}
+                  />
+                </div>
               )}
               
               {field.type === 'select' && (

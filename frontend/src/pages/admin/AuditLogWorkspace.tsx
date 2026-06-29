@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Eye } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Eye, Search } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
-import { SearchFilterBar, type FilterField } from '../../components/shared/SearchFilterBar';
+import { CustomDropdown } from '../../components/shared/CustomDropdown';
 import { apiClient } from '../../services/api-client';
 import { MetadataDetailPanel } from './components/MetadataDetailPanel';
 
@@ -32,31 +33,17 @@ interface AuditLogResponse {
 
 type Filters = Record<string, string>;
 
-const ACTION_OPTIONS = [
-  { value: '', label: 'すべて' },
-  { value: '1', label: '作成' },
-  { value: '2', label: '編集' },
-  { value: '3', label: '提出' },
-  { value: '4', label: 'マネージャー確認開始' },
-  { value: '5', label: 'マネージャー確認' },
-  { value: '6', label: 'マネージャー差戻し' },
-  { value: '7', label: '承認者確認開始' },
-  { value: '8', label: '承認' },
-  { value: '9', label: '承認者差戻し' },
-  { value: '10', label: '支払完了' },
-];
-
-const ACTION_LABELS: Record<number, string> = {
-  1: '作成',
-  2: '編集',
-  3: '提出',
-  4: 'マネージャー確認開始',
-  5: 'マネージャー確認',
-  6: 'マネージャー差戻し',
-  7: '承認者確認開始',
-  8: '承認',
-  9: '承認者差戻し',
-  10: '支払完了',
+const ACTION_TYPE_MAP: Record<number, string> = {
+  1: 'created',
+  2: 'edited',
+  3: 'submitted',
+  4: 'mgr_review_start',
+  5: 'mgr_review',
+  6: 'mgr_rejected',
+  7: 'appr_review_start',
+  8: 'approved',
+  9: 'appr_rejected',
+  10: 'payment_completed',
 };
 
 /**
@@ -64,6 +51,7 @@ const ACTION_LABELS: Record<number, string> = {
  * Displays global transaction audit logs with search filters and metadata panel.
  */
 export function AuditLogWorkspace() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<AuditLogRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
@@ -98,47 +86,53 @@ export function AuditLogWorkspace() {
     }
   };
 
-  const filterFields: FilterField[] = [
-    { key: 'requestNumber', label: 'リクエスト番号', type: 'text', placeholder: 'PRF-...' },
-    { key: 'actorName', label: '実行者名', type: 'text', placeholder: '名前で検索' },
-    {
-      key: 'actionTypeId',
-      label: 'アクション種別',
-      type: 'select',
-      placeholder: 'すべて',
-      options: ACTION_OPTIONS,
-    },
-    { key: 'startDate', label: '開始日', type: 'date' },
-    { key: 'endDate', label: '終了日', type: 'date' },
+  const [draft, setDraft] = useState<Filters>({
+    startDate: '',
+    endDate: '',
+    actionTypeId: '',
+    requestNumber: '',
+    actorName: '',
+  });
+
+  const actionOptions = [
+    { value: '', label: t('common.all') },
+    { value: '1', label: t('admin.audit_log.action_label.created') },
+    { value: '2', label: t('admin.audit_log.action_label.edited') },
+    { value: '3', label: t('admin.audit_log.action_label.submitted') },
+    { value: '4', label: t('admin.audit_log.action_label.mgr_review_start') },
+    { value: '5', label: t('admin.audit_log.action_label.mgr_review') },
+    { value: '6', label: t('admin.audit_log.action_label.mgr_rejected') },
+    { value: '7', label: t('admin.audit_log.action_label.appr_review_start') },
+    { value: '8', label: t('admin.audit_log.action_label.approved') },
+    { value: '9', label: t('admin.audit_log.action_label.appr_rejected') },
+    { value: '10', label: t('admin.audit_log.action_label.payment_completed') },
   ];
 
-  const handleApply = (values: Record<string, string | number>) => {
-    let requestNumber = String(values.requestNumber ?? '');
-    if (requestNumber.startsWith('PRF-')) {
-      requestNumber = requestNumber.slice(4);
-    }
-    const startDate = String(values.startDate ?? '');
-    const endDate = String(values.endDate ?? '');
+  const handleSearch = () => {
+    const startDate = draft.startDate;
+    const endDate = draft.endDate;
     if (startDate && endDate && startDate > endDate) {
-      setDateError('開始日は終了日より後に設定できません');
+      setDateError(t('admin.audit_log.filters.date_error'));
       return;
     }
     setDateError('');
-    setFilters({
-      startDate,
-      endDate,
-      actionTypeId: String(values.actionTypeId ?? ''),
-      requestNumber,
-      actorName: String(values.actorName ?? ''),
-    });
+    let requestNumber = draft.requestNumber;
+    if (requestNumber && !requestNumber.startsWith('PRF-')) {
+      requestNumber = `PRF-${requestNumber}`;
+    }
+    setFilters({ ...draft, requestNumber });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleClear = () => {
+    setDraft({ startDate: '', endDate: '', actionTypeId: '', requestNumber: '', actorName: '' });
     setFilters({ startDate: '', endDate: '', actionTypeId: '', requestNumber: '', actorName: '' });
     setDateError('');
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
+
+  const inputClasses = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200';
+  const hasActiveFilters = Object.values(draft).some((v) => v !== '');
 
   const isInitialLoad = useRef(true);
   useEffect(() => {
@@ -198,30 +192,30 @@ export function AuditLogWorkspace() {
   const columns: Column<AuditLogRecord>[] = [
     {
       key: 'requestNumber',
-      header: 'リクエスト番号',
+      header: t('admin.audit_log.columns.request_number'),
       sortable: true,
       render: (_val, row) => row.requestNumber ?? 'Unknown',
     },
     {
       key: 'actorName',
-      header: '実行者',
+      header: t('admin.audit_log.columns.actor'),
       sortable: true,
     },
     {
       key: 'actionTypeId',
-      header: 'アクション',
+      header: t('admin.audit_log.columns.action'),
       sortable: true,
-      render: (_val, row) => ACTION_LABELS[row.actionTypeId] ?? '不明',
+      render: (_val, row) => t(`admin.audit_log.action_label.${ACTION_TYPE_MAP[row.actionTypeId] ?? 'unknown'}`),
     },
     {
       key: 'ipAddress',
-      header: 'IPアドレス',
+      header: t('admin.audit_log.columns.ip_address'),
       sortable: true,
       width: '140px',
     },
     {
       key: 'timestamp',
-      header: '日時',
+      header: t('admin.audit_log.columns.date_time'),
       sortable: true,
       render: (_val, row) => new Date(row.timestamp).toLocaleString('ja-JP'),
     },
@@ -235,7 +229,7 @@ export function AuditLogWorkspace() {
             setSelectedLog(row);
           }}
           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-          title="詳細を見る"
+          title={t('admin.audit_log.columns.view_detail')}
         >
           <Eye className="w-4 h-4" />
         </button>
@@ -246,19 +240,128 @@ export function AuditLogWorkspace() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">監査ログ</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t('admin.audit_log.title')}</h1>
         <p className="text-sm text-slate-500 mt-1">
-          グローバルトランザクション履歴を確認できます
+          {t('admin.audit_log.description')}
         </p>
       </div>
 
       {/* Search Filters */}
-      <SearchFilterBar
-        fields={filterFields}
-        values={filters}
-        onApply={handleApply}
-        onClear={handleClear}
-      />
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm mb-6">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {/* Request Number */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-1">{t('admin.audit_log.filters.request_number')}</label>
+            <div className="flex">
+              <span className="inline-flex items-center rounded-l-lg border border-r-0 border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 whitespace-nowrap">
+                PRF-
+              </span>
+              <input
+                type="text"
+                value={draft.requestNumber}
+                onChange={(e) => setDraft((prev) => ({ ...prev, requestNumber: e.target.value }))}
+                placeholder={t('admin.audit_log.filters.request_number_placeholder')}
+                className={`${inputClasses} rounded-l-none`}
+              />
+            </div>
+          </div>
+
+          {/* Actor Name */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-1">{t('admin.audit_log.filters.actor_name')}</label>
+            <input
+              type="text"
+              value={draft.actorName}
+              onChange={(e) => setDraft((prev) => ({ ...prev, actorName: e.target.value }))}
+              placeholder={t('admin.audit_log.filters.actor_name_placeholder')}
+              className={inputClasses}
+            />
+          </div>
+
+          {/* Action Type */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-1">{t('admin.audit_log.filters.action_type')}</label>
+            <CustomDropdown
+              options={actionOptions}
+              value={draft.actionTypeId}
+              placeholder={t('common.all')}
+              onChange={(val) => setDraft((prev) => ({ ...prev, actionTypeId: String(val ?? '') }))}
+            />
+          </div>
+
+          {/* Start Date */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-1">{t('admin.audit_log.filters.start_date')}</label>
+            <input
+              type="date"
+              value={draft.startDate}
+              onChange={(e) => setDraft((prev) => ({ ...prev, startDate: e.target.value }))}
+              className={inputClasses}
+            />
+          </div>
+
+          {/* End Date */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-1">{t('admin.audit_log.filters.end_date')}</label>
+            <input
+              type="date"
+              value={draft.endDate}
+              onChange={(e) => setDraft((prev) => ({ ...prev, endDate: e.target.value }))}
+              className={inputClasses}
+            />
+          </div>
+        </div>
+
+        {/* Divider — hidden on mobile, visible on sm+ */}
+        <div className="hidden sm:block border-t border-slate-200 mt-4 pt-4">
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={handleSearch}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 whitespace-nowrap transition-all duration-200"
+            >
+              <Search className="w-4 h-4" />
+              {t('common.search')}
+            </button>
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={!hasActiveFilters}
+              className={`rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+                hasActiveFilters
+                  ? 'text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer'
+                  : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
+              }`}
+            >
+              {t('common.clear_filters')}
+            </button>
+          </div>
+        </div>
+
+        {/* Buttons — visible only on mobile, left-aligned */}
+        <div className="flex sm:hidden gap-3 mt-4">
+          <button
+            type="button"
+            onClick={handleSearch}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 whitespace-nowrap transition-all duration-200"
+          >
+            <Search className="w-4 h-4" />
+            {t('common.search')}
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={!hasActiveFilters}
+            className={`rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+              hasActiveFilters
+                ? 'text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer'
+                : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
+            }`}
+          >
+            {t('common.clear_filters')}
+          </button>
+        </div>
+      </div>
       {dateError && (
         <p className="mb-4 text-sm text-red-600">{dateError}</p>
       )}
@@ -270,7 +373,7 @@ export function AuditLogWorkspace() {
             columns={columns}
             data={sortedLogs}
             isLoading={isLoading}
-            emptyMessage="該当するログが見つかりません"
+            emptyMessage={t('admin.audit_log.empty_message')}
             onRowClick={(row) => setSelectedLog(row as unknown as AuditLogRecord)}
             sorting={{
               sortBy: sorting.sortBy,
