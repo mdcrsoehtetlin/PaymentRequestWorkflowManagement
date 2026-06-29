@@ -234,6 +234,8 @@ export function ManagerDashboard() {
     return t('dashboard.manager.all_statuses');
   };
 
+  const hasActiveFilters = activeSearch !== '' || activeStatus !== '' || activeDate !== '';
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -380,7 +382,7 @@ export function ManagerDashboard() {
             <button
               onClick={handleSearch}
               disabled={isListLoading}
-              className="inline-flex items-center gap-1.5 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="inline-flex items-center gap-1.5 rounded-md bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 transition-all duration-200"
             >
               <Search className="h-4 w-4" />
               {t('dashboard.manager.search')}
@@ -388,7 +390,12 @@ export function ManagerDashboard() {
 
             <button
               onClick={handleClearFilters}
-              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              disabled={!hasActiveFilters}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+                hasActiveFilters
+                  ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer'
+                  : 'border-slate-200 bg-slate-50 text-slate-400 opacity-60 cursor-not-allowed'
+              }`}
             >
               Clear Filters
             </button>
@@ -458,8 +465,9 @@ export function ManagerDashboard() {
                         </td>
                         <td className="px-4 py-3.5 text-center">
                           <button
+                            type="button"
                             onClick={() => handleProcess(req.paymentRequestId)}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            className="inline-flex items-center gap-1 rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                           >
                             View Detail
                           </button>
