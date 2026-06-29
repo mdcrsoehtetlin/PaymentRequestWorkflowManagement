@@ -1,23 +1,48 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import type { AxiosError } from 'axios';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useToast } from '../../hooks/useToast';
 import type { ApiErrorResponse } from '../../types';
-import type { ApproverRequestDetailView } from './types';
+import type { ApproverRequestListItem } from './types';
 import { useApproverRequests } from './hooks/useApproverRequests';
 import { useApproverRequestDetail } from './hooks/useApproverRequestDetail';
-import { FilterSearchBar } from './components/FilterSearchBar';
-import { KpiCard, DashboardKpiGrid } from '../../components/shared';
+import { KpiCard, DashboardKpiGrid, SearchFilterBar } from '../../components/shared';
+import type { FilterField } from '../../components/shared/SearchFilterBar';
 import { LayoutGrid, Clock, Eye, CalendarClock } from 'lucide-react';
-import { ApproverRequestTable } from './components/ApproverRequestTable';
+import { ApproverStatusBadge } from './components/ApproverStatusBadge';
+import { DataTable, type Column } from '../../components/shared/DataTable';
+import { formatDate } from '../../utils/format';
 import { ApproverRequestDetail } from './ApproverRequestDetail';
 import { approverService } from './services/approver.service';
 import { RefreshButton } from '../../components/shared/RefreshButton';
 
+const useApproverFilterFields = () => {
+  const { t } = useTranslation();
+  return useMemo<FilterField[]>(() => [
+    { key: 'search', label: t('approver.filters.search'), type: 'text', placeholder: t('approver.filters.search_placeholder') },
+    { key: 'branch', label: t('approver.filters.branch'), type: 'select', options: [
+      { value: '', label: t('approver.filters.all_branches') },
+      { value: 'Yangon', label: 'Yangon' },
+      { value: 'Mandalay', label: 'Mandalay' },
+      { value: 'Naypyidaw', label: 'Naypyidaw' },
+    ] },
+    { key: 'desiredDate', label: t('approver.filters.desired_date'), type: 'date' },
+    { key: 'statusId', label: t('approver.filters.status'), type: 'select', options: [
+      { value: '', label: t('approver.filters.all_statuses') },
+      { value: '6', label: t('approver.status.submitted_approver') },
+      { value: '7', label: t('approver.status.approver_reviewing') },
+      { value: '8', label: t('approver.status.approved') },
+      { value: '9', label: t('approver.status.rejected_approver') },
+    ], placeholder: t('approver.filters.all_statuses') },
+  ], [t]);
+};
+
 export function ApproverDashboard() {
   const { t } = useTranslation();
   const { success, error } = useToast();
+  const approverFilterFields = useApproverFilterFields();
   const {
     query,
     requests,
@@ -38,17 +63,62 @@ export function ApproverDashboard() {
   } = useApproverRequestDetail();
 
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
-  const [search, setSearch] = useState('');
-  const [branch, setBranch] = useState('');
-  const [desiredDate, setDesiredDate] = useState('');
-  const [statusId, setStatusId] = useState<number | undefined>(undefined);
-  const [sidebarFilter, setSidebarFilter] = useState<number | 'desiredDateAlert' | undefined>(6);
-  const previousFilterRef = useRef<number | 'desiredDateAlert' | undefined>(6);
+  const [filterValues, setFilterValues] = useState<Record<string, string | number>>(() => {
+    const saved = sessionStorage.getItem('approver_dashboard_filterValues');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [sidebarFilter, setSidebarFilter] = useState<number | 'desiredDateAlert' | undefined | null>(() => {
+    const saved = sessionStorage.getItem('approver_dashboard_sidebarFilter');
+    if (saved === 'null') return null;
+    if (saved === 'undefined') return undefined;
+    if (saved === 'desiredDateAlert') return 'desiredDateAlert';
+    if (saved !== null && !isNaN(Number(saved))) return Number(saved);
+    return 6;
+  });
+  const previousFilterRef = useRef<number | 'desiredDateAlert' | undefined | null>(undefined);
   const [summary, setSummary] = useState({ totalQueue: 0, pendingCount: 0, reviewingCount: 0, desiredDateAlertCount: 0 });
+  const location = useLocation();
 
   useEffect(() => {
-    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: 6, showAll: false });
+    sessionStorage.setItem('approver_dashboard_filterValues', JSON.stringify(filterValues));
+  }, [filterValues]);
+
+  useEffect(() => {
+    sessionStorage.setItem('approver_dashboard_sidebarFilter', String(sidebarFilter));
+  }, [sidebarFilter]);
+
+  useEffect(() => {
+    const search = typeof filterValues.search === 'string' ? filterValues.search.trim() || undefined : undefined;
+    const branch = typeof filterValues.branch === 'string' ? filterValues.branch.trim() || undefined : undefined;
+    const desiredDate = typeof filterValues.desiredDate === 'string' ? filterValues.desiredDate || undefined : undefined;
+    const filterStatusId = filterValues.statusId ? Number(filterValues.statusId) : undefined;
+
+    const hasSearchFilters = search || branch || desiredDate || filterStatusId;
+
+    if (hasSearchFilters) {
+      applyFilters({ statusId: filterStatusId, search, branch, desiredDate, desiredDateAlert: undefined });
+    } else if (sidebarFilter === undefined) {
+      applyFilters({ statusId: undefined, search: undefined, branch: undefined, desiredDate: undefined, desiredDateAlert: undefined, showAll: true });
+    } else if (sidebarFilter === 'desiredDateAlert') {
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', desiredDateAlert: true, showAll: false });
+    } else if (typeof sidebarFilter === 'number') {
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: sidebarFilter, showAll: false });
+    }
     approverService.fetchSummary().then(setSummary).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleSoftRefresh = () => {
+      sessionStorage.removeItem('approver_dashboard_filterValues');
+      sessionStorage.removeItem('approver_dashboard_sidebarFilter');
+      setFilterValues({});
+      setSidebarFilter(6);
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: 6, showAll: false });
+      approverService.fetchSummary().then(setSummary).catch(() => {});
+    };
+    window.addEventListener('dashboard-refresh', handleSoftRefresh);
+    return () => window.removeEventListener('dashboard-refresh', handleSoftRefresh);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -58,17 +128,82 @@ export function ApproverDashboard() {
     return () => clearTimeout(timer);
   }, [detailError, clearRequestDetail]);
 
-  const handleRowClick = async (item: ApproverRequestDetailView) => {
+  const handleRowClick = useCallback(async (item: { paymentRequestId: number }) => {
     previousFilterRef.current = sidebarFilter;
     setSelectedRequestId(item.paymentRequestId);
     await loadRequestDetail(item.paymentRequestId);
-  };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [sidebarFilter, loadRequestDetail]);
+
+  const columns: Column<ApproverRequestListItem & { applicantFullName: string; applicantBranch: string }>[] = useMemo(() => [
+    {
+      key: 'requestNumber',
+      header: t('approver.table.columns.request_no'),
+      render: (_, row) => (
+        <span className="text-blue-700 font-medium hover:text-blue-900 hover:underline cursor-pointer">
+          {row.requestNumber}
+        </span>
+      ),
+      width: '13%',
+    },
+    {
+      key: 'applicantFullName',
+      header: t('approver.table.columns.applicant'),
+      render: (_, row) => (
+        <span className="text-sm text-slate-700">{row.applicantFullName}</span>
+      ),
+      width: '16%',
+    },
+    {
+      key: 'applicantBranch',
+      header: t('approver.table.columns.branch'),
+      render: (_, row) => (
+        <span className="text-sm text-slate-700">{row.applicantBranch}</span>
+      ),
+      width: '12%',
+    },
+    { key: 'applicationDate', header: t('approver.table.columns.application_date'), sortable: true, width: '13%', render: (_, row) => formatDate(row.applicationDate) },
+    { key: 'desiredPaymentDate', header: t('approver.table.columns.desired_date'), sortable: true, width: '12%', render: (_, row) => formatDate(row.desiredPaymentDate) },
+    {
+      key: 'totalAmount',
+      header: t('approver.table.columns.amount'),
+      sortable: true,
+      width: '14%',
+      render: (_, row) => (
+        <span className="font-medium text-slate-900">
+          {Number(row.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} {row.currencyCode}
+        </span>
+      ),
+    },
+    { key: 'statusId', header: t('approver.table.columns.status'), sortable: true, width: '12%', render: (_, row) => <ApproverStatusBadge statusId={row.statusId} size="sm" /> },
+    {
+      key: 'action',
+      header: t('approver.table.columns.action'),
+      width: '8%',
+      render: (_, row) => (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); handleRowClick(row); }}
+          className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          {t('approver.table.view_details')}
+        </button>
+      ),
+    },
+  ], [handleRowClick, t]);
+
+  const tableRows = useMemo(() =>
+    requests.map((item) => ({
+      ...item,
+      applicantFullName: item.applicant.fullName,
+      applicantBranch: item.applicant.branch,
+    })),
+  [requests]);
 
   const handleRefresh = () => {
-    setSearch('');
-    setBranch('');
-    setDesiredDate('');
-    setStatusId(undefined);
+    sessionStorage.removeItem('approver_dashboard_filterValues');
+    sessionStorage.removeItem('approver_dashboard_sidebarFilter');
+    setFilterValues({});
     setSidebarFilter(6);
     clearRequestDetail();
     setSelectedRequestId(null);
@@ -78,10 +213,7 @@ export function ApproverDashboard() {
 
   const handleSidebarFilter = (newStatusId?: number) => {
     setSidebarFilter(newStatusId);
-    setStatusId(undefined);
-    setSearch('');
-    setBranch('');
-    setDesiredDate('');
+    setFilterValues({});
     if (newStatusId === undefined) {
       applyFilters({ statusId: undefined, search: undefined, branch: undefined, desiredDate: undefined, desiredDateAlert: undefined, showAll: true });
     } else {
@@ -91,22 +223,22 @@ export function ApproverDashboard() {
 
   const handleDesiredDateAlertFilter = () => {
     setSidebarFilter('desiredDateAlert');
-    setStatusId(undefined);
-    setSearch('');
-    setBranch('');
-    setDesiredDate('');
+    setFilterValues({});
     applyFilters({ statusId: undefined, search: undefined, branch: undefined, desiredDate: undefined, desiredDateAlert: true, showAll: false });
   };
 
-  const handleSearchApply = () => {
-    applyFilters({ statusId, search: search.trim() || undefined, branch: branch.trim() || undefined, desiredDate: desiredDate || undefined, desiredDateAlert: undefined });
+  const handleSearchApply = (values: Record<string, string | number>) => {
+    setFilterValues(values);
+    setSidebarFilter(null);
+    const search = typeof values.search === 'string' ? values.search.trim() || undefined : undefined;
+    const branch = typeof values.branch === 'string' ? values.branch.trim() || undefined : undefined;
+    const desiredDate = typeof values.desiredDate === 'string' ? values.desiredDate || undefined : undefined;
+    const statusId = values.statusId ? Number(values.statusId) : undefined;
+    applyFilters({ statusId, search, branch, desiredDate, desiredDateAlert: undefined });
   };
 
   const handleClearFilters = () => {
-    setSearch('');
-    setBranch('');
-    setDesiredDate('');
-    setStatusId(undefined);
+    setFilterValues({});
     setSidebarFilter(undefined);
     applyFilters({ statusId: undefined, search: undefined, branch: undefined, desiredDate: undefined, desiredDateAlert: undefined, showAll: true });
   };
@@ -116,7 +248,13 @@ export function ApproverDashboard() {
     setSelectedRequestId(null);
     const prev = previousFilterRef.current;
     setSidebarFilter(prev);
-    if (prev === undefined) {
+    if (prev === null) {
+      const search = typeof filterValues.search === 'string' ? filterValues.search.trim() || undefined : undefined;
+      const branch = typeof filterValues.branch === 'string' ? filterValues.branch.trim() || undefined : undefined;
+      const desiredDate = typeof filterValues.desiredDate === 'string' ? filterValues.desiredDate || undefined : undefined;
+      const statusId = filterValues.statusId ? Number(filterValues.statusId) : undefined;
+      applyFilters({ statusId, search, branch, desiredDate, desiredDateAlert: undefined });
+    } else if (prev === undefined) {
       loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
     } else if (prev === 'desiredDateAlert') {
       loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', desiredDateAlert: true, showAll: false });
@@ -126,15 +264,17 @@ export function ApproverDashboard() {
     approverService.fetchSummary().then(setSummary).catch(() => {});
   };
 
+
+
   const handleApprove = async (payload: { comment?: string; accountingUserId?: number }) => {
     if (!selectedRequestId) return;
     try {
       await approverService.approveRequest(selectedRequestId, payload);
-      success('Request approved successfully.');
+      success(t('approver.success.approve'));
       await handleBack();
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      error(axiosError.response?.data?.message || 'Failed to approve request.');
+      error(axiosError.response?.data?.message || t('approver.errors.approve'));
     }
   };
 
@@ -142,11 +282,11 @@ export function ApproverDashboard() {
     if (!selectedRequestId) return;
     try {
       await approverService.rejectRequest(selectedRequestId, payload);
-      success('Request rejected successfully.');
+      success(t('approver.success.reject'));
       await handleBack();
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      error(axiosError.response?.data?.message || 'Failed to reject request.');
+      error(axiosError.response?.data?.message || t('approver.errors.reject'));
     }
   };
 
@@ -155,16 +295,18 @@ export function ApproverDashboard() {
       <div className="flex flex-col gap-6">
         {requestDetail ? (
           <div className="space-y-6">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Queue
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                {t('approver.dashboard.back_to_dashboard')}
+              </button>
+            </div>
             <ApproverRequestDetail
               request={requestDetail}
               isLoading={isDetailLoading}
@@ -176,8 +318,8 @@ export function ApproverDashboard() {
           <>
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">{t('dashboard.approver.title')}</h1>
-                <p className="mt-2 text-sm text-slate-500">{t('dashboard.approver.welcome_message')}</p>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('dashboard.approver.title')}</h1>
+                <p className="text-slate-500 mt-1">{t('dashboard.approver.welcome_message')}</p>
               </div>
               <RefreshButton onClick={handleRefresh} />
             </div>
@@ -208,7 +350,7 @@ export function ApproverDashboard() {
               <DashboardKpiGrid>
                 <div className={sidebarFilter === undefined ? 'ring-2 ring-blue-400 rounded-xl' : ''}>
                   <KpiCard
-                    label="Total"
+                    label={t('approver.dashboard.kpi.total')}
                     count={summary.totalQueue}
                     icon={<LayoutGrid />}
                     colorClasses="bg-blue-50 text-blue-900 border border-blue-200"
@@ -217,7 +359,7 @@ export function ApproverDashboard() {
                 </div>
                 <div className={sidebarFilter === 6 ? 'ring-2 ring-slate-400 rounded-xl' : ''}>
                   <KpiCard
-                    label="Pending"
+                    label={t('approver.dashboard.kpi.pending')}
                     count={summary.pendingCount}
                     icon={<Clock />}
                     colorClasses="bg-slate-50 text-slate-900 border border-slate-200"
@@ -226,7 +368,7 @@ export function ApproverDashboard() {
                 </div>
                 <div className={sidebarFilter === 7 ? 'ring-2 ring-amber-400 rounded-xl' : ''}>
                   <KpiCard
-                    label="Under Review"
+                    label={t('approver.dashboard.kpi.under_review')}
                     count={summary.reviewingCount}
                     icon={<Eye />}
                     colorClasses="bg-amber-50 text-amber-900 border border-amber-200"
@@ -235,7 +377,7 @@ export function ApproverDashboard() {
                 </div>
                 <div className={sidebarFilter === 'desiredDateAlert' ? 'ring-2 ring-red-400 rounded-xl' : ''}>
                   <KpiCard
-                    label="Desired Date Alert"
+                    label={t('approver.dashboard.kpi.desired_date_alert')}
                     count={summary.desiredDateAlertCount}
                     icon={<CalendarClock />}
                     colorClasses="bg-red-50 text-red-900 border border-red-200"
@@ -244,35 +386,35 @@ export function ApproverDashboard() {
                 </div>
               </DashboardKpiGrid>
 
-              <FilterSearchBar
-                search={search}
-                branch={branch}
-                desiredDate={desiredDate}
-                statusId={statusId}
-                onSearchChange={setSearch}
-                onBranchChange={setBranch}
-                onDesiredDateChange={setDesiredDate}
-                onStatusChange={setStatusId}
-                onSubmit={handleSearchApply}
-                onClear={handleClearFilters}
-              />
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <ApproverRequestTable
-                  data={requests}
-                  isLoading={isListLoading}
-                  page={meta.page}
-                  pageSize={meta.pageSize}
-                  totalItems={meta.totalItems}
-                  totalPages={meta.totalPages}
-                  sortBy={query.sortBy ?? 'managerVerificationDate'}
-                  sortOrder={query.sortOrder ?? 'DESC'}
-                  onRowClick={(item) => handleRowClick(item as ApproverRequestDetailView)}
-                  onPageChange={setPage}
-                  onPageSizeChange={setPageSize}
-                  onSortChange={setSort}
+              <div className="[&_button>span:first-child]:whitespace-nowrap">
+                <SearchFilterBar
+                  fields={approverFilterFields}
+                  values={filterValues}
+                  onApply={handleSearchApply}
+                  onClear={handleClearFilters}
                 />
               </div>
+
+              <DataTable
+                columns={columns}
+                data={tableRows}
+                isLoading={isListLoading}
+                onRowClick={handleRowClick}
+                pagination={{
+                  page: meta.page,
+                  pageSize: meta.pageSize,
+                  totalItems: meta.totalItems,
+                  totalPages: meta.totalPages,
+                  onPageChange: setPage,
+                  onPageSizeChange: setPageSize,
+                }}
+                sorting={{
+                  sortBy: query.sortBy ?? 'managerVerificationDate',
+                  sortOrder: query.sortOrder ?? 'DESC',
+                  onSortChange: setSort,
+                }}
+                  emptyMessage={t('approver.table.empty_message')}
+              />
             </div>
           </>
         )}

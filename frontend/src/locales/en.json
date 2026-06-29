@@ -501,16 +501,43 @@
     }
   },
   "approver": {
+    "status": {
+      "draft": "Draft",
+      "submitted_manager": "Submitted to Manager",
+      "manager_reviewing": "Manager Reviewing",
+      "manager_verified": "Manager Verified",
+      "rejected_manager": "Rejected by Manager",
+      "submitted_approver": "Submitted to Approver",
+      "approver_reviewing": "Approver Reviewing",
+      "approved": "Approved",
+      "rejected_approver": "Rejected by Approver",
+      "paid": "Paid"
+    },
+    "action": {
+      "created": "Created",
+      "edited": "Edited",
+      "submitted": "Submitted",
+      "mgr_review_start": "Manager Review Started",
+      "mgr_verified": "Manager Verified",
+      "mgr_rejected": "Rejected by Manager",
+      "appr_review_start": "Approver Review Started",
+      "approved": "Approved",
+      "appr_rejected": "Rejected by Approver",
+      "payment_completed": "Payment Completed",
+      "cancelled": "Cancelled",
+      "draft_saved": "Draft Saved"
+    },
     "dashboard": {
       "title": "Approver Dashboard",
       "description": "Make final approval decisions",
       "kpi": {
-        "total": "Total",
-        "pending": "Pending",
+        "total": "Total Requests",
+        "pending": "Pending Requests",
         "under_review": "Under Review",
         "desired_date_alert": "Desired Date Alert"
       },
-      "back_to_queue": "Back to Queue"
+      "back_to_queue": "Back to Queue",
+      "back_to_dashboard": "Back to Dashboard"
     },
     "detail": {
       "empty_state": "Select a request from the list to view details.",

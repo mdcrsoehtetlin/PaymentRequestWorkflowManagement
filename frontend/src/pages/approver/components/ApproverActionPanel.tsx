@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ConfirmDialog } from '../../../components/shared/ConfirmDialog';
 import type { ApproverRequestDetailView } from '../types';
 
@@ -9,6 +10,7 @@ interface ApproverActionPanelProps {
 }
 
 export function ApproverActionPanel({ request, onApprove, onReject }: ApproverActionPanelProps) {
+  const { t } = useTranslation();
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
@@ -17,7 +19,7 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
   const handleApprove = async () => {
     setIsSubmitting(true);
     try {
-      await onApprove({ comment: 'Approved' });
+      await onApprove({ comment: t('approver.action_panel.approved_comment') });
     } catch {
       // Error handled by parent component
     } finally {
@@ -44,8 +46,8 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="text-lg font-semibold text-slate-900 mb-3">Actions</h3>
-      <p className="text-sm text-slate-500 mb-4">Approve or reject this request.</p>
+      <h3 className="text-lg font-semibold text-slate-900 mb-3">{t('approver.action_panel.title')}</h3>
+      <p className="text-sm text-slate-500 mb-4">{t('approver.action_panel.description')}</p>
       <div className="flex flex-col gap-3">
         <button
           type="button"
@@ -53,7 +55,7 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
           onClick={handleApprove}
           className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
         >
-          Approve
+          {t('approver.action_panel.buttons.approve')}
         </button>
         <button
           type="button"
@@ -61,23 +63,23 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
           onClick={() => setIsRejectOpen(true)}
           className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500"
         >
-          Reject
+          {t('approver.action_panel.buttons.reject')}
         </button>
       </div>
 
       {isRejectOpen && (
         <div className="mt-4 space-y-3 rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-800">Rejection Comment</p>
+          <p className="text-sm font-medium text-red-800">{t('approver.action_panel.rejection_comment')}</p>
           <textarea
             value={rejectComment}
             onChange={(e) => setRejectComment(e.target.value)}
             rows={4}
             className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
-            placeholder="Enter rejection reason (min 10 characters)..."
+            placeholder={t('approver.action_panel.rejection_placeholder')}
           />
           {rejectComment.length > 0 && rejectComment.length < 10 && (
             <p className="text-xs text-red-500">
-              Comment must be at least 10 characters ({rejectComment.length}/10)
+              {t('approver.action_panel.comment_min_error', { length: rejectComment.length })}
             </p>
           )}
           <div className="flex gap-2">
@@ -87,7 +89,7 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
               onClick={() => setIsConfirmOpen(true)}
               className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500"
             >
-              Submit Rejection
+              {t('approver.action_panel.buttons.submit_rejection')}
             </button>
             <button
               type="button"
@@ -95,7 +97,7 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
               onClick={handleCancelReject}
               className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
-              Cancel
+              {t('approver.action_panel.buttons.cancel')}
             </button>
           </div>
         </div>
@@ -105,10 +107,10 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleReject}
-        title="Confirm Rejection"
-        message={`Are you sure you want to reject this request?\n\nYour comment: "${rejectComment}"`}
-        confirmLabel="Reject"
-        cancelLabel="Cancel"
+        title={t('approver.action_panel.confirm_rejection.title')}
+        message={t('approver.action_panel.confirm_rejection.message', { comment: rejectComment })}
+        confirmLabel={t('approver.action_panel.confirm_rejection.confirm')}
+        cancelLabel={t('approver.action_panel.confirm_rejection.cancel')}
         variant="danger"
         isLoading={isSubmitting}
       />
