@@ -119,7 +119,7 @@ export function ManagerDashboard() {
           params.dateFrom = activeDate;
           params.dateTo = activeDate;
         }
-        if (activeSearch) params.applicant = activeSearch;
+        if (activeSearch) params.search = activeSearch;
 
         const response = await apiClient.get<PaymentRequestWithApplicant[]>('/manager/requests', { params });
         if (!cancelled) {

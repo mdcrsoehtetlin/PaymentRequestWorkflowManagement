@@ -230,6 +230,22 @@ describe('ManagerService', () => {
         { applicantName: '%John%' },
       );
     });
+
+    it('should query with search filter matching requestNumber OR applicant', async () => {
+      const query: QueryRequestsDto = {
+        search: 'PRF-2026',
+      };
+      const qb =
+        paymentRequestRepo.createQueryBuilder() as unknown as MockQueryBuilder;
+      qb.getMany.mockResolvedValueOnce([]);
+
+      await service.getPendingRequests(mockManagerId, query);
+
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(request.requestNumber ILIKE :searchTerm OR applicant.fullName ILIKE :searchTerm)',
+        { searchTerm: '%PRF-2026%' },
+      );
+    });
   });
 
   describe('downloadReceipt', () => {
