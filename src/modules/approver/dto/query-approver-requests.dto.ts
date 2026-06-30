@@ -17,6 +17,7 @@ export enum ApproverRequestSortFields {
   TOTAL_AMOUNT = 'totalAmount',
   STATUS = 'statusId',
   MANAGER_VERIFIED_DATE = 'managerVerificationDate',
+  MODIFIED_DATE = 'modifiedDate',
 }
 
 export class QueryApproverRequestsDto extends PaginationQueryDto {
@@ -49,8 +50,7 @@ export class QueryApproverRequestsDto extends PaginationQueryDto {
 
   @IsOptional()
   @IsEnum(ApproverRequestSortFields)
-  sortBy?: ApproverRequestSortFields =
-    ApproverRequestSortFields.MANAGER_VERIFIED_DATE;
+  sortBy?: ApproverRequestSortFields = ApproverRequestSortFields.MODIFIED_DATE;
 }
 
 import {

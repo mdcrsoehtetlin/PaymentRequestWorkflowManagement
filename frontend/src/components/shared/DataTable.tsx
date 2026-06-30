@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { EmptyState } from './EmptyState';
 
@@ -40,6 +41,7 @@ export function DataTable<T>({
   pagination,
   sorting,
 }: DataTableProps<T>) {
+  const { t } = useTranslation();
   if (isLoading && data.length === 0) {
     return (
       <div className="animate-pulse space-y-4 py-4">
@@ -107,11 +109,11 @@ export function DataTable<T>({
             >
               {[10, 20, 50, 100].map((size) => (
                 <option key={size} value={size}>
-                  {size} rows
+                  {size} {t('common.rows')}
                 </option>
               ))}
             </select>
-            Showing
+            {t('common.showing')}
             <span className="mx-2 font-medium text-slate-900">
               {Math.min((pagination.page - 1) * pagination.pageSize + 1, pagination.totalItems)}
             </span>
@@ -119,7 +121,7 @@ export function DataTable<T>({
             <span className="mx-2 font-medium text-slate-900">
               {Math.min(pagination.page * pagination.pageSize, pagination.totalItems)}
             </span>
-            of <span className="mx-1 font-medium text-slate-900">{pagination.totalItems}</span> results
+            {t('common.of')} <span className="mx-1 font-medium text-slate-900">{pagination.totalItems}</span> {t('common.results')}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -128,7 +130,7 @@ export function DataTable<T>({
               disabled={pagination.page <= 1}
               className="px-3 py-1 border border-slate-300 rounded bg-white text-slate-600 disabled:opacity-50 hover:bg-slate-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Previous
+              {t('common.previous')}
             </button>
             <span className="text-sm text-slate-600 px-2">
               {pagination.page} / {pagination.totalPages || 1}
@@ -138,7 +140,7 @@ export function DataTable<T>({
               disabled={pagination.page >= pagination.totalPages}
               className="px-3 py-1 border border-slate-300 rounded bg-white text-slate-600 disabled:opacity-50 hover:bg-slate-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Next
+              {t('common.next')}
             </button>
           </div>
         </div>

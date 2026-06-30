@@ -24,6 +24,8 @@ export interface SearchFilterBarProps {
   showSearchButton?: boolean;
   showClearButton?: boolean;
   actions?: React.ReactNode;
+  searchLabel?: string;
+  clearLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -38,6 +40,8 @@ export function SearchFilterBar({
   showSearchButton = true,
   showClearButton,
   actions,
+  searchLabel = 'Search',
+  clearLabel = 'Clear Filters',
 }: SearchFilterBarProps) {
   const shouldShowClear = showClearButton ?? !!onClear;
 
@@ -153,7 +157,7 @@ export function SearchFilterBar({
                 className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 whitespace-nowrap transition-all duration-200"
               >
                 <Search className="w-4 h-4" />
-                Search
+                {searchLabel}
               </button>
             )}
             {shouldShowClear && (
@@ -167,7 +171,7 @@ export function SearchFilterBar({
                     : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
                 }`}
               >
-                Clear Filters
+                {clearLabel}
               </button>
             )}
           </div>
