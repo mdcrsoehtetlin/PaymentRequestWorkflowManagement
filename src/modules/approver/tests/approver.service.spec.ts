@@ -320,7 +320,7 @@ describe('ApproverService', () => {
       await service.findAssignedRequests(mockApproverUserId, query);
 
       expect(qb['orderBy']).toHaveBeenCalledWith(
-        'request.managerVerificationDate',
+        'request.modifiedDate',
         'DESC',
       );
     });
@@ -1172,6 +1172,25 @@ describe('ApproverService', () => {
 
       expect(qb['orderBy']).toHaveBeenCalledWith('request.createdDate', 'ASC');
     });
+
+    it('should sort by modifiedDate when sortBy is modifiedDate', async () => {
+      const query: QueryApproverRequestsDto = {
+        page: 1,
+        pageSize: 10,
+        sortBy: ApproverRequestSortFields.MODIFIED_DATE,
+        sortOrder: 'DESC',
+      };
+
+      const qb = paymentRequestRepo.createQueryBuilder();
+      (qb['getManyAndCount'] as jest.Mock).mockResolvedValue([[], 0]);
+
+      await service.findAssignedRequests(mockApproverUserId, query);
+
+      expect(qb['orderBy']).toHaveBeenCalledWith(
+        'request.modifiedDate',
+        'DESC',
+      );
+    });
   });
 
   describe('private Brackets condition builders', () => {
@@ -1208,15 +1227,15 @@ describe('ApproverService', () => {
       ) => void;
       fn(mockQb);
       expect(mockQb.where).toHaveBeenCalledWith(
-        'request.request_number LIKE :search',
+        'LOWER(request.request_number) LIKE LOWER(:search)',
         { search: '%test query%' },
       );
       expect(mockQb.orWhere).toHaveBeenCalledWith(
-        'applicant.full_name LIKE :search',
+        'LOWER(applicant.full_name) LIKE LOWER(:search)',
         { search: '%test query%' },
       );
       expect(mockQb.orWhere).toHaveBeenCalledWith(
-        'request.purpose LIKE :search',
+        'LOWER(request.purpose) LIKE LOWER(:search)',
         { search: '%test query%' },
       );
     });

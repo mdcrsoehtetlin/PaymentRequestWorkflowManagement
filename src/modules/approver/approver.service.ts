@@ -176,8 +176,10 @@ export class ApproverService {
       qb.orderBy('request.desiredPaymentDate', orderDirection);
     } else if (sortBy === ApproverRequestSortFields.CREATED_DATE) {
       qb.orderBy('request.createdDate', orderDirection);
+    } else if (sortBy === ApproverRequestSortFields.MODIFIED_DATE) {
+      qb.orderBy('request.modifiedDate', orderDirection);
     } else {
-      qb.orderBy('request.managerVerificationDate', orderDirection);
+      qb.orderBy('request.modifiedDate', orderDirection);
     }
 
     const [data, total] = await qb
@@ -437,7 +439,7 @@ export class ApproverService {
 
     const sortedLogs = [...request.approvalLogs].sort(
       (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
 
     const canApprove =
@@ -890,9 +892,15 @@ export class ApproverService {
 
   private buildSearchCondition(search: string) {
     return (qb: import('typeorm').WhereExpressionBuilder) => {
-      qb.where('request.request_number LIKE :search', { search: `%${search}%` })
-        .orWhere('applicant.full_name LIKE :search', { search: `%${search}%` })
-        .orWhere('request.purpose LIKE :search', { search: `%${search}%` });
+      qb.where('LOWER(request.request_number) LIKE LOWER(:search)', {
+        search: `%${search}%`,
+      })
+        .orWhere('LOWER(applicant.full_name) LIKE LOWER(:search)', {
+          search: `%${search}%`,
+        })
+        .orWhere('LOWER(request.purpose) LIKE LOWER(:search)', {
+          search: `%${search}%`,
+        });
     };
   }
 }

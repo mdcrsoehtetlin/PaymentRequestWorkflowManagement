@@ -25,6 +25,8 @@ export interface SearchFilterBarProps {
   showSearchButton?: boolean;
   showClearButton?: boolean;
   actions?: React.ReactNode;
+  searchLabel?: string;
+  clearLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -39,6 +41,8 @@ export function SearchFilterBar({
   showSearchButton = true,
   showClearButton,
   actions,
+  searchLabel = 'Search',
+  clearLabel = 'Clear Filters',
 }: SearchFilterBarProps) {
   const { t } = useTranslation();
   const shouldShowClear = showClearButton ?? !!onClear;

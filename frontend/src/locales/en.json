@@ -39,7 +39,7 @@
       "status_approved": "Approved",
       "status_rejected_approver": "Rejected by Approver",
       "status_paid": "Paid",
-      "search_placeholder": "Search by applicant name...",
+      "search_placeholder": "Search by Request No or applicant name...",
       "search": "Search",
       "all_statuses": "All Statuses",
       "request_no": "Request No.",
@@ -406,7 +406,7 @@
       "filters": {
         "status": "Status",
         "date": "Date",
-        "search_placeholder": "Search by applicant name..."
+        "search_placeholder": "Search by Request No or applicant name..."
       },
       "columns": {
         "request_no": "Request No.",

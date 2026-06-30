@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useManagerDashboardFilters } from '../../hooks/useManagerDashboardFilters';
@@ -17,11 +17,12 @@ import {
 import {
   Search,
   RefreshCw,
-  Inbox,
   ChevronDown,
 } from 'lucide-react';
 import { KpiCard, DashboardKpiGrid } from '../../components/shared';
 import { LayoutGrid, Clock, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { DataTable, type Column } from '../../components/shared/DataTable';
+import { formatDate } from '../../utils/format';
 
 const triggerToast = (type: 'success' | 'error' | 'warning' | 'info', message: string) => {
   window.dispatchEvent(new CustomEvent('globalToast', { detail: { type, message } }));
@@ -93,7 +94,7 @@ export function ManagerDashboard() {
         const response = await apiClient.get<PaymentRequestWithApplicant[]>('/manager/requests');
         if (!cancelled) {
           const sorted = response.data.sort((a, b) => {
-            const diff = new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime();
+            const diff = new Date(b.modifiedDate).getTime() - new Date(a.modifiedDate).getTime();
             return diff !== 0 ? diff : b.paymentRequestId - a.paymentRequestId;
           });
           setAllRequests(sorted);
@@ -119,12 +120,12 @@ export function ManagerDashboard() {
           params.dateFrom = activeDate;
           params.dateTo = activeDate;
         }
-        if (activeSearch) params.applicant = activeSearch;
+        if (activeSearch) params.search = activeSearch;
 
         const response = await apiClient.get<PaymentRequestWithApplicant[]>('/manager/requests', { params });
         if (!cancelled) {
           const sorted = response.data.sort((a, b) => {
-            const diff = new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime();
+            const diff = new Date(b.modifiedDate).getTime() - new Date(a.modifiedDate).getTime();
             return diff !== 0 ? diff : b.paymentRequestId - a.paymentRequestId;
           });
           setRequests(sorted);
@@ -163,13 +164,6 @@ export function ManagerDashboard() {
     setLocalStatus('');
     setLocalDate('');
     setFilters({ status: newStatusId ?? '', search: '', date: '' });
-  };
-
-  const handleProcess = (paymentRequestId: number | undefined) => {
-    if (paymentRequestId == null) return;
-    navigate(`/manager/requests/${paymentRequestId}`, {
-      state: { returnFilters: location.search },
-    });
   };
 
   // WebSocket: trigger re-fetch on real-time status updates
@@ -213,9 +207,6 @@ export function ManagerDashboard() {
 
   const totalResults = requests.length;
   const totalPages = Math.ceil(totalResults / rowsPerPage);
-  const displayedRows = requests.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
-  const showStart = totalResults === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
-  const showEnd = Math.min(currentPage * rowsPerPage, totalResults);
 
   const formatCurrency = (amount: string, currencyId: number) => {
     const code = CURRENCY_CODES[currencyId as keyof typeof CURRENCY_CODES] || 'MMK';
@@ -223,11 +214,96 @@ export function ManagerDashboard() {
     return `${val.toLocaleString()} ${code}`;
   };
 
-  const formatDate = (dateStr: string | Date) => {
-    if (!dateStr) return '-';
-    const d = new Date(dateStr);
-    return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
-  };
+  const handleProcess = useCallback((paymentRequestId: number | undefined) => {
+    if (paymentRequestId == null) return;
+    navigate(`/manager/requests/${paymentRequestId}`, {
+      state: { returnFilters: location.search },
+    });
+  }, [navigate, location.search]);
+
+  const columns: Column<PaymentRequestWithApplicant>[] = useMemo(() => [
+    {
+      key: 'requestNumber',
+      header: t('dashboard.manager.request_no'),
+      render: (_, row) => (
+        <span className="text-indigo-600 font-mono tracking-tight">
+          {row.requestNumber}
+        </span>
+      ),
+      width: '13%',
+    },
+    {
+      key: 'applicant',
+      header: t('dashboard.manager.applicant'),
+      render: (_, row) => (
+        <span className="text-slate-900 font-medium">
+          {row.applicant?.fullName || t('dashboard.manager.unregistered')}
+        </span>
+      ),
+      width: '16%',
+    },
+    {
+      key: 'branch',
+      header: 'Branch',
+      render: (_, row) => (
+        <span className="text-slate-600">{row.applicant?.branch || '-'}</span>
+      ),
+      width: '10%',
+    },
+    {
+      key: 'totalAmount',
+      header: t('dashboard.manager.amount'),
+      render: (_, row) => (
+        <span className="font-semibold text-slate-900">
+          {formatCurrency(row.totalAmount, row.currencyId)}
+        </span>
+      ),
+      width: '14%',
+    },
+    {
+      key: 'applicationDate',
+      header: t('dashboard.manager.application_date'),
+      render: (_, row) => (
+        <span className="text-slate-500">{formatDate(row.applicationDate)}</span>
+      ),
+      width: '13%',
+    },
+    {
+      key: 'desiredPaymentDate',
+      header: 'Desired Date',
+      render: (_, row) => (
+        <span className="text-slate-500">{formatDate(row.desiredPaymentDate)}</span>
+      ),
+      width: '12%',
+    },
+    {
+      key: 'statusId',
+      header: t('dashboard.manager.status'),
+      render: (_, row) => (
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[row.statusId as PaymentStatus] || 'bg-slate-100 text-slate-800'
+            }`}
+        >
+          {STATUS_LABELS_EN[row.statusId as PaymentStatus]}
+        </span>
+      ),
+      width: '12%',
+    },
+    {
+      key: 'action',
+      header: 'ACTION',
+      render: (_, row) => (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); handleProcess(row.paymentRequestId); }}
+          className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          View Details
+        </button>
+      ),
+      width: '10%',
+    },
+  ], [t, handleProcess]);
 
 
 
@@ -414,126 +490,21 @@ export function ManagerDashboard() {
         </div>
 
         {/* Request Queue Table */}
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm text-left">
-              <thead className="bg-slate-50 text-slate-600 font-semibold uppercase text-xs">
-                <tr>
-                  <th className="px-4 py-3">{t('dashboard.manager.request_no')}</th>
-                  <th className="px-4 py-3">{t('dashboard.manager.applicant')}</th>
-                  <th className="px-4 py-3">{t('dashboard.manager.amount')}</th>
-                  <th className="px-4 py-3">{t('dashboard.manager.application_date')}</th>
-                  <th className="px-4 py-3">{t('dashboard.manager.status')}</th>
-                  <th className="px-4 py-3 text-center">ACTION</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {isListLoading && requests.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8">
-                      <div className="flex flex-col items-center justify-center space-y-2">
-                        <RefreshCw className="h-6 w-6 text-blue-500 animate-spin" />
-                        <span className="text-slate-400">{t('dashboard.manager.loading')}</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : requests.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-12">
-                      <div className="flex flex-col items-center justify-center space-y-2 text-slate-400">
-                        <Inbox className="h-10 w-10 opacity-60" />
-                        <span>{t('dashboard.manager.no_requests')}</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  displayedRows.map((req) => {
-                    return (
-                      <tr
-                        key={req.paymentRequestId}
-                        className={`transition ${req.statusId === PaymentStatus.MANAGER_REVIEWING ? 'bg-indigo-50/10' : ''
-                          }`}
-                      >
-                        <td className="px-4 py-3.5 text-indigo-600 font-mono tracking-tight">
-                          {req.requestNumber}
-                        </td>
-                        <td className="px-4 py-3.5 text-slate-900 font-medium">
-                          {req.applicant?.fullName || t('dashboard.manager.unregistered')}
-                        </td>
-                        <td className="px-4 py-3.5 text-slate-900 font-semibold">
-                          {formatCurrency(req.totalAmount, req.currencyId)}
-                        </td>
-                        <td className="px-4 py-3.5 text-slate-500">
-                          {formatDate(req.applicationDate)}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[req.statusId as PaymentStatus] || 'bg-slate-100 text-slate-800'
-                              }`}
-                          >
-                            {STATUS_LABELS_EN[req.statusId as PaymentStatus]}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleProcess(req.paymentRequestId)}
-                            className="inline-flex items-center gap-1 rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                          >
-                            View Detail
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination Footer */}
-          {totalResults > 0 && (
-            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3">
-              <div className="flex items-center text-sm text-slate-500">
-                <select
-                  value={rowsPerPage}
-                  onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                  className="mr-2 rounded border-slate-300 bg-white text-sm text-slate-900"
-                >
-                  {[10, 20, 50].map((size) => (
-                    <option key={size} value={size}>
-                      {size} rows
-                    </option>
-                  ))}
-                </select>
-                Showing
-                <span className="mx-2 font-medium text-slate-900">{showStart}</span>
-                -
-                <span className="mx-2 font-medium text-slate-900">{showEnd}</span>
-                of <span className="mx-1 font-medium text-slate-900">{totalResults}</span> results
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => { if (currentPage > 1) setCurrentPage(currentPage - 1); }}
-                  disabled={currentPage <= 1}
-                  className="rounded border border-slate-300 bg-white px-3 py-1 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <span className="px-2 text-sm text-slate-600">
-                  {currentPage} / {totalPages || 1}
-                </span>
-                <button
-                  onClick={() => { if (currentPage < totalPages) setCurrentPage(currentPage + 1); }}
-                  disabled={currentPage >= totalPages}
-                  className="rounded border border-slate-300 bg-white px-3 py-1 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <DataTable
+          columns={columns}
+          data={requests}
+          isLoading={isListLoading}
+          onRowClick={(row) => handleProcess(row.paymentRequestId)}
+          pagination={{
+            page: currentPage,
+            pageSize: rowsPerPage,
+            totalItems: totalResults,
+            totalPages: totalPages,
+            onPageChange: setCurrentPage,
+            onPageSizeChange: (size) => { setRowsPerPage(size); setCurrentPage(1); },
+          }}
+          emptyMessage={t('dashboard.manager.no_requests')}
+        />
       </div>
     </DashboardLayout>
   );
