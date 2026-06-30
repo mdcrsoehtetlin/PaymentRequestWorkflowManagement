@@ -81,7 +81,7 @@
       "loading_details": "တောင်းဆိုမှု အသေးစိတ် ဖွင့်နေဆဲ...",
       "last_updated": "နောက်ဆုံး အပ်ဒိတ်:",
       "employee_number": "ဝန်ထမ်းနံပါတ်",
-      "department_branch": "ဌာန / ခွဲခြမ်းစိတ်ဖြာ",
+      "department_branch": "ဌာန / ရုံးခွဲ",
       "desired_payment_date": "ငွေပေးချေလိုသည့် ရက်စွဲ",
       "payment_type": "ပေးချေမှု အမျိုးအစား",
       "payment_method": "ပေးချေမှု နည်းလမ်း",
@@ -174,7 +174,7 @@
     "unknown": "မသိ",
     "all": "အားလုံး",
     "search": "ရှာဖွေရန်",
-    "clear_filters": "ဇစ်မြစ်များ ရှင်းရန်",
+    "clear_filters": "ရှင်းရန်",
     "cancel": "ပယ်ဖျက်",
     "delete": "ဖျက်ရန်",
     "yes": "ဟုတ်ကဲ့",
@@ -326,7 +326,7 @@
       "employee_info": "ဝန်ထမ်း အချက်အလက်",
       "employee_number": "ဝန်ထမ်းနံပါတ်",
       "name": "အမည်",
-      "branch": "ခွဲခြမ်းစိတ်ဖြာ",
+      "branch": "ရုံးခွဲ",
       "department": "ဌာန",
       "actions_section": "လုပ်ဆောင်ချက်များ",
       "buttons": {
@@ -444,7 +444,7 @@
         "applicant": "လျှောက်ထားသူ",
         "employee_number": "ဝန်ထမ်းနံပါတ်",
         "department": "ဌာန",
-        "branch": "ခွဲခြမ်းစိတ်ဖြာ",
+        "branch": "ရုံးခွဲ",
         "email": "အီးမေးလ်",
         "desired_payment_date": "ငွေပေးချေလိုသည့် ရက်စွဲ",
         "purpose": "ရည်ရွယ်ချက်",
@@ -550,7 +550,7 @@
         "applicant": "လျှောက်ထားသူ",
         "employee_number": "ဝန်ထမ်းနံပါတ်",
         "department": "ဌာန",
-        "branch": "ခွဲခြမ်းစိတ်ဖြာ",
+        "branch": "ရုံးခွဲ",
         "email": "အီးမေးလ်",
         "desired_payment_date": "ငွေပေးချေလိုသည့် ရက်စွဲ",
         "purpose": "ရည်ရွယ်ချက်"
@@ -640,8 +640,8 @@
       "filters": {
         "search": "ရှာဖွေရန်",
         "search_placeholder": "လျှောက်လွှာနံပါတ်၊ လျှောက်ထားသူအမည်...",
-        "branch": "ခွဲခြမ်းစိတ်ဖြာ",
-        "all_branches": "ခွဲခြမ်းစိတ်ဖြာ အားလုံး",
+        "branch": "ရုံးခွဲ",
+        "all_branches": "ရုံးခွဲ အားလုံး",
         "status": "အခြေအနေ",
         "all_statuses": "အခြေအနေ အားလုံး",
         "approved": "အတည်ပြုပြီး",
@@ -661,7 +661,7 @@
       "columns": {
         "request_no": "လျှောက်လွှာနံပါတ်",
         "applicant": "လျှောက်ထားသူ",
-        "branch": "ခွဲခြမ်းစိတ်ဖြာ",
+        "branch": "ရုံးခွဲ",
         "application_date": "လျှောက်ထားသည့်ရက်",
         "desired_date": "လိုအပ်သည့်ရက်",
         "amount": "ပမာဏ",
@@ -703,7 +703,7 @@
       "fields": {
         "name": "အမည်",
         "employee": "ဝန်ထမ်း",
-        "branch": "ခွဲခြမ်းစိတ်ဖြာ",
+        "branch": "ရုံးခွဲ",
         "department": "ဌာန",
         "email": "အီးမေးလ်",
         "total": "စုစုပေါင်း",
@@ -764,7 +764,7 @@
   "admin": {
     "sidebar": {
       "user_management": "အသုံးပြုသူ စီမံခန့်ခွဲမှု",
-      "master_data": "မေးစတာဒေတာ",
+      "master_data": "မာစတာဒေတာ",
       "audit_logs": "စစ်ဆေးမှု မှတ်တမ်း"
     },
     "user_management": {
@@ -777,7 +777,7 @@
         "employee_number": "ဝန်ထမ်းနံပါတ်",
         "full_name": "အမည်အပြည့်အစုံ",
         "email": "အီးမေးလ်",
-        "branch": "ခွဲခြမ်းစိတ်ဖြာ",
+        "branch": "ရုံးခွဲ",
         "role": "အခန်းကဏ္ဍ",
         "status": "အခြေအနေ",
         "actions": "လုပ်ဆောင်ချက်"
@@ -799,14 +799,14 @@
         "password_reset": "စကားဝှက် ပြန်လည်သတ်မှတ်ရန်"
       },
       "filters": {
-        "keyword": "သော့ချက်စကား",
+        "keyword": "ရှာဖွေရန်",
         "keyword_placeholder": "ဝန်ထမ်းနံပါတ် သို့မဟုတ် အမည်ဖြင့် ရှာဖွေရန်",
         "role": "အခန်းကဏ္ဍ",
         "status": "အခြေအနေ"
       }
     },
     "master_data": {
-      "title": "မေးစတာဒေတာ ဖွဲ့စည်းပုံ",
+      "title": "မာစတာဒေတာ ဖွဲ့စည်းပုံ",
       "description": "စနစ် lookup tables များကို ကြည့်ရှုနိုင်ပါသည်",
       "empty_message": "ဒေတာ မရှိပါ",
       "categories": {
@@ -874,7 +874,7 @@
         "employee_number": "ဝန်ထမ်းနံပါတ်",
         "full_name": "အမည်အပြည့်အစုံ",
         "email": "အီးမေးလ်",
-        "branch": "ခွဲခြမ်းစိတ်ဖြာ",
+        "branch": "ရုံးခွဲ",
         "role": "အခန်းကဏ္ဍ"
       },
       "role_options": {
