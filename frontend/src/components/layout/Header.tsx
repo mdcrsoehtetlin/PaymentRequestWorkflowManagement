@@ -102,9 +102,9 @@ export function Header({ onMenuToggle, notificationCount = 0, notifications = []
                 </div>
               </div>
               <div className="max-h-[350px] overflow-y-auto">
-                {notifications.length > 0 ? (
+                {notifications.filter(n => !n.isRead).length > 0 ? (
                   <div className="flex flex-col">
-                    {notifications.map((noti) => {
+                    {notifications.filter(n => !n.isRead).map((noti) => {
                       const payload = noti.payload;
                       let url = noti.link || '#';
                       if (!noti.link && userRole && 'paymentRequestId' in payload) {

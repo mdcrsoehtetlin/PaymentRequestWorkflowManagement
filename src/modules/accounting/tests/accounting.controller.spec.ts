@@ -86,6 +86,33 @@ describe('AccountingController', () => {
         undefined,
       );
     });
+
+    it('should convert statusId string to number when provided', async () => {
+      service.findApprovedRequests.mockResolvedValue({
+        data: [],
+        meta: { total: 0, page: 1, lastPage: 0 },
+      });
+
+      await controller.getApprovedRequests(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        '8',
+      );
+
+      expect(service.findApprovedRequests).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        8,
+      );
+    });
   });
 
   describe('GET /accounting/payment-requests/summary', () => {
