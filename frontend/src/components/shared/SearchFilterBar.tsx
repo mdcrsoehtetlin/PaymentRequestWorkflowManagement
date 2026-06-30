@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { CustomDropdown } from './CustomDropdown';
 
 // ---------------------------------------------------------------------------
@@ -39,6 +40,7 @@ export function SearchFilterBar({
   showClearButton,
   actions,
 }: SearchFilterBarProps) {
+  const { t } = useTranslation();
   const shouldShowClear = showClearButton ?? !!onClear;
 
   // Local state for draft filters
@@ -153,7 +155,7 @@ export function SearchFilterBar({
                 className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 whitespace-nowrap transition-all duration-200"
               >
                 <Search className="w-4 h-4" />
-                Search
+                {t('common.search')}
               </button>
             )}
             {shouldShowClear && (
@@ -161,13 +163,14 @@ export function SearchFilterBar({
                 type="button"
                 onClick={handleClear}
                 disabled={!hasActiveFilters}
-                className={`rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
                   hasActiveFilters 
                     ? 'text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer' 
                     : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
                 }`}
               >
-                Clear Filters
+                <X className="w-4 h-4" />
+                {t('common.clear_filters')}
               </button>
             )}
           </div>

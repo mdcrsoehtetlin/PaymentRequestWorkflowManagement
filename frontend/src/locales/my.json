@@ -423,7 +423,7 @@
       },
       "buttons": {
         "view_detail": "အသေးစိတ် ကြည့်ရန်",
-        "clear_filters": "ဇစ်မြစ်များ ရှင်းရန်"
+        "clear_filters": "ရှင်းရန်"
       },
       "empty_message": "ကိုက်ညီသည့် ငွေတောင်းခံလွှာ မရှိပါ။",
       "pagination": {
