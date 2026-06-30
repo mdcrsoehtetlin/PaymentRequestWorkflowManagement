@@ -93,7 +93,7 @@ export function ManagerDashboard() {
         const response = await apiClient.get<PaymentRequestWithApplicant[]>('/manager/requests');
         if (!cancelled) {
           const sorted = response.data.sort((a, b) => {
-            const diff = new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime();
+            const diff = new Date(b.modifiedDate).getTime() - new Date(a.modifiedDate).getTime();
             return diff !== 0 ? diff : b.paymentRequestId - a.paymentRequestId;
           });
           setAllRequests(sorted);
@@ -124,7 +124,7 @@ export function ManagerDashboard() {
         const response = await apiClient.get<PaymentRequestWithApplicant[]>('/manager/requests', { params });
         if (!cancelled) {
           const sorted = response.data.sort((a, b) => {
-            const diff = new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime();
+            const diff = new Date(b.modifiedDate).getTime() - new Date(a.modifiedDate).getTime();
             return diff !== 0 ? diff : b.paymentRequestId - a.paymentRequestId;
           });
           setRequests(sorted);

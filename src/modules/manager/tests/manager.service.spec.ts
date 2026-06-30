@@ -192,10 +192,7 @@ describe('ManagerService', () => {
         'request.statusId != :draftStatus',
         { draftStatus: PaymentStatus.DRAFT },
       );
-      expect(qb.orderBy).toHaveBeenCalledWith(
-        'request.submittedToManagerDate',
-        'ASC',
-      );
+      expect(qb.orderBy).toHaveBeenCalledWith('request.modifiedDate', 'DESC');
       expect(result).toEqual([
         {
           ...mockRequest,

@@ -115,7 +115,7 @@ export class ManagerService {
       });
     }
 
-    qb.orderBy('request.submittedToManagerDate', 'ASC');
+    qb.orderBy('request.modifiedDate', 'DESC');
 
     const requests = await qb.getMany();
     return requests.map((r) => ({
