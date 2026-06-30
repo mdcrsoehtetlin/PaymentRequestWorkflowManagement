@@ -192,10 +192,7 @@ describe('ManagerService', () => {
         'request.statusId != :draftStatus',
         { draftStatus: PaymentStatus.DRAFT },
       );
-      expect(qb.orderBy).toHaveBeenCalledWith(
-        'request.submittedToManagerDate',
-        'ASC',
-      );
+      expect(qb.orderBy).toHaveBeenCalledWith('request.modifiedDate', 'DESC');
       expect(result).toEqual([
         {
           ...mockRequest,
@@ -231,6 +228,22 @@ describe('ManagerService', () => {
       expect(qb.andWhere).toHaveBeenCalledWith(
         'applicant.fullName ILIKE :applicantName',
         { applicantName: '%John%' },
+      );
+    });
+
+    it('should query with search filter matching requestNumber OR applicant', async () => {
+      const query: QueryRequestsDto = {
+        search: 'PRF-2026',
+      };
+      const qb =
+        paymentRequestRepo.createQueryBuilder() as unknown as MockQueryBuilder;
+      qb.getMany.mockResolvedValueOnce([]);
+
+      await service.getPendingRequests(mockManagerId, query);
+
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(request.requestNumber ILIKE :searchTerm OR applicant.fullName ILIKE :searchTerm)',
+        { searchTerm: '%PRF-2026%' },
       );
     });
   });
