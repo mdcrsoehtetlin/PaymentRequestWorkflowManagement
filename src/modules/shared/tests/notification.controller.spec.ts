@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotificationController } from '../notification.controller';
-import { NotificationService } from '../../shared/services/notification.service';
-import { JwtPayload } from '../../shared/types';
-import { Notification } from '../../shared/entities/notification.entity';
+import { NotificationController } from '../controllers/notification.controller';
+import { NotificationService } from '../services/notification.service';
+import { JwtPayload } from '../types';
+import { Notification } from '../entities/notification.entity';
 
 describe('NotificationController', () => {
   let controller: NotificationController;

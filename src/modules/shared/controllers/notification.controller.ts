@@ -6,11 +6,11 @@ import {
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
-import { NotificationService } from '../shared/services/notification.service';
-import { JwtAuthGuard } from '../shared/guards/jwt-auth.guard';
-import { RolesGuard } from '../shared/guards/roles.guard';
-import { CurrentUser } from '../shared/decorators/current-user.decorator';
-import { JwtPayload } from '../shared/types';
+import { NotificationService } from '../services/notification.service';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { RolesGuard } from '../guards/roles.guard';
+import { CurrentUser } from '../decorators/current-user.decorator';
+import { JwtPayload } from '../types';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('notifications')

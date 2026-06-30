@@ -672,6 +672,32 @@ describe('AccountingService', () => {
       });
     });
 
+    it('should not throw when notification creation fails', async () => {
+      const mockManager = {
+        findOne: jest.fn().mockResolvedValue({
+          id: 100,
+          statusId: 8,
+          applicantUserId: 5,
+          requestNumber: 'PR-2026-001',
+        }),
+        update: jest.fn(),
+        create: jest.fn().mockReturnValue({}),
+        save: jest.fn(),
+      };
+      dataSource.transaction.mockImplementation(async (cb: any) =>
+        cb(mockManager),
+      );
+      redis.del.mockResolvedValue(undefined);
+      notificationService.create.mockRejectedValue(new Error('DB unavailable'));
+
+      const result = await service.completePayment(100, mockCtx);
+
+      expect(result).toEqual({
+        success: true,
+        message: 'Payment completed successfully',
+      });
+    });
+
     it('should not throw when WebSocket broadcast fails', async () => {
       const mockManager = {
         findOne: jest.fn().mockResolvedValue({
@@ -698,6 +724,184 @@ describe('AccountingService', () => {
         success: true,
         message: 'Payment completed successfully',
       });
+    });
+
+    it('should handle null comment in context', async () => {
+      const mockManager = {
+        findOne: jest.fn().mockResolvedValue({
+          id: 100,
+          statusId: 8,
+          applicantUserId: 5,
+          requestNumber: 'PR-2026-001',
+        }),
+        update: jest.fn(),
+        create: jest.fn().mockReturnValue({}),
+        save: jest.fn(),
+      };
+      dataSource.transaction.mockImplementation(async (cb: any) =>
+        cb(mockManager),
+      );
+      redis.del.mockResolvedValue(undefined);
+
+      const result = await service.completePayment(100, {
+        ...mockCtx,
+        comment: undefined,
+      });
+
+      expect(result).toEqual({
+        success: true,
+        message: 'Payment completed successfully',
+      });
+    });
+  });
+
+  describe('findApprovedRequests - branch coverage', () => {
+    it('should use default page and pageSize when not provided', async () => {
+      const qb = createMockQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+      paymentRequestRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.findApprovedRequests();
+
+      expect(result.meta.page).toBe(1);
+      expect(qb.skip).toHaveBeenCalledWith(0);
+      expect(qb.take).toHaveBeenCalledWith(10);
+    });
+
+    it('should use default page and pageSize with partial args', async () => {
+      const qb = createMockQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+      paymentRequestRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.findApprovedRequests(2);
+
+      expect(result.meta.page).toBe(2);
+      expect(qb.skip).toHaveBeenCalledWith(10);
+      expect(qb.take).toHaveBeenCalledWith(10);
+    });
+  });
+
+  describe('findOneForAccounting - branch coverage', () => {
+    it('should return non-array breakdowns/receipts/approvalLogs as empty', async () => {
+      const qb = createMockQueryBuilder();
+      const mockRequest = {
+        id: 100,
+        requestNumber: 'PR-2026-001',
+        statusId: 8,
+        hasReceipt: false,
+        applicantUserId: 1,
+        applicant: {
+          fullName: 'John',
+          employeeNumber: 'E1',
+          branch: 'Y',
+          department: 'D',
+          email: 't@t.com',
+        },
+        totalAmount: '1000',
+        currencyId: 1,
+        paymentTypeId: 1,
+        paymentMethodId: 1,
+        purpose: 'p',
+        requestContent: 'r',
+        applicationDate: '2026-06-01',
+        desiredPaymentDate: '2026-06-10',
+        breakdowns: null,
+        receipts: undefined,
+        approvalLogs: null,
+      };
+      qb.getOne.mockResolvedValue(mockRequest);
+      paymentRequestRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.findOneForAccounting(100);
+
+      expect(result.breakdownItems).toEqual([]);
+      expect(result.receiptFiles).toEqual([]);
+      expect(result.approvalTimeline).toEqual([]);
+    });
+
+    it('should handle missing applicant fields with fallbacks', async () => {
+      const qb = createMockQueryBuilder();
+      const mockRequest = {
+        id: 100,
+        requestNumber: 'PR-2026-001',
+        statusId: 8,
+        hasReceipt: false,
+        applicantUserId: 1,
+        applicant: null,
+        totalAmount: '1000',
+        currencyId: 99,
+        paymentTypeId: 99,
+        paymentMethodId: 99,
+        purpose: 'p',
+        requestContent: 'r',
+        bankAccountInfo: 'info',
+        applicationDate: '2026-06-01',
+        desiredPaymentDate: '2026-06-10',
+        breakdowns: [],
+        receipts: [],
+        approvalLogs: [],
+      };
+      qb.getOne.mockResolvedValue(mockRequest);
+      paymentRequestRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.findOneForAccounting(100);
+
+      expect(result.applicant.fullName).toBe('Unknown');
+      expect(result.applicant.employeeNumber).toBe('N/A');
+      expect(result.applicant.branch).toBe('Unknown');
+      expect(result.applicant.email).toBe('');
+      expect(result.paymentDetails.currencyCode).toBe('UNKNOWN');
+      expect(result.paymentDetails.paymentTypeName).toBe('Unknown');
+      expect(result.paymentDetails.paymentMethodName).toBe('Unknown');
+    });
+
+    it('should handle approval logs with missing action_taken_by_user', async () => {
+      const qb = createMockQueryBuilder();
+      const mockRequest = {
+        id: 100,
+        requestNumber: 'PR-2026-001',
+        statusId: 8,
+        hasReceipt: false,
+        applicantUserId: 1,
+        applicant: {
+          fullName: 'John',
+          employeeNumber: 'E1',
+          branch: 'Y',
+          department: null,
+          email: 't@t.com',
+        },
+        totalAmount: '1000',
+        currencyId: 1,
+        paymentTypeId: 1,
+        paymentMethodId: 1,
+        purpose: 'p',
+        requestContent: 'r',
+        applicationDate: '2026-06-01',
+        desiredPaymentDate: '2026-06-10',
+        breakdowns: [],
+        receipts: [],
+        approvalLogs: [
+          {
+            approvalLogId: 1,
+            actionTypeId: 1,
+            previousStatusId: undefined,
+            newStatusId: 8,
+            comment: null,
+            timestamp: new Date(),
+            action_taken_by_user: null,
+          },
+        ],
+      };
+      qb.getOne.mockResolvedValue(mockRequest);
+      paymentRequestRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.findOneForAccounting(100);
+
+      expect(result.approvalTimeline).toHaveLength(1);
+      expect(result.approvalTimeline[0].previousStatusId).toBeNull();
+      expect(result.approvalTimeline[0].user.userId).toBe(0);
+      expect(result.approvalTimeline[0].user.fullName).toBe('Unknown');
+      expect(result.approvalTimeline[0].user.employeeNumber).toBe('N/A');
     });
   });
 });
