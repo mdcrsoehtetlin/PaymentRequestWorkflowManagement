@@ -42,6 +42,7 @@
       "search_placeholder": "Search by Request No or applicant name...",
       "search": "Search",
       "all_statuses": "All Statuses",
+      "all_branches": "All Branches",
       "request_no": "Request No.",
       "applicant": "Applicant",
       "amount": "Amount",
@@ -640,7 +641,8 @@
         "branch": "Branch",
         "all_branches": "All Branches",
         "status": "Status",
-        "all_statuses": "All Statuses",
+      "all_statuses": "All Statuses",
+      "all_branches": "All Branches",
         "approved": "Approved",
         "paid": "Paid",
         "desired_date": "Desired Date"

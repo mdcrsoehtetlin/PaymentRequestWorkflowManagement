@@ -86,7 +86,7 @@ export class ManagerService {
     this.logger.log(
       `Fetching requests for manager: ${managerId} with filters: ${JSON.stringify(query)}`,
     );
-    const { statusId, dateFrom, dateTo, applicant, search } = query;
+    const { statusId, dateFrom, dateTo, applicant, search, branch } = query;
 
     const qb = this.paymentRequestRepository
       .createQueryBuilder('request')
@@ -118,6 +118,10 @@ export class ManagerService {
       qb.andWhere('applicant.fullName ILIKE :applicantName', {
         applicantName: `%${applicant}%`,
       });
+    }
+
+    if (branch) {
+      qb.andWhere('applicant.branch = :branch', { branch });
     }
 
     qb.orderBy('request.modifiedDate', 'DESC');

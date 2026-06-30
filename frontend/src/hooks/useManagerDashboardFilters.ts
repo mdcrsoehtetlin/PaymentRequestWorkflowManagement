@@ -5,6 +5,7 @@ export interface ManagerDashboardFilters {
   search: string;
   status: number | '';
   date: string;
+  branch: string;
 }
 
 const STORAGE_KEY_PAGE = 'manager_dashboard_page';
@@ -21,10 +22,11 @@ export function useManagerDashboardFilters() {
   const statusParam = searchParams.get('status');
   const status: number | '' = statusParam ? Number(statusParam) : '';
   const date = searchParams.get('date') ?? '';
+  const branch = searchParams.get('branch') ?? '';
 
   const filters = useMemo<ManagerDashboardFilters>(
-    () => ({ search, status, date }),
-    [search, status, date],
+    () => ({ search, status, date, branch }),
+    [search, status, date, branch],
   );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,6 +48,10 @@ export function useManagerDashboardFilters() {
         if (updates.date !== undefined) {
           if (updates.date) next.set('date', updates.date);
           else next.delete('date');
+        }
+        if (updates.branch !== undefined) {
+          if (updates.branch) next.set('branch', updates.branch);
+          else next.delete('branch');
         }
 
         return next;
