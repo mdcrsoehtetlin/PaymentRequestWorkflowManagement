@@ -248,7 +248,7 @@ export class ManagerService {
             actionTypeId: ApprovalActionType.MGR_REVIEW_START,
             previousStatusId: PaymentStatus.SUBMITTED_MANAGER,
             newStatusId: PaymentStatus.MANAGER_REVIEWING,
-            comment: '確認開始',
+            comment: 'Manager Reviewing',
             ipAddress,
             userAgent,
           });
@@ -398,7 +398,7 @@ export class ManagerService {
             actionTypeId: ApprovalActionType.MGR_VERIFIED,
             previousStatusId: previousStatus,
             newStatusId: PaymentStatus.MANAGER_VERIFIED,
-            comment: dto.comment || '承認されました。',
+            comment: dto.comment || 'Manager Verified',
             ipAddress,
             userAgent,
           });
