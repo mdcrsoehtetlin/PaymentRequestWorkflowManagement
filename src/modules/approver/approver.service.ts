@@ -22,6 +22,7 @@ import { User } from '../shared/entities/user.entity';
 import { ApprovalLog } from '../shared/entities/approval-log.entity';
 import { AuditLogService } from '../shared/services/audit-log.service';
 import { RedisService } from '../shared/services/redis.service';
+import { NotificationService } from '../shared/services/notification.service';
 import { WebsocketGateway } from '../shared/websocket.gateway';
 import { buildPaginationMeta } from '../shared/utils/pagination.util';
 import {
@@ -72,6 +73,7 @@ export class ApproverService {
     private readonly dataSource: DataSource,
     private readonly auditLogService: AuditLogService,
     private readonly redisService: RedisService,
+    private readonly notificationService: NotificationService,
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
@@ -698,6 +700,34 @@ export class ApproverService {
         );
       }
 
+      // Persistent DB notifications
+      try {
+        await this.notificationService.create(request.applicantUserId, {
+          paymentRequestId: Number(id),
+          title: 'Application Approved',
+          message: `Your request ${request.requestNumber} has been approved by the approver.`,
+          link: `/applicant/request/${id}`,
+        });
+
+        // Find accounting user to notify
+        const accountingUsers = await this.userRepository.find({
+          where: { roleId: 4 },
+        });
+        for (const accUser of accountingUsers) {
+          await this.notificationService.create(accUser.userId, {
+            paymentRequestId: Number(id),
+            title: 'New Approved Request',
+            message: `Request ${request.requestNumber} has been approved and is ready for payment processing.`,
+            link: `/accounting/payment/${id}`,
+          });
+        }
+      } catch (notifError) {
+        this.logger.warn(
+          `Failed to create persistent notification for request ${id}`,
+          notifError,
+        );
+      }
+
       this.logger.log(`Request ${id} approved successfully`);
       return { success: true, message: 'Request successfully approved.' };
     } catch (error) {
@@ -802,6 +832,21 @@ export class ApproverService {
         this.logger.warn(
           `WebSocket notification failed for request ${id}`,
           wsError,
+        );
+      }
+
+      // Persistent DB notification for applicant
+      try {
+        await this.notificationService.create(request.applicantUserId, {
+          paymentRequestId: Number(id),
+          title: 'Application Rejected',
+          message: `Your request ${request.requestNumber} has been rejected by the approver.`,
+          link: `/applicant/request/${id}`,
+        });
+      } catch (notifError) {
+        this.logger.warn(
+          `Failed to create persistent notification for request ${id}`,
+          notifError,
         );
       }
 

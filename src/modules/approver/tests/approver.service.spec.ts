@@ -13,6 +13,7 @@ import { PaymentRequest } from '../../shared/entities/payment-request.entity';
 import { User } from '../../shared/entities/user.entity';
 import { AuditLogService } from '../../shared/services/audit-log.service';
 import { RedisService } from '../../shared/services/redis.service';
+import { NotificationService } from '../../shared/services/notification.service';
 import { WebsocketGateway } from '../../shared/websocket.gateway';
 import { PaymentStatus } from '../../shared/types';
 import {
@@ -29,6 +30,7 @@ describe('ApproverService', () => {
   let dataSource: jest.Mocked<DataSource>;
   let auditLogService: jest.Mocked<AuditLogService>;
   let redisService: jest.Mocked<RedisService>;
+  let notificationService: jest.Mocked<NotificationService>;
   let websocketGateway: jest.Mocked<WebsocketGateway>;
 
   const mockAuditContext: AuditContext = {
@@ -137,6 +139,14 @@ describe('ApproverService', () => {
       sendStatusUpdate: jest.fn(),
     } as unknown as jest.Mocked<WebsocketGateway>;
 
+    notificationService = {
+      create: jest.fn(),
+      findByUserId: jest.fn(),
+      getUnreadCount: jest.fn(),
+      markAsRead: jest.fn(),
+      markAllAsRead: jest.fn(),
+    } as unknown as jest.Mocked<NotificationService>;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ApproverService,
@@ -148,6 +158,7 @@ describe('ApproverService', () => {
         { provide: DataSource, useValue: dataSource },
         { provide: AuditLogService, useValue: auditLogService },
         { provide: RedisService, useValue: redisService },
+        { provide: NotificationService, useValue: notificationService },
         { provide: WebsocketGateway, useValue: websocketGateway },
       ],
     }).compile();

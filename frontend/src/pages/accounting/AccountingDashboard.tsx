@@ -96,6 +96,19 @@ export function AccountingDashboard() {
   }, [data]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  useEffect(() => {
+    const handleSoftRefresh = () => {
+      setFilters({});
+      setKpiFilter(null);
+      setPage(1);
+      refreshQueue();
+      void fetchSummary();
+    };
+    window.addEventListener('dashboard-refresh', handleSoftRefresh);
+    return () => window.removeEventListener('dashboard-refresh', handleSoftRefresh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshQueue]);
+
   const handleKpiClick = (filter: KpiFilter) => {
     setKpiFilter((prev) => (prev === filter ? null : filter));
     setFilters({});

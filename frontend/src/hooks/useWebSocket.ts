@@ -202,7 +202,7 @@ export function useWebSocket(userId?: number, role?: string) {
   );
 
   const markAllAsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    setNotifications([]);
     setUnreadCount(0);
 
     // Persist to backend

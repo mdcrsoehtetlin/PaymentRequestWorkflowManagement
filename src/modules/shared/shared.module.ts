@@ -14,6 +14,9 @@ import { Notification } from './entities/notification.entity';
 // Gateway
 import { WebsocketGateway } from './websocket.gateway';
 
+// Controllers
+import { NotificationController } from './controllers/notification.controller';
+
 // Services
 import { RequestNumberService } from './services/request-number.service';
 import { FileUploadService } from './services/file-upload.service';
@@ -43,6 +46,7 @@ import { NotificationService } from './services/notification.service';
       Notification,
     ]),
   ],
+  controllers: [NotificationController],
   providers: [
     {
       provide: 'REDIS_CLIENT',
