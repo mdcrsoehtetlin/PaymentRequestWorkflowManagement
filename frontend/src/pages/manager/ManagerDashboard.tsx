@@ -208,6 +208,11 @@ export function ManagerDashboard() {
   const totalResults = requests.length;
   const totalPages = Math.ceil(totalResults / rowsPerPage);
 
+  const paginatedRequests = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return requests.slice(start, start + rowsPerPage);
+  }, [requests, currentPage, rowsPerPage]);
+
   const formatCurrency = (amount: string, currencyId: number) => {
     const code = CURRENCY_CODES[currencyId as keyof typeof CURRENCY_CODES] || 'MMK';
     const val = parseFloat(amount) || 0;
@@ -444,8 +449,8 @@ export function ManagerDashboard() {
                           setIsStatusOpen(false);
                         }}
                         className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${localStatus === option.value
-                            ? 'bg-blue-50 text-blue-700 font-medium'
-                            : 'text-slate-700 hover:bg-slate-50'
+                          ? 'bg-blue-50 text-blue-700 font-medium'
+                          : 'text-slate-700 hover:bg-slate-50'
                           }`}
                       >
                         {option.label}
@@ -478,11 +483,10 @@ export function ManagerDashboard() {
             <button
               onClick={handleClearFilters}
               disabled={!hasActiveFilters}
-              className={`rounded-lg border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
-                hasActiveFilters
-                  ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer'
-                  : 'border-slate-200 bg-slate-50 text-slate-400 opacity-60 cursor-not-allowed'
-              }`}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${hasActiveFilters
+                ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer'
+                : 'border-slate-200 bg-slate-50 text-slate-400 opacity-60 cursor-not-allowed'
+                }`}
             >
               Clear Filters
             </button>
@@ -492,7 +496,7 @@ export function ManagerDashboard() {
         {/* Request Queue Table */}
         <DataTable
           columns={columns}
-          data={requests}
+          data={paginatedRequests}
           isLoading={isListLoading}
           onRowClick={(row) => handleProcess(row.paymentRequestId)}
           pagination={{
