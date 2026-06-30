@@ -8,7 +8,7 @@ export function useApproverRequests() {
   const [query, setQuery] = useState<ApproverRequestQuery>({
     page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
-    sortBy: 'managerVerificationDate',
+    sortBy: 'modifiedDate',
     sortOrder: 'DESC',
     showAll: false,
   });
@@ -49,7 +49,8 @@ export function useApproverRequests() {
 
   const setSort = useCallback(
     (sortBy: string) => {
-      const sortOrder = query.sortBy === sortBy && query.sortOrder === 'DESC' ? 'ASC' : 'DESC';
+      const sortOrder =
+        query.sortBy === sortBy && query.sortOrder === 'DESC' ? 'ASC' : 'DESC';
       return loadRequests({ ...query, sortBy, sortOrder, page: 1 });
     },
     [loadRequests, query],
