@@ -18,4 +18,8 @@ export class QueryRequestsDto {
   @IsOptional()
   @IsString()
   applicant?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

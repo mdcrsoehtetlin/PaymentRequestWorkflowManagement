@@ -22,6 +22,7 @@ import { User } from '../shared/entities/user.entity';
 import { ApprovalLog } from '../shared/entities/approval-log.entity';
 import { AuditLogService } from '../shared/services/audit-log.service';
 import { RedisService } from '../shared/services/redis.service';
+import { NotificationService } from '../shared/services/notification.service';
 import { WebsocketGateway } from '../shared/websocket.gateway';
 import { buildPaginationMeta } from '../shared/utils/pagination.util';
 import {
@@ -72,6 +73,7 @@ export class ApproverService {
     private readonly dataSource: DataSource,
     private readonly auditLogService: AuditLogService,
     private readonly redisService: RedisService,
+    private readonly notificationService: NotificationService,
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
@@ -174,8 +176,10 @@ export class ApproverService {
       qb.orderBy('request.desiredPaymentDate', orderDirection);
     } else if (sortBy === ApproverRequestSortFields.CREATED_DATE) {
       qb.orderBy('request.createdDate', orderDirection);
+    } else if (sortBy === ApproverRequestSortFields.MODIFIED_DATE) {
+      qb.orderBy('request.modifiedDate', orderDirection);
     } else {
-      qb.orderBy('request.managerVerificationDate', orderDirection);
+      qb.orderBy('request.modifiedDate', orderDirection);
     }
 
     const [data, total] = await qb
@@ -435,7 +439,7 @@ export class ApproverService {
 
     const sortedLogs = [...request.approvalLogs].sort(
       (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
 
     const canApprove =
@@ -698,6 +702,34 @@ export class ApproverService {
         );
       }
 
+      // Persistent DB notifications
+      try {
+        await this.notificationService.create(request.applicantUserId, {
+          paymentRequestId: Number(id),
+          title: 'Application Approved',
+          message: `Your request ${request.requestNumber} has been approved by the approver.`,
+          link: `/applicant/request/${id}`,
+        });
+
+        // Find accounting user to notify
+        const accountingUsers = await this.userRepository.find({
+          where: { roleId: 4 },
+        });
+        for (const accUser of accountingUsers) {
+          await this.notificationService.create(accUser.userId, {
+            paymentRequestId: Number(id),
+            title: 'New Approved Request',
+            message: `Request ${request.requestNumber} has been approved and is ready for payment processing.`,
+            link: `/accounting/payment/${id}`,
+          });
+        }
+      } catch (notifError) {
+        this.logger.warn(
+          `Failed to create persistent notification for request ${id}`,
+          notifError,
+        );
+      }
+
       this.logger.log(`Request ${id} approved successfully`);
       return { success: true, message: 'Request successfully approved.' };
     } catch (error) {
@@ -805,6 +837,21 @@ export class ApproverService {
         );
       }
 
+      // Persistent DB notification for applicant
+      try {
+        await this.notificationService.create(request.applicantUserId, {
+          paymentRequestId: Number(id),
+          title: 'Application Rejected',
+          message: `Your request ${request.requestNumber} has been rejected by the approver.`,
+          link: `/applicant/request/${id}`,
+        });
+      } catch (notifError) {
+        this.logger.warn(
+          `Failed to create persistent notification for request ${id}`,
+          notifError,
+        );
+      }
+
       this.logger.log(`Request ${id} rejected successfully`);
       return {
         success: true,
@@ -845,9 +892,15 @@ export class ApproverService {
 
   private buildSearchCondition(search: string) {
     return (qb: import('typeorm').WhereExpressionBuilder) => {
-      qb.where('request.request_number LIKE :search', { search: `%${search}%` })
-        .orWhere('applicant.full_name LIKE :search', { search: `%${search}%` })
-        .orWhere('request.purpose LIKE :search', { search: `%${search}%` });
+      qb.where('LOWER(request.request_number) LIKE LOWER(:search)', {
+        search: `%${search}%`,
+      })
+        .orWhere('LOWER(applicant.full_name) LIKE LOWER(:search)', {
+          search: `%${search}%`,
+        })
+        .orWhere('LOWER(request.purpose) LIKE LOWER(:search)', {
+          search: `%${search}%`,
+        });
     };
   }
 }

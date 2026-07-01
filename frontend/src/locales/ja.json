@@ -39,7 +39,7 @@
       "status_approved": "承認済み",
       "status_rejected_approver": "承認者により差し戻し",
       "status_paid": "支払済み",
-      "search_placeholder": "申請者名で検索...",
+      "search_placeholder": "リクエスト番号または申請者名で検索...",
       "search": "検索",
       "all_statuses": "すべてのステータス",
       "request_no": "申請番号",
@@ -406,7 +406,7 @@
       "filters": {
         "status": "ステータス",
         "date": "日付",
-        "search_placeholder": "申請者名で検索..."
+        "search_placeholder": "リクエスト番号または申請者名で検索..."
       },
       "columns": {
         "request_no": "申請番号",

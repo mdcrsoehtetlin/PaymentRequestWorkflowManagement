@@ -24,9 +24,8 @@ const useApproverFilterFields = () => {
     { key: 'search', label: t('approver.filters.search'), type: 'text', placeholder: t('approver.filters.search_placeholder') },
     { key: 'branch', label: t('approver.filters.branch'), type: 'select', options: [
       { value: '', label: t('approver.filters.all_branches') },
-      { value: 'Yangon', label: 'Yangon' },
-      { value: 'Mandalay', label: 'Mandalay' },
-      { value: 'Naypyidaw', label: 'Naypyidaw' },
+      { value: 'Yangon', label: t('common.branch.yangon') },
+      { value: 'Mandalay', label: t('common.branch.mandalay') },
     ] },
     { key: 'desiredDate', label: t('approver.filters.desired_date'), type: 'date' },
     { key: 'statusId', label: t('approver.filters.status'), type: 'select', options: [
@@ -100,9 +99,9 @@ export function ApproverDashboard() {
     } else if (sidebarFilter === undefined) {
       applyFilters({ statusId: undefined, search: undefined, branch: undefined, desiredDate: undefined, desiredDateAlert: undefined, showAll: true });
     } else if (sidebarFilter === 'desiredDateAlert') {
-      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', desiredDateAlert: true, showAll: false });
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'modifiedDate', sortOrder: 'DESC', desiredDateAlert: true, showAll: false });
     } else if (typeof sidebarFilter === 'number') {
-      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: sidebarFilter, showAll: false });
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'modifiedDate', sortOrder: 'DESC', statusId: sidebarFilter, showAll: false });
     }
     approverService.fetchSummary().then(setSummary).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,7 +113,7 @@ export function ApproverDashboard() {
       sessionStorage.removeItem('approver_dashboard_sidebarFilter');
       setFilterValues({});
       setSidebarFilter(6);
-      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: 6, showAll: false });
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'modifiedDate', sortOrder: 'DESC', statusId: 6, showAll: false });
       approverService.fetchSummary().then(setSummary).catch(() => {});
     };
     window.addEventListener('dashboard-refresh', handleSoftRefresh);
@@ -157,9 +156,11 @@ export function ApproverDashboard() {
     {
       key: 'applicantBranch',
       header: t('approver.table.columns.branch'),
-      render: (_, row) => (
-        <span className="text-sm text-slate-700">{row.applicantBranch}</span>
-      ),
+      render: (_, row) => {
+        const branchKey = `common.branch.${row.applicantBranch.toLowerCase()}`;
+        const branchLabel = t(branchKey);
+        return <span className="text-sm text-slate-700">{branchLabel !== branchKey ? branchLabel : row.applicantBranch}</span>;
+      },
       width: '12%',
     },
     { key: 'applicationDate', header: t('approver.table.columns.application_date'), sortable: true, width: '13%', render: (_, row) => formatDate(row.applicationDate) },
@@ -207,7 +208,7 @@ export function ApproverDashboard() {
     setSidebarFilter(6);
     clearRequestDetail();
     setSelectedRequestId(null);
-    loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: 6, showAll: false });
+    loadRequests({ page: 1, pageSize: 10, sortBy: 'modifiedDate', sortOrder: 'DESC', statusId: 6, showAll: false });
     approverService.fetchSummary().then(setSummary).catch(() => {});
   };
 
@@ -255,11 +256,11 @@ export function ApproverDashboard() {
       const statusId = filterValues.statusId ? Number(filterValues.statusId) : undefined;
       applyFilters({ statusId, search, branch, desiredDate, desiredDateAlert: undefined });
     } else if (prev === undefined) {
-      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', showAll: true });
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'modifiedDate', sortOrder: 'DESC', showAll: true });
     } else if (prev === 'desiredDateAlert') {
-      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', desiredDateAlert: true, showAll: false });
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'modifiedDate', sortOrder: 'DESC', desiredDateAlert: true, showAll: false });
     } else {
-      loadRequests({ page: 1, pageSize: 10, sortBy: 'managerVerificationDate', sortOrder: 'DESC', statusId: prev, showAll: false });
+      loadRequests({ page: 1, pageSize: 10, sortBy: 'modifiedDate', sortOrder: 'DESC', statusId: prev, showAll: false });
     }
     approverService.fetchSummary().then(setSummary).catch(() => {});
   };
@@ -321,7 +322,7 @@ export function ApproverDashboard() {
                 <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('dashboard.approver.title')}</h1>
                 <p className="text-slate-500 mt-1">{t('dashboard.approver.welcome_message')}</p>
               </div>
-              <RefreshButton onClick={handleRefresh} />
+              <RefreshButton onClick={handleRefresh} label={t('dashboard.manager.refresh')} />
             </div>
 
             {detailError && (
@@ -409,7 +410,7 @@ export function ApproverDashboard() {
                   onPageSizeChange: setPageSize,
                 }}
                 sorting={{
-                  sortBy: query.sortBy ?? 'managerVerificationDate',
+                  sortBy: query.sortBy ?? 'modifiedDate',
                   sortOrder: query.sortOrder ?? 'DESC',
                   onSortChange: setSort,
                 }}
