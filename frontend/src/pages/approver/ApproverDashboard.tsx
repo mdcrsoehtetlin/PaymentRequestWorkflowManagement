@@ -4,10 +4,12 @@ import { useLocation } from 'react-router-dom';
 import type { AxiosError } from 'axios';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../hooks/useAuth';
 import type { ApiErrorResponse } from '../../types';
 import type { ApproverRequestListItem } from './types';
 import { useApproverRequests } from './hooks/useApproverRequests';
 import { useApproverRequestDetail } from './hooks/useApproverRequestDetail';
+import { useApproverWebSockets } from './hooks/useApproverWebSockets';
 import { KpiCard, DashboardKpiGrid, SearchFilterBar } from '../../components/shared';
 import type { FilterField } from '../../components/shared/SearchFilterBar';
 import { LayoutGrid, Clock, Eye, CalendarClock } from 'lucide-react';
@@ -41,6 +43,7 @@ const useApproverFilterFields = () => {
 export function ApproverDashboard() {
   const { t } = useTranslation();
   const { success, error } = useToast();
+  const { user } = useAuth();
   const approverFilterFields = useApproverFilterFields();
   const {
     query,
@@ -77,6 +80,30 @@ export function ApproverDashboard() {
   const previousFilterRef = useRef<number | 'desiredDateAlert' | undefined | null>(undefined);
   const [summary, setSummary] = useState({ totalQueue: 0, pendingCount: 0, reviewingCount: 0, desiredDateAlertCount: 0 });
   const location = useLocation();
+
+  const refreshQueue = useCallback(() => {
+    loadRequests(query);
+    approverService.fetchSummary().then(setSummary).catch(() => {});
+  }, [loadRequests, query]);
+
+  useApproverWebSockets(user?.sub, user?.role, refreshQueue);
+
+  // Auto-load request detail from URL path (e.g., /approver/request/123)
+  useEffect(() => {
+    const pathParts = location.pathname.split('/');
+    const requestIndex = pathParts.indexOf('request');
+    if (requestIndex !== -1 && pathParts[requestIndex + 1]) {
+      const requestId = Number(pathParts[requestIndex + 1]);
+      if (!isNaN(requestId) && requestId > 0) {
+        previousFilterRef.current = sidebarFilter;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedRequestId(requestId);
+        loadRequestDetail(requestId);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   useEffect(() => {
     sessionStorage.setItem('approver_dashboard_filterValues', JSON.stringify(filterValues));

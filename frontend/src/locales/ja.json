@@ -517,6 +517,8 @@
       "created": "作成済み",
       "edited": "編集済み",
       "submitted": "提出済み",
+      "submitted_to_manager": "マネージャーに提出済み",
+      "submitted_to_approver": "承認者に提出済み",
       "mgr_review_start": "マネージャーレビュー開始",
       "mgr_verified": "マネージャー確認済み",
       "mgr_rejected": "マネージャーにより差し戻し",
@@ -589,6 +591,12 @@
         "title": "差し戻しの確認",
         "message": "このリクエストを差し戻してもよろしいですか？\n\nコメント: \"{{comment}}\"",
         "confirm": "差し戻し",
+        "cancel": "キャンセル"
+      },
+      "confirm_approval": {
+        "title": "承認の確認",
+        "message": "このリクエストを承認してもよろしいですか？",
+        "confirm": "承認",
         "cancel": "キャンセル"
       },
       "approved_comment": "承認"

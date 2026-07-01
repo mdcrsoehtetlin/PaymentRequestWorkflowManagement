@@ -517,6 +517,8 @@
       "created": "Created",
       "edited": "Edited",
       "submitted": "Submitted",
+      "submitted_to_manager": "Submitted to Manager",
+      "submitted_to_approver": "Submitted to Final Approver",
       "mgr_review_start": "Manager Review Started",
       "mgr_verified": "Manager Verified",
       "mgr_rejected": "Rejected by Manager",
@@ -589,6 +591,12 @@
         "title": "Confirm Rejection",
         "message": "Are you sure you want to reject this request?\n\nYour comment: \"{{comment}}\"",
         "confirm": "Reject",
+        "cancel": "Cancel"
+      },
+      "confirm_approval": {
+        "title": "Confirm Approval",
+        "message": "Are you sure you want to approve this request?",
+        "confirm": "Approve",
         "cancel": "Cancel"
       },
       "approved_comment": "Approved"
