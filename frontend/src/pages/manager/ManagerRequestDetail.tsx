@@ -10,8 +10,6 @@ import {
   CURRENCY_CODES,
   PAYMENT_TYPE_LABELS_EN,
   PAYMENT_METHOD_LABELS_EN,
-  ACTION_LABELS_EN,
-  ACTION_BADGE_COLORS,
   type PaymentRequestDetailView,
   type UserSummary,
 } from '../../types';
