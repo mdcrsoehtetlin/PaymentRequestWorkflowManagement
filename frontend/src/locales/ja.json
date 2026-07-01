@@ -41,6 +41,7 @@
       "status_paid": "支払済み",
       "search_placeholder": "リクエスト番号または申請者名で検索...",
       "search": "検索",
+      "branch": "拠点",
       "all_statuses": "すべてのステータス",
       "all_branches": "すべての拠点",
       "request_no": "申請番号",
@@ -72,7 +73,7 @@
       "preview": "プレビュー",
       "download": "ダウンロード",
       "download_error": "領収書のダウンロードに失敗しました。",
-      "approval_history": "承認プロセス履歴",
+      "approval_history": "活動プロセス履歴",
       "comment_label": "コメント（承認は任意 / 差し戻しの場合は理由を入力してください >= 10文字）",
       "comment_placeholder": "検証結果についてのコメント、または差し戻しの理由を入力してください。",
       "max_chars": "最大500文字",
@@ -135,7 +136,12 @@
       "payment_completed": "支払完了",
       "cancelled": "キャンセル",
       "draft_saved": "下書き保存",
-      "unknown": "不明"
+      "unknown": "不明",
+      "submitted_to_manager": "マネージャーに提出済み",
+      "submitted_to_approver": "承認者に提出済み"
+    },
+    "timeline": {
+      "empty": "活動履歴がありません。"
     },
     "payment_type": {
       "expense_reimburse": "経費精算",
@@ -198,7 +204,7 @@
     "description": "説明",
     "amount": "金額",
     "status": "ステータス",
-    "action": "操作",
+    "action_label": "操作",
     "open": "開く",
     "download_all_receipts": "領収書をすべてダウンロード ({{count}}件)",
     "back_to_list": "リストに戻る",
@@ -470,8 +476,8 @@
         "download_all": "領収書をすべてダウンロード ({{count}}件)",
         "empty": "領収書ファイルが添付されていません。"
       },
-      "approval_history": "承認履歴",
-      "empty_history": "承認履歴がありません。"
+      "approval_history": "活動履歴",
+      "empty_history": "活動履歴がありません。"
     },
     "action_panel": {
       "title": "操作",
@@ -519,6 +525,8 @@
       "created": "作成済み",
       "edited": "編集済み",
       "submitted": "提出済み",
+      "submitted_to_manager": "マネージャーに提出済み",
+      "submitted_to_approver": "承認者に提出済み",
       "mgr_review_start": "マネージャーレビュー開始",
       "mgr_verified": "マネージャー確認済み",
       "mgr_rejected": "マネージャーにより差し戻し",
@@ -528,6 +536,12 @@
       "payment_completed": "支払い完了",
       "cancelled": "キャンセル済み",
       "draft_saved": "下書き保存済み"
+    },
+    "role": {
+      "applicant": "申請者",
+      "manager": "マネージャー",
+      "approver": "承認者",
+      "accounting": "経理"
     },
     "dashboard": {
       "title": "承認者ダッシュボード",
@@ -572,8 +586,8 @@
         "download_all": "領収書をすべてダウンロード ({{count}}件)",
         "empty": "領収書ファイルが添付されていません。"
       },
-      "approval_history": "承認履歴",
-      "empty_history": "承認履歴がありません。"
+      "approval_history": "活動履歴",
+      "empty_history": "活動履歴がありません。"
     },
     "action_panel": {
       "title": "操作",
@@ -591,6 +605,12 @@
         "title": "差し戻しの確認",
         "message": "このリクエストを差し戻してもよろしいですか？\n\nコメント: \"{{comment}}\"",
         "confirm": "差し戻し",
+        "cancel": "キャンセル"
+      },
+      "confirm_approval": {
+        "title": "承認の確認",
+        "message": "このリクエストを承認してもよろしいですか？",
+        "confirm": "承認",
         "cancel": "キャンセル"
       },
       "approved_comment": "承認"
