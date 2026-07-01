@@ -38,7 +38,7 @@ const ACTION_TYPE_MAP: Record<number, string> = {
   2: 'edited',
   3: 'submitted',
   4: 'mgr_review_start',
-  5: 'mgr_review',
+  5: 'mgr_verified',
   6: 'mgr_rejected',
   7: 'appr_review_start',
   8: 'approved',
@@ -96,16 +96,16 @@ export function AuditLogWorkspace() {
 
   const actionOptions = [
     { value: '', label: t('common.all') },
-    { value: '1', label: t('admin.audit_log.action_label.created') },
-    { value: '2', label: t('admin.audit_log.action_label.edited') },
-    { value: '3', label: t('admin.audit_log.action_label.submitted') },
-    { value: '4', label: t('admin.audit_log.action_label.mgr_review_start') },
-    { value: '5', label: t('admin.audit_log.action_label.mgr_review') },
-    { value: '6', label: t('admin.audit_log.action_label.mgr_rejected') },
-    { value: '7', label: t('admin.audit_log.action_label.appr_review_start') },
-    { value: '8', label: t('admin.audit_log.action_label.approved') },
-    { value: '9', label: t('admin.audit_log.action_label.appr_rejected') },
-    { value: '10', label: t('admin.audit_log.action_label.payment_completed') },
+    { value: '1', label: t('common.actions.created') },
+    { value: '2', label: t('common.actions.edited') },
+    { value: '3', label: t('common.actions.submitted') },
+    { value: '4', label: t('common.actions.mgr_review_start') },
+    { value: '5', label: t('common.actions.mgr_verified') },
+    { value: '6', label: t('common.actions.mgr_rejected') },
+    { value: '7', label: t('common.actions.appr_review_start') },
+    { value: '8', label: t('common.actions.approved') },
+    { value: '9', label: t('common.actions.appr_rejected') },
+    { value: '10', label: t('common.actions.payment_completed') },
   ];
 
   const handleSearch = () => {
@@ -205,7 +205,7 @@ export function AuditLogWorkspace() {
       key: 'actionTypeId',
       header: t('admin.audit_log.columns.action'),
       sortable: true,
-      render: (_val, row) => t(`admin.audit_log.action_label.${ACTION_TYPE_MAP[row.actionTypeId] ?? 'unknown'}`),
+      render: (_val, row) => t(`common.actions.${ACTION_TYPE_MAP[row.actionTypeId] ?? 'unknown'}`),
     },
     {
       key: 'ipAddress',
@@ -221,7 +221,7 @@ export function AuditLogWorkspace() {
     },
     {
       key: 'actions',
-      header: '',
+      header: t('admin.audit_log.columns.view_detail'),
       render: (_val, row) => (
         <button
           onClick={(e) => {
