@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CustomDropdown } from './CustomDropdown';
 
@@ -25,8 +25,6 @@ export interface SearchFilterBarProps {
   showSearchButton?: boolean;
   showClearButton?: boolean;
   actions?: React.ReactNode;
-  searchLabel?: string;
-  clearLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -41,8 +39,6 @@ export function SearchFilterBar({
   showSearchButton = true,
   showClearButton,
   actions,
-  searchLabel,
-  clearLabel,
 }: SearchFilterBarProps) {
   const { t } = useTranslation();
   const shouldShowClear = showClearButton ?? !!onClear;
@@ -159,7 +155,7 @@ export function SearchFilterBar({
                 className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 whitespace-nowrap transition-all duration-200"
               >
                 <Search className="w-4 h-4" />
-                {searchLabel || t('common.search')}
+                {t('common.search')}
               </button>
             )}
             {shouldShowClear && (
@@ -167,13 +163,14 @@ export function SearchFilterBar({
                 type="button"
                 onClick={handleClear}
                 disabled={!hasActiveFilters}
-                className={`rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
                   hasActiveFilters 
                     ? 'text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer' 
                     : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
                 }`}
               >
-                {clearLabel || t('common.clear_filters')}
+                <X className="w-4 h-4" />
+                {t('common.clear_filters')}
               </button>
             )}
           </div>
