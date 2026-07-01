@@ -316,6 +316,7 @@ export interface UserSummary {
   fullName: string;
   employeeNumber: string;
   branch: string;
+  roleId?: number | null;
 }
 
 export interface PaymentRequest {

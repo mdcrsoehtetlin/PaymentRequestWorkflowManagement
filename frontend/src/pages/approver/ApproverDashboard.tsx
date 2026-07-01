@@ -4,12 +4,11 @@ import { useLocation } from 'react-router-dom';
 import type { AxiosError } from 'axios';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useToast } from '../../hooks/useToast';
-import { useAuth } from '../../hooks/useAuth';
 import type { ApiErrorResponse } from '../../types';
 import type { ApproverRequestListItem } from './types';
 import { useApproverRequests } from './hooks/useApproverRequests';
 import { useApproverRequestDetail } from './hooks/useApproverRequestDetail';
-import { useApproverWebSockets } from './hooks/useApproverWebSockets';
+import { wsService } from '../../services/websocket.service';
 import { KpiCard, DashboardKpiGrid, SearchFilterBar } from '../../components/shared';
 import type { FilterField } from '../../components/shared/SearchFilterBar';
 import { LayoutGrid, Clock, Eye, CalendarClock } from 'lucide-react';
@@ -43,7 +42,6 @@ const useApproverFilterFields = () => {
 export function ApproverDashboard() {
   const { t } = useTranslation();
   const { success, error } = useToast();
-  const { user } = useAuth();
   const approverFilterFields = useApproverFilterFields();
   const {
     query,
@@ -86,7 +84,16 @@ export function ApproverDashboard() {
     approverService.fetchSummary().then(setSummary).catch(() => {});
   }, [loadRequests, query]);
 
-  useApproverWebSockets(user?.sub, user?.role, refreshQueue);
+  // Listen for real-time WebSocket status changes (queue refresh)
+  useEffect(() => {
+    const handleStatusChanged = () => {
+      refreshQueue();
+    };
+    wsService.on('request:status-changed', handleStatusChanged);
+    return () => {
+      wsService.off('request:status-changed', handleStatusChanged);
+    };
+  }, [refreshQueue]);
 
   // Auto-load request detail from URL path (e.g., /approver/request/123)
   useEffect(() => {
@@ -212,9 +219,10 @@ export function ApproverDashboard() {
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); handleRowClick(row); }}
-          className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="rounded-md p-1.5 text-blue-600 hover:bg-blue-50 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          title={t('approver.table.view_details')}
         >
-          {t('approver.table.view_details')}
+          <Eye className="w-5 h-5" />
         </button>
       ),
     },
