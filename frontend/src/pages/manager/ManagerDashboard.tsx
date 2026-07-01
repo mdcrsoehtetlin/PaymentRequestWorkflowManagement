@@ -315,9 +315,9 @@ export function ManagerDashboard() {
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); handleProcess(row.paymentRequestId); }}
-          className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="rounded-lg bg-blue-50 p-2 text-blue-600 hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          View Details
+          <Eye className="h-4 w-4" />
         </button>
       ),
       width: '10%',
