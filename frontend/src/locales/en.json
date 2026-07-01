@@ -172,7 +172,7 @@
     "unknown": "Unknown",
     "all": "All",
     "search": "Search",
-    "clear_filters": "Clear Filters",
+    "clear_filters": "Clear",
     "cancel": "Cancel",
     "delete": "Delete",
     "yes": "Yes",
@@ -387,17 +387,17 @@
       "amount_placeholder": "0.00"
     },
     "validation": {
-      "application_date_past": "申請日は本日以前の日付を入力してください",
-      "purpose_required": "目的を入力してください（最大500文字）",
-      "application_date_required": "申請日を入力してください",
-      "desired_date_required": "支払希望日を入力してください",
-      "content_required": "申請内容を入力してください（最大1000文字）",
-      "currency_required": "通貨を選択してください",
-      "payment_type_required": "支払種別を選択してください",
-      "payment_method_required": "支払方法を選択してください",
-      "manager_required": "担当マネージャーを選択してください",
-      "bank_account_required": "銀行口座情報を入力してください",
-      "breakdown_count": "明細は1件以上15件以内で入力してください"
+      "application_date_past": "Application date must be today or earlier",
+      "purpose_required": "Purpose is required (max 500 characters)",
+      "application_date_required": "Application date is required",
+      "desired_date_required": "Desired payment date is required",
+      "content_required": "Payment request content is required (max 1000 characters)",
+      "currency_required": "Currency must be selected",
+      "payment_type_required": "Payment type must be selected",
+      "payment_method_required": "Payment method must be selected",
+      "manager_required": "Target manager must be selected",
+      "bank_account_required": "Bank account information is required",
+      "breakdown_count": "Breakdown must contain between 1 and 15 items"
     }
   },
   "manager": {
@@ -637,7 +637,7 @@
       "description": "Process payments for approved requests",
       "filters": {
         "search": "Search",
-        "search_placeholder": "Request #, applicant name...",
+        "search_placeholder": "Request No., applicant name...",
         "branch": "Branch",
         "all_branches": "All Branches",
         "status": "Status",
@@ -658,7 +658,7 @@
     "queue_table": {
       "loading": "Loading queue...",
       "columns": {
-        "request_no": "Request #",
+        "request_no": "Request No.",
         "applicant": "Applicant",
         "branch": "Branch",
         "application_date": "Application Date",

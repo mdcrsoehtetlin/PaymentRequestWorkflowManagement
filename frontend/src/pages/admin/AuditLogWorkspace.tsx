@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Eye, Search } from 'lucide-react';
+import { Eye, Search, X } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { CustomDropdown } from '../../components/shared/CustomDropdown';
 import { apiClient } from '../../services/api-client';
@@ -327,12 +327,13 @@ export function AuditLogWorkspace() {
               type="button"
               onClick={handleClear}
               disabled={!hasActiveFilters}
-              className={`rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+              className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
                 hasActiveFilters
                   ? 'text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer'
                   : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
               }`}
             >
+              <X className="w-4 h-4" />
               {t('common.clear_filters')}
             </button>
           </div>
@@ -352,12 +353,13 @@ export function AuditLogWorkspace() {
             type="button"
             onClick={handleClear}
             disabled={!hasActiveFilters}
-            className={`rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+            className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
               hasActiveFilters
                 ? 'text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer'
                 : 'text-slate-400 bg-slate-50 opacity-60 cursor-not-allowed'
             }`}
           >
+            <X className="w-4 h-4" />
             {t('common.clear_filters')}
           </button>
         </div>
