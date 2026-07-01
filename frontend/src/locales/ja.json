@@ -42,6 +42,8 @@
       "search_placeholder": "リクエスト番号または申請者名で検索...",
       "search": "検索",
       "branch": "拠点",
+      "action_panel_title": "操作",
+      "action_panel_description": "このリクエストを承認または差し戻します。",
       "all_statuses": "すべてのステータス",
       "all_branches": "すべての拠点",
       "request_no": "申請番号",
@@ -123,7 +125,7 @@
       "rejected_approver": "承認者により差し戻し",
       "paid": "支払済み"
     },
-    "actions": {
+    "action": {
       "created": "作成",
       "edited": "編集",
       "submitted": "マネージャーに提出済み",

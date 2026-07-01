@@ -41,6 +41,8 @@
       "status_paid": "Paid",
       "search_placeholder": "Search by Request No or applicant name...",
       "search": "Search",
+      "action_panel_title": "Action",
+      "action_panel_description": "Approve or reject this request.",
       "all_statuses": "All Statuses",
       "all_branches": "All Branches",
       "request_no": "Request No.",
@@ -122,7 +124,7 @@
       "rejected_approver": "Rejected by Approver",
       "paid": "Paid"
     },
-    "actions": {
+    "action": {
       "created": "Created",
       "edited": "Edited",
       "submitted": "Submitted to Manager",
