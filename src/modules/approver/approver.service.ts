@@ -416,6 +416,8 @@ export class ApproverService {
           'request:status-changed',
           statusUpdatePayload,
         );
+
+        this.websocketGateway.sendStatusUpdate('APPROVER', statusUpdatePayload);
       } catch (wsError) {
         this.logger.warn(
           `WebSocket notification failed for request ${id}`,
@@ -439,7 +441,7 @@ export class ApproverService {
 
     const sortedLogs = [...request.approvalLogs].sort(
       (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
 
     const canApprove =
@@ -579,6 +581,7 @@ export class ApproverService {
               branch: log.action_taken_by_user.branch,
               department: log.action_taken_by_user.department ?? '',
               email: log.action_taken_by_user.email ?? '',
+              roleId: log.action_taken_by_user.roleId ?? null,
             }
           : {
               userId: 0,
@@ -587,6 +590,7 @@ export class ApproverService {
               branch: '',
               department: '',
               email: '',
+              roleId: null,
             },
       })),
       canApprove,
@@ -695,6 +699,8 @@ export class ApproverService {
           'ACCOUNTING',
           statusUpdatePayload,
         );
+
+        this.websocketGateway.sendStatusUpdate('APPROVER', statusUpdatePayload);
       } catch (wsError) {
         this.logger.warn(
           `WebSocket notification failed for request ${id}`,
@@ -830,6 +836,8 @@ export class ApproverService {
           'request:status-changed',
           statusUpdatePayload,
         );
+
+        this.websocketGateway.sendStatusUpdate('APPROVER', statusUpdatePayload);
       } catch (wsError) {
         this.logger.warn(
           `WebSocket notification failed for request ${id}`,
