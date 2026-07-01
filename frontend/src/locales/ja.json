@@ -122,19 +122,20 @@
       "rejected_approver": "承認者により差し戻し",
       "paid": "支払済み"
     },
-    "action": {
+    "actions": {
       "created": "作成",
       "edited": "編集",
-      "submitted": "提出",
-      "mgr_review_start": "マネージャー確認開始",
-      "mgr_verified": "マネージャー確認",
+      "submitted": "マネージャーに提出済み",
+      "mgr_review_start": "マネージャー確認中",
+      "mgr_verified": "マネージャー確認済み",
       "mgr_rejected": "マネージャー差戻し",
-      "appr_review_start": "承認者確認開始",
+      "appr_review_start": "承認者確認中",
       "approved": "承認",
       "appr_rejected": "承認者差戻し",
       "payment_completed": "支払完了",
       "cancelled": "キャンセル",
-      "draft_saved": "下書き保存"
+      "draft_saved": "下書き保存",
+      "unknown": "不明"
     },
     "payment_type": {
       "expense_reimburse": "経費精算",
@@ -836,19 +837,6 @@
         "ip_address": "IPアドレス",
         "date_time": "日時",
         "view_detail": "詳細を見る"
-      },
-      "action_label": {
-        "created": "作成",
-        "edited": "編集",
-        "submitted": "提出",
-        "mgr_review_start": "マネージャー確認開始",
-        "mgr_review": "マネージャー確認",
-        "mgr_rejected": "マネージャー差戻し",
-        "appr_review_start": "承認者確認開始",
-        "approved": "承認",
-        "appr_rejected": "承認者差戻し",
-        "payment_completed": "支払完了",
-        "unknown": "不明"
       }
     },
     "metadata_detail": {

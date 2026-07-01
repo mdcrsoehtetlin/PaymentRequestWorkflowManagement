@@ -122,19 +122,20 @@
       "rejected_approver": "Rejected by Approver",
       "paid": "Paid"
     },
-    "action": {
+    "actions": {
       "created": "Created",
       "edited": "Edited",
-      "submitted": "Submitted",
-      "mgr_review_start": "Manager Review Started",
+      "submitted": "Submitted to Manager",
+      "mgr_review_start": "Manager Reviewing",
       "mgr_verified": "Manager Verified",
       "mgr_rejected": "Rejected by Manager",
-      "appr_review_start": "Approver Review Started",
+      "appr_review_start": "Approver Reviewing",
       "approved": "Approved",
       "appr_rejected": "Rejected by Approver",
-      "payment_completed": "Payment Completed",
+      "payment_completed": "Paid",
       "cancelled": "Cancelled",
-      "draft_saved": "Draft Saved"
+      "draft_saved": "Draft Saved",
+      "unknown": "Unknown"
     },
     "payment_type": {
       "expense_reimburse": "Expense Reimbursement",
@@ -837,19 +838,6 @@
         "ip_address": "IP Address",
         "date_time": "Date/Time",
         "view_detail": "View Detail"
-      },
-      "action_label": {
-        "created": "Created",
-        "edited": "Edited",
-        "submitted": "Submitted",
-        "mgr_review_start": "Manager Review Started",
-        "mgr_review": "Manager Review",
-        "mgr_rejected": "Manager Rejected",
-        "appr_review_start": "Approver Review Started",
-        "approved": "Approved",
-        "appr_rejected": "Approver Rejected",
-        "payment_completed": "Payment Completed",
-        "unknown": "Unknown"
       }
     },
     "metadata_detail": {

@@ -125,19 +125,20 @@
       "rejected_approver": "အတည်ပြုသူမှ ပယ်ချပြီး",
       "paid": "ငွေပေးပြီး"
     },
-    "action": {
+    "actions": {
       "created": "ဖန်တီးပြီး",
       "edited": "ပြင်ဆင်ပြီး",
-      "submitted": "တင်ပြပြီး",
-      "mgr_review_start": "မန်နေဂျာ စစ်ဆေးမှု စတင်ပြီး",
+      "submitted": "မန်နေဂျာထံ တင်ပြပြီး",
+      "mgr_review_start": "မန်နေဂျာ စစ်ဆေးနေဆဲ",
       "mgr_verified": "မန်နေဂျာ စစ်ဆေးပြီး",
       "mgr_rejected": "မန်နေဂျာမှ ပယ်ချပြီး",
-      "appr_review_start": "အတည်ပြုသူ စစ်ဆေးမှု စတင်ပြီး",
+      "appr_review_start": "အတည်ပြုသူ စစ်ဆေးနေဆဲ",
       "approved": "အတည်ပြုပြီး",
       "appr_rejected": "အတည်ပြုသူမှ ပယ်ချပြီး",
-      "payment_completed": "ငွေပေးချေမှု ပြီးဆုံးပြီး",
+      "payment_completed": "ငွေပေးပြီး",
       "cancelled": "ပယ်ဖျက်ပြီး",
-      "draft_saved": "မူကြမ်း သိမ်းဆည်းပြီး"
+      "draft_saved": "မူကြမ်း သိမ်းဆည်းပြီး",
+      "unknown": "မသိ"
     },
     "payment_type": {
       "expense_reimburse": "အသုံးစရိတ် ပြန်လည်ထောက်ပံ့ခြင်း",
@@ -839,19 +840,6 @@
         "ip_address": "IP လိပ်စာ",
         "date_time": "ရက်စွဲ/အချိန်",
         "view_detail": "အသေးစိတ် ကြည့်ရန်"
-      },
-      "action_label": {
-        "created": "ဖန်တီးပြီး",
-        "edited": "ပြင်ဆင်ပြီး",
-        "submitted": "တင်ပြပြီး",
-        "mgr_review_start": "မန်နေဂျာ စစ်ဆေးမှု စတင်ပြီး",
-        "mgr_review": "မန်နေဂျာ စစ်ဆေးမှု",
-        "mgr_rejected": "မန်နေဂျာမှ ပယ်ချပြီး",
-        "appr_review_start": "အတည်ပြုသူ စစ်ဆေးမှု စတင်ပြီး",
-        "approved": "အတည်ပြုပြီး",
-        "appr_rejected": "အတည်ပြုသူမှ ပယ်ချပြီး",
-        "payment_completed": "ငွေပေးချေမှု ပြီးဆုံးပြီး",
-        "unknown": "မသိ"
       }
     },
     "metadata_detail": {
