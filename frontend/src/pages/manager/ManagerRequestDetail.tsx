@@ -10,8 +10,6 @@ import {
   CURRENCY_CODES,
   PAYMENT_TYPE_LABELS_EN,
   PAYMENT_METHOD_LABELS_EN,
-  ACTION_LABELS_EN,
-  ACTION_BADGE_COLORS,
   type PaymentRequestDetailView,
   type UserSummary,
 } from '../../types';
@@ -27,6 +25,7 @@ import {
   RotateCcw,
   Download,
 } from 'lucide-react';
+import { ApprovalTimeline } from '../../components/shared/ApprovalTimeline';
 
 interface AxiosErrorResponse {
   response?: {
@@ -546,33 +545,7 @@ export function ManagerRequestDetail() {
               <Clock className="h-3.5 w-3.5 text-slate-400" />
               {t('dashboard.manager.approval_history')}
             </h3>
-            <div className="space-y-3 pl-3 border-l-2 border-slate-100 ml-1">
-              {request.approvalLogs?.map((log) => (
-                <div key={log.approvalLogId} className="relative text-xs">
-                  <div className="absolute -left-[19px] top-1.5 bg-white border-2 border-indigo-400 rounded-full h-3 w-3"></div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 mb-0.5">
-                    <div>
-                      <span className="font-semibold text-slate-700">{log.actionTakenByUser?.fullName}</span>
-                      {log.actionTakenByUser?.employeeNumber && (
-                        <span className="ml-1.5 text-slate-400">({log.actionTakenByUser.employeeNumber})</span>
-                      )}
-                    </div>
-                    <span>{new Date(log.timestamp).toLocaleString('ja-JP')}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_BADGE_COLORS[log.actionTypeId as keyof typeof ACTION_BADGE_COLORS] || 'bg-slate-100 text-slate-800'
-                      }`}>
-                      {ACTION_LABELS_EN[log.actionTypeId as keyof typeof ACTION_LABELS_EN]}
-                    </span>
-                    {log.comment && (
-                      <span className="text-slate-500 italic block mt-0.5">
-                        &quot;{log.comment}&quot;
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ApprovalTimeline logs={request.approvalLogs || []} />
           </div>
 
           {/* Verification Decision Form Area */}
