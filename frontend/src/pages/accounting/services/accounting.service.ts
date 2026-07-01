@@ -51,6 +51,7 @@ export interface AccountingApprovalTimelineItem {
     userId: number;
     fullName: string;
     employeeNumber: string;
+    roleId: number | null;
   };
 }
 
