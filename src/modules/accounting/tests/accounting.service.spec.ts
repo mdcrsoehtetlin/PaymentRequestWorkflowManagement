@@ -534,6 +534,7 @@ describe('AccountingService', () => {
               userId: 1,
               fullName: 'John Doe',
               employeeNumber: 'E1',
+              roleId: 1,
             },
           },
           {
@@ -547,6 +548,7 @@ describe('AccountingService', () => {
               userId: 5,
               fullName: 'Jane Manager',
               employeeNumber: 'E5',
+              roleId: 2,
             },
           },
         ],
@@ -561,9 +563,11 @@ describe('AccountingService', () => {
       expect(result.approvalTimeline[0].actionTypeId).toBe(3);
       expect(result.approvalTimeline[0].comment).toBe('Submitted by applicant');
       expect(result.approvalTimeline[0].user.fullName).toBe('John Doe');
+      expect(result.approvalTimeline[0].user.roleId).toBe(1);
       expect(result.approvalTimeline[1].id).toBe('log-2');
       expect(result.approvalTimeline[1].comment).toBeNull();
       expect(result.approvalTimeline[1].user.fullName).toBe('Jane Manager');
+      expect(result.approvalTimeline[1].user.roleId).toBe(2);
     });
   });
 
