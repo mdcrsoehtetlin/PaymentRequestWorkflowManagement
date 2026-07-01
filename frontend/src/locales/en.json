@@ -280,7 +280,7 @@
         "no_description": "No description",
         "total_amount": "Total Amount"
       },
-      "activity_log": "Activity Log",
+      "activity_log": "Activity History",
       "status_changed_to": "Status changed to",
       "reply_to_rejection": {
         "title": "Reply to Rejection",
