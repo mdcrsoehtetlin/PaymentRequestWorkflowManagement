@@ -13,6 +13,7 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
   const { t } = useTranslation();
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isApproveConfirmOpen, setIsApproveConfirmOpen] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -20,6 +21,7 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
     setIsSubmitting(true);
     try {
       await onApprove({ comment: t('approver.action_panel.approved_comment') });
+      setIsApproveConfirmOpen(false);
     } catch {
       // Error handled by parent component
     } finally {
@@ -52,7 +54,7 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
         <button
           type="button"
           disabled={!request.canApprove || isSubmitting}
-          onClick={handleApprove}
+          onClick={() => setIsApproveConfirmOpen(true)}
           className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
         >
           {t('approver.action_panel.buttons.approve')}
@@ -112,6 +114,18 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
         confirmLabel={t('approver.action_panel.confirm_rejection.confirm')}
         cancelLabel={t('approver.action_panel.confirm_rejection.cancel')}
         variant="danger"
+        isLoading={isSubmitting}
+      />
+
+      <ConfirmDialog
+        isOpen={isApproveConfirmOpen}
+        onClose={() => setIsApproveConfirmOpen(false)}
+        onConfirm={handleApprove}
+        title={t('approver.action_panel.confirm_approval.title')}
+        message={t('approver.action_panel.confirm_approval.message')}
+        confirmLabel={t('approver.action_panel.confirm_approval.confirm')}
+        cancelLabel={t('approver.action_panel.confirm_approval.cancel')}
+        variant="primary"
         isLoading={isSubmitting}
       />
     </div>

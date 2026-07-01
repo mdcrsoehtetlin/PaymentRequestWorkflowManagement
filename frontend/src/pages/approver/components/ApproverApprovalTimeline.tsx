@@ -5,21 +5,21 @@ import type { ApprovalActionType } from '../../../types';
 
 const ACTION_I18N_KEY: Record<number, string> = {
   1: 'approver.action.created',
-  2: 'approver.action.draft_saved',
-  3: 'approver.action.mgr_rejected',
-  4: 'approver.action.mgr_rejected',
+  2: 'approver.action.edited',
+  3: 'approver.action.submitted',
+  4: 'approver.action.mgr_review_start',
   5: 'approver.action.mgr_verified',
-  6: 'approver.action.submitted',
+  6: 'approver.action.mgr_rejected',
   7: 'approver.action.appr_review_start',
   8: 'approver.action.approved',
   9: 'approver.action.appr_rejected',
   10: 'approver.action.payment_completed',
-  11: 'approver.action.cancelled',
 };
 
 interface TimelineLog {
   approvalLogId: string;
   actionTypeId: number;
+  newStatusId: number | null;
   comment: string | null;
   timestamp: string;
   actionTakenByUser: {
@@ -39,13 +39,24 @@ export function ApproverApprovalTimeline({ logs }: ApproverApprovalTimelineProps
     return <p className="text-sm text-slate-500 italic">{t('approver.timeline.empty')}</p>;
   }
 
+  const getActionLabel = (log: TimelineLog): string => {
+    if (log.actionTypeId === 3) {
+      if (log.newStatusId === 2) {
+        return t('approver.action.submitted_to_manager');
+      } else if (log.newStatusId === 6) {
+        return t('approver.action.submitted_to_approver');
+      }
+    }
+    const i18nKey = ACTION_I18N_KEY[log.actionTypeId];
+    return i18nKey ? t(i18nKey) : t('approver.action.created');
+  };
+
   return (
     <div className="relative border-l-2 border-slate-200 ml-3 space-y-6">
       {logs.map((log) => {
-        const isRejection = log.actionTypeId === 3 || log.actionTypeId === 9;
+        const isRejection = log.actionTypeId === 6 || log.actionTypeId === 9;
         const badgeColor = ACTION_BADGE_COLORS[log.actionTypeId as ApprovalActionType] || 'bg-slate-100 text-slate-800';
-        const i18nKey = ACTION_I18N_KEY[log.actionTypeId];
-        const actionLabel = i18nKey ? t(i18nKey) : t('approver.action.created');
+        const actionLabel = getActionLabel(log);
 
         return (
           <div key={log.approvalLogId} className="relative pl-6">

@@ -1050,6 +1050,93 @@ describe('ApproverService', () => {
     });
   });
 
+  describe('approve - persistent DB notification to accounting users', () => {
+    it('should notify accounting users after approval', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      dataSource.transaction.mockImplementation((cb) => {
+        const mockManager = {
+          findOne: jest.fn().mockResolvedValue({ ...mockRequest }),
+          save: jest.fn(),
+          query: jest.fn().mockResolvedValue([]),
+        } as unknown as EntityManager;
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
+      });
+
+      userRepo.find = jest.fn().mockResolvedValue([
+        { userId: 20, fullName: 'Accountant A' },
+        { userId: 21, fullName: 'Accountant B' },
+      ]);
+
+      const result = await service.approve(
+        100,
+        mockApproverUserId,
+        {},
+        mockAuditContext,
+      );
+
+      expect(result.success).toBe(true);
+      expect(notificationService['create']).toHaveBeenCalledWith(
+        mockRequest.applicantUserId,
+        expect.objectContaining({
+          title: 'Application Approved',
+        }),
+      );
+      expect(notificationService['create']).toHaveBeenCalledWith(
+        20,
+        expect.objectContaining({
+          title: 'New Approved Request',
+        }),
+      );
+      expect(notificationService['create']).toHaveBeenCalledWith(
+        21,
+        expect.objectContaining({
+          title: 'New Approved Request',
+        }),
+      );
+    });
+  });
+
+  describe('reject - persistent DB notification failure', () => {
+    it('should still reject even if persistent notification fails', async () => {
+      const mockRequest = buildMockRequest({
+        statusId: PaymentStatus.APPROVER_REVIEWING,
+        finalApproverUserId: mockApproverUserId,
+      });
+      paymentRequestRepo.findOne.mockResolvedValueOnce(mockRequest);
+
+      dataSource.transaction.mockImplementation((cb) => {
+        const mockManager = {
+          findOne: jest.fn().mockResolvedValue({ ...mockRequest }),
+          save: jest.fn(),
+          query: jest.fn().mockResolvedValue([]),
+        } as unknown as EntityManager;
+        return (
+          cb as unknown as (entityManager: EntityManager) => Promise<unknown>
+        )(mockManager);
+      });
+
+      notificationService.create.mockRejectedValueOnce(
+        new Error('Notification DB error'),
+      );
+
+      const result = await service.reject(
+        100,
+        mockApproverUserId,
+        { comment: 'Test rejection' },
+        mockAuditContext,
+      );
+
+      expect(result.success).toBe(true);
+    });
+  });
+
   describe('findAssignedRequests - additional filters', () => {
     it('should apply showAll filter when provided', async () => {
       const query: QueryApproverRequestsDto = {
