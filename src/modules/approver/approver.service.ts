@@ -416,6 +416,8 @@ export class ApproverService {
           'request:status-changed',
           statusUpdatePayload,
         );
+
+        this.websocketGateway.sendStatusUpdate('APPROVER', statusUpdatePayload);
       } catch (wsError) {
         this.logger.warn(
           `WebSocket notification failed for request ${id}`,
@@ -695,6 +697,8 @@ export class ApproverService {
           'ACCOUNTING',
           statusUpdatePayload,
         );
+
+        this.websocketGateway.sendStatusUpdate('APPROVER', statusUpdatePayload);
       } catch (wsError) {
         this.logger.warn(
           `WebSocket notification failed for request ${id}`,
@@ -830,6 +834,8 @@ export class ApproverService {
           'request:status-changed',
           statusUpdatePayload,
         );
+
+        this.websocketGateway.sendStatusUpdate('APPROVER', statusUpdatePayload);
       } catch (wsError) {
         this.logger.warn(
           `WebSocket notification failed for request ${id}`,

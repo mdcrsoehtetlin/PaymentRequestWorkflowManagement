@@ -25,7 +25,10 @@ describe('ApplicantService', () => {
   let mockDataSource: { transaction: jest.Mock };
   let mockCacheManager: { get: jest.Mock; set: jest.Mock; del: jest.Mock };
   let mockRequestNumberService: { generateNext: jest.Mock };
-  let mockWebsocketGateway: { sendPersonalNotification: jest.Mock };
+  let mockWebsocketGateway: {
+    sendPersonalNotification: jest.Mock;
+    sendStatusUpdate: jest.Mock;
+  };
   let mockPaymentRequestRepo: Record<string, jest.Mock>;
   let module: TestingModule;
 
@@ -58,6 +61,7 @@ describe('ApplicantService', () => {
 
     mockWebsocketGateway = {
       sendPersonalNotification: jest.fn(),
+      sendStatusUpdate: jest.fn(),
     };
 
     mockPaymentRequestRepo = {
@@ -690,6 +694,77 @@ describe('ApplicantService', () => {
         }),
       );
     });
+
+    it('should send persistent DB notification to manager on successful submission', async () => {
+      const mockReq = createMockRequest();
+      mockManager.findOne.mockResolvedValue(mockReq);
+      mockManager.save.mockImplementation((data: unknown) =>
+        Promise.resolve({
+          ...(data as Record<string, unknown>),
+          id: 1,
+          requestNumber: 'PRF-2026-000001',
+        }),
+      );
+      mockManager.create.mockImplementation(
+        (entity: unknown, data: unknown) => ({
+          ...(data as Record<string, unknown>),
+          timestamp: new Date(),
+        }),
+      );
+
+      const mockUserRepo = {
+        find: jest.fn().mockResolvedValue([]),
+        findOne: jest
+          .fn()
+          .mockResolvedValue({ userId: 1, fullName: 'John Doe' }),
+      };
+      (service as any).userRepo = mockUserRepo;
+
+      const mockNotificationService = {
+        create: jest.fn().mockResolvedValue({}),
+        sendNotification: jest.fn(),
+        sendBulkNotification: jest.fn(),
+      };
+      (service as any).notificationService = mockNotificationService;
+
+      await service.submitToManager(1, 1);
+
+      expect(mockNotificationService.create).toHaveBeenCalledWith(
+        5,
+        expect.objectContaining({
+          title: 'New Payment Request',
+          message: expect.stringContaining('John Doe'),
+          link: expect.stringContaining('/manager/requests/'),
+        }),
+      );
+    });
+
+    it('should handle notification failure gracefully during submission', async () => {
+      const mockReq = createMockRequest();
+      mockManager.findOne.mockResolvedValue(mockReq);
+      mockManager.save.mockImplementation((data: unknown) =>
+        Promise.resolve({
+          ...(data as Record<string, unknown>),
+          id: 1,
+          requestNumber: 'PRF-2026-000001',
+        }),
+      );
+      mockManager.create.mockImplementation(
+        (entity: unknown, data: unknown) => ({
+          ...(data as Record<string, unknown>),
+          timestamp: new Date(),
+        }),
+      );
+
+      const mockUserRepo = {
+        find: jest.fn().mockResolvedValue([]),
+        findOne: jest.fn().mockRejectedValue(new Error('DB error')),
+      };
+      (service as any).userRepo = mockUserRepo;
+
+      const result = await service.submitToManager(1, 1);
+      expect(result.statusId).toBe(2);
+    });
   });
 
   // ======================================================================
@@ -1041,6 +1116,53 @@ describe('ApplicantService', () => {
       }));
       const res = await service.submitToApprover(1, 1);
       expect(res.statusId).toBe(6);
+    });
+
+    it('should send persistent DB notifications to all approvers on submitToApprover', async () => {
+      mockManager.findOne.mockResolvedValueOnce({
+        id: 1,
+        statusId: 4,
+        approverUserId: 2,
+        requestNumber: 'PRF-2026-000001',
+      });
+      mockManager.save.mockImplementation((data: any) => Promise.resolve(data));
+      mockManager.create.mockImplementation((e: any, data: any) => ({
+        ...data,
+        timestamp: new Date(),
+      }));
+
+      const mockUserRepo = {
+        find: jest.fn().mockResolvedValue([
+          { userId: 10, fullName: 'Approver A' },
+          { userId: 11, fullName: 'Approver B' },
+        ]),
+        findOne: jest.fn(),
+      };
+      (service as any).userRepo = mockUserRepo;
+
+      const mockNotificationService = {
+        create: jest.fn().mockResolvedValue({}),
+        sendNotification: jest.fn(),
+        sendBulkNotification: jest.fn(),
+      };
+      (service as any).notificationService = mockNotificationService;
+
+      await service.submitToApprover(1, 1);
+
+      expect(mockNotificationService.create).toHaveBeenCalledTimes(2);
+      expect(mockNotificationService.create).toHaveBeenCalledWith(
+        10,
+        expect.objectContaining({
+          title: 'New Request Submitted',
+          link: expect.stringContaining('/approver/request/'),
+        }),
+      );
+      expect(mockNotificationService.create).toHaveBeenCalledWith(
+        11,
+        expect.objectContaining({
+          title: 'New Request Submitted',
+        }),
+      );
     });
   });
 

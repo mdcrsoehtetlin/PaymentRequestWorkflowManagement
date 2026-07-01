@@ -600,6 +600,35 @@ export class ApplicantService {
         },
       );
 
+      this.websocketGateway.sendStatusUpdate('APPROVER', {
+        paymentRequestId: Number(savedRequest.id),
+        requestNumber: savedRequest.requestNumber,
+        previousStatusId: 4,
+        newStatusId: 6,
+        actionByUserId: Number(applicantId),
+        actionByUserName: 'Applicant',
+        timestamp: log.timestamp.toISOString(),
+      });
+
+      try {
+        const approverUsers = await this.userRepo.find({
+          where: { roleId: 3 },
+        });
+        for (const approver of approverUsers) {
+          await this.notificationService.create(approver.userId, {
+            paymentRequestId: Number(savedRequest.id),
+            title: 'New Request Submitted',
+            message: `Request ${savedRequest.requestNumber} has been submitted for your approval.`,
+            link: `/approver/request/${savedRequest.id}`,
+          });
+        }
+      } catch (notifError) {
+        this.logger.warn(
+          `Failed to create persistent notification for request ${savedRequest.id}`,
+          notifError,
+        );
+      }
+
       return savedRequest;
     });
   }
