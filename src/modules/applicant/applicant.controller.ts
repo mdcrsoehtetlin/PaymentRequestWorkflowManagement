@@ -170,6 +170,15 @@ export class ApplicantController {
         new_status_id: l.newStatusId,
         action_type_id: l.actionTypeId,
         timestamp: l.timestamp,
+        actionTakenByUser: l.action_taken_by_user
+          ? {
+              userId: l.action_taken_by_user.userId,
+              fullName: l.action_taken_by_user.fullName,
+              employeeNumber: l.action_taken_by_user.employeeNumber,
+              branch: l.action_taken_by_user.branch,
+              roleId: l.action_taken_by_user.roleId ?? null,
+            }
+          : null,
       })),
     };
   }
