@@ -246,6 +246,21 @@ describe('ManagerService', () => {
         { searchTerm: '%PRF-2026%' },
       );
     });
+
+    it('should query with branch filter', async () => {
+      const query: QueryRequestsDto = {
+        branch: 'Tokyo',
+      };
+      const qb =
+        paymentRequestRepo.createQueryBuilder() as unknown as MockQueryBuilder;
+      qb.getMany.mockResolvedValueOnce([]);
+
+      await service.getPendingRequests(mockManagerId, query);
+
+      expect(qb.andWhere).toHaveBeenCalledWith('applicant.branch = :branch', {
+        branch: 'Tokyo',
+      });
+    });
   });
 
   describe('downloadReceipt', () => {
