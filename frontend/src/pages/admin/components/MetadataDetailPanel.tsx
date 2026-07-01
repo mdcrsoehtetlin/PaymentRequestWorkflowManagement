@@ -25,7 +25,7 @@ const ACTION_TYPE_MAP: Record<number, string> = {
   2: 'edited',
   3: 'submitted',
   4: 'mgr_review_start',
-  5: 'mgr_review',
+  5: 'mgr_verified',
   6: 'mgr_rejected',
   7: 'appr_review_start',
   8: 'approved',
@@ -70,7 +70,7 @@ export function MetadataDetailPanel({ log, onClose }: MetadataDetailPanelProps) 
         <div>
           <p className="text-xs text-slate-500">{t('admin.metadata_detail.labels.action')}</p>
           <p className="text-sm font-medium text-slate-900">
-            {t(`admin.audit_log.action_label.${ACTION_TYPE_MAP[log.actionTypeId] ?? 'unknown'}`)}
+            {t(`common.actions.${ACTION_TYPE_MAP[log.actionTypeId] ?? 'unknown'}`)}
           </p>
         </div>
         <div>

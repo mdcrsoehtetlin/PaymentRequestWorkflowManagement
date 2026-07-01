@@ -95,10 +95,7 @@
       "total_amount": "စုစုပေါင်း ပမာဏ",
       "receipt_attachments": "ပျံ့နှံ့ဖိုင် ပူးတွဲမှုများ",
       "no_receipts": "ပျံ့နှံ့ဖိုင် ပူးတွဲထားခြင်း မရှိပါ။",
-      "preview": "ကြိုတင်ကြည့်ရန်",
-      "urgent": "အရေးပေါ်",
-      "description": "ဖော်ပြချက်",
-      "total_amount": "စုစုပေါင်း ပမာဏ"
+      "preview": "ကြိုတင်ကြည့်ရန်"
     },
     "approver": {
       "title": "အတည်ပြုသူ ဒက်ရှ်ဘုတ်",
@@ -126,19 +123,20 @@
       "rejected_approver": "အတည်ပြုသူမှ ပယ်ချပြီး",
       "paid": "ငွေပေးပြီး"
     },
-    "action": {
+    "actions": {
       "created": "ဖန်တီးပြီး",
       "edited": "ပြင်ဆင်ပြီး",
-      "submitted": "တင်ပြပြီး",
-      "mgr_review_start": "မန်နေဂျာ စစ်ဆေးမှု စတင်ပြီး",
+      "submitted": "မန်နေဂျာထံ တင်ပြပြီး",
+      "mgr_review_start": "မန်နေဂျာ စစ်ဆေးနေဆဲ",
       "mgr_verified": "မန်နေဂျာ စစ်ဆေးပြီး",
       "mgr_rejected": "မန်နေဂျာမှ ပယ်ချပြီး",
-      "appr_review_start": "အတည်ပြုသူ စစ်ဆေးမှု စတင်ပြီး",
+      "appr_review_start": "အတည်ပြုသူ စစ်ဆေးနေဆဲ",
       "approved": "အတည်ပြုပြီး",
       "appr_rejected": "အတည်ပြုသူမှ ပယ်ချပြီး",
-      "payment_completed": "ငွေပေးချေမှု ပြီးဆုံးပြီး",
+      "payment_completed": "ငွေပေးပြီး",
       "cancelled": "ပယ်ဖျက်ပြီး",
       "draft_saved": "မူကြမ်း သိမ်းဆည်းပြီး",
+      "unknown": "မသိ",
       "submitted_to_manager": "မန်နေဂျာထံ တင်ပြပြီး",
       "submitted_to_approver": "အတည်ပြုသူထံ တင်ပြပြီး"
     },
@@ -545,12 +543,6 @@
       "cancelled": "ပယ်ဖျက်ပြီး",
       "draft_saved": "မူကြမ်း သိမ်းဆည်းပြီး"
     },
-    "role": {
-      "applicant": "လျှောက်ထားသူ",
-      "manager": "မန်နေဂျာ",
-      "approver": "အတည်ပြုသူ",
-      "accounting": "စာရင်းကိုင်"
-    },
     "dashboard": {
       "title": "အတည်ပြုသူ ဒက်ရှ်ဘုတ်",
       "description": "နောက်ဆုံး အတည်ပြုချက်များကို ဆုံးဖြတ်ရန်",
@@ -865,19 +857,6 @@
         "ip_address": "IP လိပ်စာ",
         "date_time": "ရက်စွဲ/အချိန်",
         "view_detail": "အသေးစိတ် ကြည့်ရန်"
-      },
-      "action_label": {
-        "created": "ဖန်တီးပြီး",
-        "edited": "ပြင်ဆင်ပြီး",
-        "submitted": "တင်ပြပြီး",
-        "mgr_review_start": "မန်နေဂျာ စစ်ဆေးမှု စတင်ပြီး",
-        "mgr_review": "မန်နေဂျာ စစ်ဆေးမှု",
-        "mgr_rejected": "မန်နေဂျာမှ ပယ်ချပြီး",
-        "appr_review_start": "အတည်ပြုသူ စစ်ဆေးမှု စတင်ပြီး",
-        "approved": "အတည်ပြုပြီး",
-        "appr_rejected": "အတည်ပြုသူမှ ပယ်ချပြီး",
-        "payment_completed": "ငွေပေးချေမှု ပြီးဆုံးပြီး",
-        "unknown": "မသိ"
       }
     },
     "metadata_detail": {
