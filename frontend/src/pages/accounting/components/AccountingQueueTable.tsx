@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Eye } from 'lucide-react';
 import type { PaymentRequest } from '../services/accounting.service';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
 import { formatDate } from '../../../utils/format';
@@ -92,9 +93,10 @@ export const AccountingQueueTable: FC<Props> = ({
                     <button
                       type="button"
                       onClick={() => onSelectRequest(req.paymentRequestId)}
-                      className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      title={t('accounting.queue_table.view_detail')}
+                      className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
-                      {t('accounting.queue_table.view_detail')}
+                      <Eye className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
