@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../utils/format';
 import type { ApproverRequestDetailView, PaymentBreakdownItem } from './types';
 import { ApproverActionPanel } from './components/ApproverActionPanel';
-import { ApproverApprovalTimeline } from './components/ApproverApprovalTimeline';
+import { ApprovalTimeline } from '../../components/shared/ApprovalTimeline';
 import { ApproverStatusBadge } from './components/ApproverStatusBadge';
 
 function approverCurrency(amount: string | number, currencyCode = 'MMK'): string {
@@ -188,7 +188,7 @@ export function ApproverRequestDetail({ request, isLoading, onApprove, onReject 
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">{t('approver.detail.approval_history')}</h3>
-            <ApproverApprovalTimeline logs={request.approvalLogs} />
+            <ApprovalTimeline logs={request.approvalLogs} />
           </div>
         </div>
 

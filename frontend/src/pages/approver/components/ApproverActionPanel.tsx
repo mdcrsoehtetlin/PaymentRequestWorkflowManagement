@@ -20,7 +20,7 @@ export function ApproverActionPanel({ request, onApprove, onReject }: ApproverAc
   const handleApprove = async () => {
     setIsSubmitting(true);
     try {
-      await onApprove({ comment: t('approver.action_panel.approved_comment') });
+      await onApprove({ comment: 'Approved' });
       setIsApproveConfirmOpen(false);
     } catch {
       // Error handled by parent component
