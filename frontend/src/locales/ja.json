@@ -41,6 +41,7 @@
       "status_paid": "支払済み",
       "search_placeholder": "リクエスト番号または申請者名で検索...",
       "search": "検索",
+      "branch": "拠点",
       "all_statuses": "すべてのステータス",
       "all_branches": "すべての拠点",
       "request_no": "申請番号",

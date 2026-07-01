@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useManagerDashboardFilters } from '../../hooks/useManagerDashboardFilters';
@@ -15,11 +15,10 @@ import {
   type UserSummary,
 } from '../../types';
 import {
-  Search,
   RefreshCw,
-  ChevronDown,
 } from 'lucide-react';
-import { KpiCard, DashboardKpiGrid } from '../../components/shared';
+import { KpiCard, DashboardKpiGrid, SearchFilterBar } from '../../components/shared';
+import type { FilterField } from '../../components/shared/SearchFilterBar';
 import { LayoutGrid, Clock, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { DataTable, type Column } from '../../components/shared/DataTable';
 import { formatDate } from '../../utils/format';
@@ -45,12 +44,6 @@ export function ManagerDashboard() {
   const { filters, setFilters, clearFilters } = useManagerDashboardFilters();
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  // Local staging states (bound to UI inputs, no fetch on change)
-  const [localSearchText, setLocalSearchText] = useState(filters.search);
-  const [localStatus, setLocalStatus] = useState<number | ''>(filters.status);
-  const [localDate, setLocalDate] = useState(filters.date);
-  const [localBranch, setLocalBranch] = useState(filters.branch);
 
   // Active query states derived from URL params
   const activeSearch = filters.search;
@@ -86,11 +79,6 @@ export function ManagerDashboard() {
 
   // Incremented by WebSocket to trigger re-fetch
   const [refreshKey, setRefreshKey] = useState(0);
-
-  const [isStatusOpen, setIsStatusOpen] = useState(false);
-  const statusDropdownRef = useRef<HTMLDivElement>(null);
-  const [isBranchOpen, setIsBranchOpen] = useState(false);
-  const branchDropdownRef = useRef<HTMLDivElement>(null);
 
   // Always fetch the full unfiltered dataset for KPI counters
   useEffect(() => {
@@ -152,29 +140,9 @@ export function ManagerDashboard() {
     return () => { cancelled = true; };
   }, [activeStatus, activeDate, activeSearch, activeBranch, refreshKey, location.pathname, t]);
 
-  const handleSearch = () => {
-    setFilters({
-      search: localSearchText,
-      status: localStatus,
-      date: localDate,
-      branch: localBranch,
-    });
-  };
-
-  const handleClearFilters = () => {
-    setLocalSearchText('');
-    setLocalStatus('');
-    setLocalDate('');
-    setLocalBranch('');
-    clearFilters();
-  };
-
   const handleSidebarFilter = (newStatusId?: number) => {
-    setLocalSearchText('');
-    setLocalStatus('');
-    setLocalDate('');
-    setLocalBranch('');
     setFilters({ status: newStatusId ?? '', search: '', date: '', branch: '' });
+    setFilterValues({ search: '', branch: '', status: '', date: '' });
   };
 
   // WebSocket: trigger re-fetch on real-time status updates
@@ -196,21 +164,6 @@ export function ManagerDashboard() {
       wsService.disconnect();
     };
   }, [user]);
-
-
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
-        setIsStatusOpen(false);
-      }
-      if (branchDropdownRef.current && !branchDropdownRef.current.contains(event.target as Node)) {
-        setIsBranchOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const totalCount = allRequests.filter(r => r.managerUserId === user?.sub).length;
   const pendingCount = allRequests.filter(r => r.statusId === PaymentStatus.SUBMITTED_MANAGER).length;
@@ -315,9 +268,9 @@ export function ManagerDashboard() {
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); handleProcess(row.paymentRequestId); }}
-          className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="rounded-lg bg-blue-50 p-2 text-blue-600 hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          View Details
+          <Eye className="h-4 w-4" />
         </button>
       ),
       width: '10%',
@@ -326,29 +279,71 @@ export function ManagerDashboard() {
 
 
 
-  const statusLabel = (val: number | '') => {
-    if (val === '') return t('dashboard.manager.all_statuses');
-    if (val === PaymentStatus.SUBMITTED_MANAGER) return t('dashboard.manager.pending_review');
-    if (val === PaymentStatus.MANAGER_REVIEWING) return t('dashboard.manager.reviewing');
-    if (val === PaymentStatus.MANAGER_VERIFIED) return t('dashboard.manager.verified');
-    if (val === PaymentStatus.REJECTED_MANAGER) return t('dashboard.manager.rejected');
-    if (val === PaymentStatus.SUBMITTED_APPROVER) return t('dashboard.manager.status_submitted_approver');
-    if (val === PaymentStatus.APPROVER_REVIEWING) return t('dashboard.manager.status_approver_reviewing');
-    if (val === PaymentStatus.APPROVED) return t('dashboard.manager.status_approved');
-    if (val === PaymentStatus.REJECTED_APPROVER) return t('dashboard.manager.status_rejected_approver');
-    if (val === PaymentStatus.PAID) return t('dashboard.manager.status_paid');
-    return t('dashboard.manager.all_statuses');
+  const managerFilterFields: FilterField[] = [
+    {
+      key: 'search',
+      label: t('dashboard.manager.search'),
+      type: 'text',
+      placeholder: t('dashboard.manager.search_placeholder'),
+    },
+    {
+      key: 'branch',
+      label: t('dashboard.manager.branch'),
+      type: 'select',
+      placeholder: t('dashboard.manager.all_branches'),
+      options: [
+        { value: '', label: t('dashboard.manager.all_branches') },
+        { value: 'Yangon', label: t('common.branch.yangon') },
+        { value: 'Mandalay', label: t('common.branch.mandalay') },
+        { value: 'Naypyitaw', label: t('common.branch.naypyidaw') },
+      ],
+    },
+    {
+      key: 'status',
+      label: t('dashboard.manager.status'),
+      type: 'select',
+      placeholder: t('dashboard.manager.all_statuses'),
+      options: [
+        { value: '', label: t('dashboard.manager.all_statuses') },
+        { value: PaymentStatus.SUBMITTED_MANAGER, label: t('dashboard.manager.pending_review') },
+        { value: PaymentStatus.MANAGER_REVIEWING, label: t('dashboard.manager.reviewing') },
+        { value: PaymentStatus.MANAGER_VERIFIED, label: t('dashboard.manager.verified') },
+        { value: PaymentStatus.REJECTED_MANAGER, label: t('dashboard.manager.rejected') },
+        { value: PaymentStatus.SUBMITTED_APPROVER, label: t('dashboard.manager.status_submitted_approver') },
+        { value: PaymentStatus.APPROVER_REVIEWING, label: t('dashboard.manager.status_approver_reviewing') },
+        { value: PaymentStatus.APPROVED, label: t('dashboard.manager.status_approved') },
+        { value: PaymentStatus.REJECTED_APPROVER, label: t('dashboard.manager.status_rejected_approver') },
+        { value: PaymentStatus.PAID, label: t('dashboard.manager.status_paid') },
+      ],
+    },
+    {
+      key: 'date',
+      label: t('dashboard.manager.date'),
+      type: 'date',
+    },
+  ];
+
+  const [filterValues, setFilterValues] = useState<Record<string, string | number>>({
+    search: filters.search,
+    branch: filters.branch,
+    status: filters.status,
+    date: filters.date,
+  });
+
+  const handleSearchApply = (values: Record<string, string | number>) => {
+    setFilterValues(values);
+    setFilters({
+      search: typeof values.search === 'string' ? values.search : '',
+      status: typeof values.status === 'number' ? values.status : (values.status === '' ? '' : Number(values.status)),
+      date: typeof values.date === 'string' ? values.date : '',
+      branch: typeof values.branch === 'string' ? values.branch : '',
+    });
   };
 
-  const branchLabel = (val: string) => {
-    if (val === '') return t('dashboard.manager.all_branches');
-    if (val === 'Yangon') return t('common.branch.yangon');
-    if (val === 'Mandalay') return t('common.branch.mandalay');
-    if (val === 'Naypyitaw') return t('common.branch.naypyidaw');
-    return val;
+  const handleClearFilters = () => {
+    setFilterValues({});
+    clearFilters();
   };
-
-  const hasActiveFilters = activeSearch !== '' || activeStatus !== '' || activeDate !== '' || activeBranch !== '';
 
   return (
     <DashboardLayout>
@@ -422,135 +417,13 @@ export function ManagerDashboard() {
         </DashboardKpiGrid>
 
         {/* Filter Block */}
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[180px] flex-1">
-              <label className="mb-1 block text-xs font-medium text-slate-500">{t('dashboard.manager.search')}</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder={t('dashboard.manager.search_placeholder')}
-                  value={localSearchText}
-                  onChange={(e) => setLocalSearchText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-                  className="w-full rounded-md border border-slate-300 p-2 pl-9 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                />
-              </div>
-            </div>
-
-            <div className="min-w-[130px]">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Branch</label>
-              <div className="relative" ref={branchDropdownRef}>
-                <button
-                  onClick={() => setIsBranchOpen(!isBranchOpen)}
-                  className="flex items-center gap-2 px-3 py-2 w-full border border-slate-300 rounded-md bg-white text-sm text-slate-900 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  <span className="flex-1 text-left truncate">{branchLabel(localBranch)}</span>
-                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
-                </button>
-
-                {isBranchOpen && (
-                  <div className="absolute mt-1 w-full bg-white rounded-md shadow-lg border border-slate-200 py-1 z-50">
-                    {[
-                      { value: '', label: t('dashboard.manager.all_branches') },
-                      { value: 'Yangon', label: t('common.branch.yangon') },
-                      { value: 'Mandalay', label: t('common.branch.mandalay') },
-                      { value: 'Naypyitaw', label: t('common.branch.naypyidaw') },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => {
-                          setLocalBranch(option.value);
-                          setIsBranchOpen(false);
-                        }}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${localBranch === option.value
-                          ? 'bg-blue-50 text-blue-700 font-medium'
-                          : 'text-slate-700 hover:bg-slate-50'
-                          }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="min-w-[130px]">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Status</label>
-              <div className="relative" ref={statusDropdownRef}>
-                <button
-                  onClick={() => setIsStatusOpen(!isStatusOpen)}
-                  className="flex items-center gap-2 px-3 py-2 w-full border border-slate-300 rounded-md bg-white text-sm text-slate-900 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  <span className="flex-1 text-left truncate">{statusLabel(localStatus)}</span>
-                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
-                </button>
-
-                {isStatusOpen && (
-                  <div className="absolute mt-1 w-full bg-white rounded-md shadow-lg border border-slate-200 py-1 z-50">
-                    {[
-                      { value: '' as const, label: t('dashboard.manager.all_statuses') },
-                      { value: PaymentStatus.SUBMITTED_MANAGER, label: t('dashboard.manager.pending_review') },
-                      { value: PaymentStatus.MANAGER_REVIEWING, label: t('dashboard.manager.reviewing') },
-                      { value: PaymentStatus.MANAGER_VERIFIED, label: t('dashboard.manager.verified') },
-                      { value: PaymentStatus.REJECTED_MANAGER, label: t('dashboard.manager.rejected') },
-                      { value: PaymentStatus.SUBMITTED_APPROVER, label: t('dashboard.manager.status_submitted_approver') },
-                      { value: PaymentStatus.APPROVER_REVIEWING, label: t('dashboard.manager.status_approver_reviewing') },
-                      { value: PaymentStatus.APPROVED, label: t('dashboard.manager.status_approved') },
-                      { value: PaymentStatus.REJECTED_APPROVER, label: t('dashboard.manager.status_rejected_approver') },
-                      { value: PaymentStatus.PAID, label: t('dashboard.manager.status_paid') },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => {
-                          setLocalStatus(option.value);
-                          setIsStatusOpen(false);
-                        }}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${localStatus === option.value
-                          ? 'bg-blue-50 text-blue-700 font-medium'
-                          : 'text-slate-700 hover:bg-slate-50'
-                          }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="min-w-[150px]">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Date</label>
-              <input
-                type="date"
-                value={localDate}
-                onChange={(e) => setLocalDate(e.target.value)}
-                className="w-full rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              />
-            </div>
-
-            <button
-              onClick={handleSearch}
-              disabled={isListLoading}
-              className="inline-flex items-center gap-1.5 rounded-md bg-blue-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 transition-all duration-200"
-            >
-              <Search className="h-4 w-4" />
-              {t('dashboard.manager.search')}
-            </button>
-
-            <button
-              onClick={handleClearFilters}
-              disabled={!hasActiveFilters}
-              className={`rounded-lg border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${hasActiveFilters
-                ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-500 cursor-pointer'
-                : 'border-slate-200 bg-slate-50 text-slate-400 opacity-60 cursor-not-allowed'
-                }`}
-            >
-              Clear Filters
-            </button>
-          </div>
+        <div className="[&_button>span:first-child]:whitespace-nowrap">
+          <SearchFilterBar
+            fields={managerFilterFields}
+            values={filterValues}
+            onApply={handleSearchApply}
+            onClear={handleClearFilters}
+          />
         </div>
 
         {/* Request Queue Table */}
