@@ -637,7 +637,7 @@
       "description": "Process payments for approved requests",
       "filters": {
         "search": "Search",
-        "search_placeholder": "Request #, applicant name...",
+        "search_placeholder": "Request No., applicant name...",
         "branch": "Branch",
         "all_branches": "All Branches",
         "status": "Status",
@@ -658,7 +658,7 @@
     "queue_table": {
       "loading": "Loading queue...",
       "columns": {
-        "request_no": "Request #",
+        "request_no": "Request No.",
         "applicant": "Applicant",
         "branch": "Branch",
         "application_date": "Application Date",
