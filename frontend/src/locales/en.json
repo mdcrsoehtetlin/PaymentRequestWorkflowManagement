@@ -72,7 +72,7 @@
       "preview": "Preview",
       "download": "Download",
       "download_error": "Failed to download receipt.",
-      "approval_history": "Approval Process History",
+      "approval_history": "Activity History",
       "comment_label": "Comment (optional for approval / rejection requires reason >= 10 characters)",
       "comment_placeholder": "Enter a comment about the verification result, or the reason for rejection if sending back.",
       "max_chars": "Max 500 characters",
@@ -135,7 +135,12 @@
       "payment_completed": "Paid",
       "cancelled": "Cancelled",
       "draft_saved": "Draft Saved",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "submitted_to_manager": "Submitted to Manager",
+      "submitted_to_approver": "Submitted to Final Approver"
+    },
+    "timeline": {
+      "empty": "No activity history available."
     },
     "payment_type": {
       "expense_reimburse": "Expense Reimbursement",
@@ -198,7 +203,7 @@
     "description": "Description",
     "amount": "Amount",
     "status": "Status",
-    "action": "Action",
+    "action_label": "Action",
     "open": "Open",
     "download_all_receipts": "Download All Receipts ({{count}})",
     "back_to_list": "Back to List",
@@ -470,8 +475,8 @@
         "download_all": "Download All Receipts ({{count}})",
         "empty": "No receipt files attached."
       },
-      "approval_history": "Approval History",
-      "empty_history": "No approval history available."
+      "approval_history": "Activity History",
+      "empty_history": "No activity history available."
     },
     "action_panel": {
       "title": "Actions",
@@ -519,6 +524,8 @@
       "created": "Created",
       "edited": "Edited",
       "submitted": "Submitted",
+      "submitted_to_manager": "Submitted to Manager",
+      "submitted_to_approver": "Submitted to Final Approver",
       "mgr_review_start": "Manager Review Started",
       "mgr_verified": "Manager Verified",
       "mgr_rejected": "Rejected by Manager",
@@ -572,8 +579,8 @@
         "download_all": "Download All Receipts ({{count}})",
         "empty": "No receipt files attached."
       },
-      "approval_history": "Approval History",
-      "empty_history": "No approval history available."
+      "approval_history": "Activity History",
+      "empty_history": "No activity history available."
     },
     "action_panel": {
       "title": "Actions",
@@ -591,6 +598,12 @@
         "title": "Confirm Rejection",
         "message": "Are you sure you want to reject this request?\n\nYour comment: \"{{comment}}\"",
         "confirm": "Reject",
+        "cancel": "Cancel"
+      },
+      "confirm_approval": {
+        "title": "Confirm Approval",
+        "message": "Are you sure you want to approve this request?",
+        "confirm": "Approve",
         "cancel": "Cancel"
       },
       "approved_comment": "Approved"
