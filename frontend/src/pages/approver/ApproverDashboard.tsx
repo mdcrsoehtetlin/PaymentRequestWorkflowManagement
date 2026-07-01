@@ -420,8 +420,6 @@ export function ApproverDashboard() {
                   values={filterValues}
                   onApply={handleSearchApply}
                   onClear={handleClearFilters}
-                  searchLabel={t('common.search')}
-                  clearLabel={t('common.clear_filters')}
                 />
               </div>
 

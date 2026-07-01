@@ -22,4 +22,8 @@ export class QueryRequestsDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsString()
+  branch?: string;
 }

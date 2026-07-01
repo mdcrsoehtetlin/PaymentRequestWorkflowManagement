@@ -50,28 +50,33 @@ export function ManagerDashboard() {
   const [localSearchText, setLocalSearchText] = useState(filters.search);
   const [localStatus, setLocalStatus] = useState<number | ''>(filters.status);
   const [localDate, setLocalDate] = useState(filters.date);
+  const [localBranch, setLocalBranch] = useState(filters.branch);
 
   // Active query states derived from URL params
   const activeSearch = filters.search;
   const activeStatus = filters.status;
   const activeDate = filters.date;
+  const activeBranch = filters.branch;
 
   // Reset page to 1 during render when filters change
   const [prevFilters, setPrevFilters] = useState({
     search: activeSearch,
     status: activeStatus,
     date: activeDate,
+    branch: activeBranch,
   });
 
   if (
     prevFilters.search !== activeSearch ||
     prevFilters.status !== activeStatus ||
-    prevFilters.date !== activeDate
+    prevFilters.date !== activeDate ||
+    prevFilters.branch !== activeBranch
   ) {
     setPrevFilters({
       search: activeSearch,
       status: activeStatus,
       date: activeDate,
+      branch: activeBranch,
     });
     setCurrentPage(1);
   }
@@ -84,6 +89,8 @@ export function ManagerDashboard() {
 
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
+  const [isBranchOpen, setIsBranchOpen] = useState(false);
+  const branchDropdownRef = useRef<HTMLDivElement>(null);
 
   // Always fetch the full unfiltered dataset for KPI counters
   useEffect(() => {
@@ -121,6 +128,7 @@ export function ManagerDashboard() {
           params.dateTo = activeDate;
         }
         if (activeSearch) params.search = activeSearch;
+        if (activeBranch) params.branch = activeBranch;
 
         const response = await apiClient.get<PaymentRequestWithApplicant[]>('/manager/requests', { params });
         if (!cancelled) {
@@ -142,13 +150,14 @@ export function ManagerDashboard() {
 
     load();
     return () => { cancelled = true; };
-  }, [activeStatus, activeDate, activeSearch, refreshKey, location.pathname, t]);
+  }, [activeStatus, activeDate, activeSearch, activeBranch, refreshKey, location.pathname, t]);
 
   const handleSearch = () => {
     setFilters({
       search: localSearchText,
       status: localStatus,
       date: localDate,
+      branch: localBranch,
     });
   };
 
@@ -156,6 +165,7 @@ export function ManagerDashboard() {
     setLocalSearchText('');
     setLocalStatus('');
     setLocalDate('');
+    setLocalBranch('');
     clearFilters();
   };
 
@@ -163,7 +173,8 @@ export function ManagerDashboard() {
     setLocalSearchText('');
     setLocalStatus('');
     setLocalDate('');
-    setFilters({ status: newStatusId ?? '', search: '', date: '' });
+    setLocalBranch('');
+    setFilters({ status: newStatusId ?? '', search: '', date: '', branch: '' });
   };
 
   // WebSocket: trigger re-fetch on real-time status updates
@@ -192,6 +203,9 @@ export function ManagerDashboard() {
     function handleClickOutside(event: MouseEvent) {
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
         setIsStatusOpen(false);
+      }
+      if (branchDropdownRef.current && !branchDropdownRef.current.contains(event.target as Node)) {
+        setIsBranchOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -326,7 +340,15 @@ export function ManagerDashboard() {
     return t('dashboard.manager.all_statuses');
   };
 
-  const hasActiveFilters = activeSearch !== '' || activeStatus !== '' || activeDate !== '';
+  const branchLabel = (val: string) => {
+    if (val === '') return t('dashboard.manager.all_branches');
+    if (val === 'Yangon') return t('common.branch.yangon');
+    if (val === 'Mandalay') return t('common.branch.mandalay');
+    if (val === 'Naypyitaw') return t('common.branch.naypyidaw');
+    return val;
+  };
+
+  const hasActiveFilters = activeSearch !== '' || activeStatus !== '' || activeDate !== '' || activeBranch !== '';
 
   return (
     <DashboardLayout>
@@ -414,6 +436,44 @@ export function ManagerDashboard() {
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
                   className="w-full rounded-md border border-slate-300 p-2 pl-9 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 />
+              </div>
+            </div>
+
+            <div className="min-w-[130px]">
+              <label className="mb-1 block text-xs font-medium text-slate-500">Branch</label>
+              <div className="relative" ref={branchDropdownRef}>
+                <button
+                  onClick={() => setIsBranchOpen(!isBranchOpen)}
+                  className="flex items-center gap-2 px-3 py-2 w-full border border-slate-300 rounded-md bg-white text-sm text-slate-900 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  <span className="flex-1 text-left truncate">{branchLabel(localBranch)}</span>
+                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                </button>
+
+                {isBranchOpen && (
+                  <div className="absolute mt-1 w-full bg-white rounded-md shadow-lg border border-slate-200 py-1 z-50">
+                    {[
+                      { value: '', label: t('dashboard.manager.all_branches') },
+                      { value: 'Yangon', label: t('common.branch.yangon') },
+                      { value: 'Mandalay', label: t('common.branch.mandalay') },
+                      { value: 'Naypyitaw', label: t('common.branch.naypyidaw') },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setLocalBranch(option.value);
+                          setIsBranchOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${localBranch === option.value
+                          ? 'bg-blue-50 text-blue-700 font-medium'
+                          : 'text-slate-700 hover:bg-slate-50'
+                          }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
