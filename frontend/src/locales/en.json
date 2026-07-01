@@ -642,8 +642,7 @@
         "branch": "Branch",
         "all_branches": "All Branches",
         "status": "Status",
-      "all_statuses": "All Statuses",
-      "all_branches": "All Branches",
+        "all_statuses": "All Statuses",
         "approved": "Approved",
         "paid": "Paid",
         "desired_date": "Desired Date"
