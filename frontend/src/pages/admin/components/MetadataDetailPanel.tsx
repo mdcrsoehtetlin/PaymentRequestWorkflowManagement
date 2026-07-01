@@ -70,7 +70,7 @@ export function MetadataDetailPanel({ log, onClose }: MetadataDetailPanelProps) 
         <div>
           <p className="text-xs text-slate-500">{t('admin.metadata_detail.labels.action')}</p>
           <p className="text-sm font-medium text-slate-900">
-            {t(`common.actions.${ACTION_TYPE_MAP[log.actionTypeId] ?? 'unknown'}`)}
+            {t(`common.action.${ACTION_TYPE_MAP[log.actionTypeId] ?? 'unknown'}`)}
           </p>
         </div>
         <div>
