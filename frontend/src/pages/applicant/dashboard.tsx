@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FileEdit, Send, XCircle, CheckCircle, Plus } from 'lucide-react';
+import { FileEdit, Send, XCircle, CheckCircle, Plus, Eye, Trash2 } from 'lucide-react';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { usePaymentRequests } from './hooks/use-payment-requests';
 import { StatusBadge, SearchFilterBar, DataTable, DashboardKpiGrid, KpiCard, ConfirmDialog } from '../../components/shared';
@@ -157,20 +157,22 @@ const ApplicantDashboard: React.FC = () => {
       key: 'action',
       header: t('applicant.dashboard.columns.action'),
       render: (_, row) => (
-        <div className="flex justify-end space-x-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           {row.status_id === 1 && (
-            <button 
+            <button
               onClick={() => setDeleteId(row.id)}
-              className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              title={t('applicant.dashboard.delete_draft.confirm')}
+              className="rounded-md p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >
-              {t('applicant.dashboard.delete_draft.confirm')}
+              <Trash2 className="h-4 w-4" />
             </button>
           )}
-          <button 
+          <button
             onClick={() => navigate(`/applicant/request/${row.id}`)}
-            className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            title={t('approver.table.view_details')}
+            className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            {t('approver.table.view_details')}
+            <Eye className="h-4 w-4" />
           </button>
         </div>
       ),
