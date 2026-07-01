@@ -42,6 +42,7 @@
       "search_placeholder": "リクエスト番号または申請者名で検索...",
       "search": "検索",
       "all_statuses": "すべてのステータス",
+      "all_branches": "すべての拠点",
       "request_no": "申請番号",
       "applicant": "申請者",
       "amount": "金額",

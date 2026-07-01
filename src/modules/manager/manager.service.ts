@@ -86,7 +86,7 @@ export class ManagerService {
     this.logger.log(
       `Fetching requests for manager: ${managerId} with filters: ${JSON.stringify(query)}`,
     );
-    const { statusId, dateFrom, dateTo, applicant, search } = query;
+    const { statusId, dateFrom, dateTo, applicant, search, branch } = query;
 
     const qb = this.paymentRequestRepository
       .createQueryBuilder('request')
@@ -118,6 +118,10 @@ export class ManagerService {
       qb.andWhere('applicant.fullName ILIKE :applicantName', {
         applicantName: `%${applicant}%`,
       });
+    }
+
+    if (branch) {
+      qb.andWhere('applicant.branch = :branch', { branch });
     }
 
     qb.orderBy('request.modifiedDate', 'DESC');
@@ -244,7 +248,7 @@ export class ManagerService {
             actionTypeId: ApprovalActionType.MGR_REVIEW_START,
             previousStatusId: PaymentStatus.SUBMITTED_MANAGER,
             newStatusId: PaymentStatus.MANAGER_REVIEWING,
-            comment: '確認開始',
+            comment: 'Manager Reviewing',
             ipAddress,
             userAgent,
           });
@@ -394,7 +398,7 @@ export class ManagerService {
             actionTypeId: ApprovalActionType.MGR_VERIFIED,
             previousStatusId: previousStatus,
             newStatusId: PaymentStatus.MANAGER_VERIFIED,
-            comment: dto.comment || '承認されました。',
+            comment: dto.comment || 'Manager Verified',
             ipAddress,
             userAgent,
           });
