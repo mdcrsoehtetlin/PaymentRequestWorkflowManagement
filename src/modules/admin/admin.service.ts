@@ -120,7 +120,8 @@ export class AdminService {
 
   /**
    * @description Fetches a paginated list of system users.
-   * @param keyword Search filter for employee number or full name.
+   * @param employeeNumber Exact match filter for employee number.
+   * @param employeeName Partial match filter for employee full name.
    * @param roleId Filter by role ID.
    * @param isActive Filter by active status.
    * @param page Page number (default 1).
@@ -128,7 +129,8 @@ export class AdminService {
    * @returns Paginated user list.
    */
   async getUsers(
-    keyword?: string,
+    employeeNumber?: string,
+    employeeName?: string,
     roleId?: number,
     isActive?: boolean,
     page = 1,
@@ -154,11 +156,20 @@ export class AdminService {
 
     const qb = this.userRepository.createQueryBuilder('user');
 
-    if (keyword) {
-      qb.andWhere(
-        '(user.employee_number ILIKE :keyword OR user.full_name ILIKE :keyword)',
-        { keyword: `%${keyword}%` },
-      );
+    if (employeeNumber?.trim()) {
+      const normalizedEmployeeNumber = employeeNumber.trim();
+      const searchEmployeeNumber = normalizedEmployeeNumber.startsWith('EMP-')
+        ? normalizedEmployeeNumber
+        : `EMP-${normalizedEmployeeNumber}`;
+
+      qb.andWhere('user.employee_number = :employeeNumber', {
+        employeeNumber: searchEmployeeNumber,
+      });
+    }
+    if (employeeName) {
+      qb.andWhere('user.full_name ILIKE :employeeName', {
+        employeeName: `%${employeeName}%`,
+      });
     }
     if (roleId !== undefined) {
       qb.andWhere('user.role_id = :roleId', { roleId });

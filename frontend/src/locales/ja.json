@@ -125,10 +125,10 @@
       "rejected_approver": "承認者により差し戻し",
       "paid": "支払済み"
     },
-    "action": {
+    "actions": {
       "created": "作成",
       "edited": "編集",
-      "submitted": "マネージャーに提出済み",
+      "submitted": "提出済み",
       "mgr_review_start": "マネージャー確認中",
       "mgr_verified": "マネージャー確認済み",
       "mgr_rejected": "マネージャー差戻し",

@@ -37,7 +37,8 @@ export function UserManagementWorkspace() {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
-    keyword: '',
+    employeeNumber: '',
+    employeeName: '',
     roleId: '',
     isActive: '',
   });
@@ -72,7 +73,14 @@ export function UserManagementWorkspace() {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filters.keyword) params.set('keyword', filters.keyword);
+      if (filters.employeeNumber) {
+        // Strip EMP- prefix if present for API call
+        const num = filters.employeeNumber.startsWith('EMP-') 
+          ? filters.employeeNumber.slice(4) 
+          : filters.employeeNumber;
+        params.set('employeeNumber', num);
+      }
+      if (filters.employeeName) params.set('employeeName', filters.employeeName);
       if (filters.roleId) params.set('roleId', filters.roleId);
       if (filters.isActive) params.set('isActive', filters.isActive);
       params.set('page', String(pagination.page));
@@ -95,7 +103,8 @@ export function UserManagementWorkspace() {
   }, [filters, pagination.page, pagination.pageSize]);
 
   const filterFields: FilterField[] = [
-    { key: 'keyword', label: t('admin.user_management.filters.keyword'), type: 'text', placeholder: t('admin.user_management.filters.keyword_placeholder') },
+    { key: 'employeeNumber', label: t('admin.user_management.filters.employee_number', '社員番号'), type: 'text', placeholder: '12345', prefix: 'EMP-', maxWidth: 'max-w-xs' },
+    { key: 'employeeName', label: t('admin.user_management.filters.employee_name', '社員名'), type: 'text', placeholder: t('admin.user_management.filters.keyword_placeholder') },
     {
       key: 'roleId',
       label: t('admin.user_management.filters.role'),
@@ -125,7 +134,8 @@ export function UserManagementWorkspace() {
 
   const handleApply = (values: Record<string, string | number>) => {
     setFilters({
-      keyword: String(values.keyword ?? ''),
+      employeeNumber: String(values.employeeNumber ?? ''),
+      employeeName: String(values.employeeName ?? ''),
       roleId: String(values.roleId ?? ''),
       isActive: String(values.isActive ?? ''),
     });
@@ -133,7 +143,7 @@ export function UserManagementWorkspace() {
   };
 
   const handleClear = () => {
-    setFilters({ keyword: '', roleId: '', isActive: '' });
+    setFilters({ employeeNumber: '', employeeName: '', roleId: '', isActive: '' });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
@@ -147,7 +157,13 @@ export function UserManagementWorkspace() {
       setIsLoading(true);
       try {
         const params = new URLSearchParams();
-        if (filters.keyword) params.set('keyword', filters.keyword);
+        if (filters.employeeNumber) {
+          const num = filters.employeeNumber.startsWith('EMP-') 
+            ? filters.employeeNumber.slice(4) 
+            : filters.employeeNumber;
+          params.set('employeeNumber', num);
+        }
+        if (filters.employeeName) params.set('employeeName', filters.employeeName);
         if (filters.roleId) params.set('roleId', filters.roleId);
         if (filters.isActive) params.set('isActive', filters.isActive);
         params.set('page', String(pagination.page));

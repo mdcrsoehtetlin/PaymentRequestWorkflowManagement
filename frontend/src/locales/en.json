@@ -124,10 +124,10 @@
       "rejected_approver": "Rejected by Approver",
       "paid": "Paid"
     },
-    "action": {
+    "actions": {
       "created": "Created",
       "edited": "Edited",
-      "submitted": "Submitted to Manager",
+      "submitted": "Submitted",
       "mgr_review_start": "Manager Reviewing",
       "mgr_verified": "Manager Verified",
       "mgr_rejected": "Rejected by Manager",

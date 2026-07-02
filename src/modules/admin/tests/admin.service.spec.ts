@@ -273,12 +273,33 @@ describe('AdminService', () => {
       mockQb.getMany.mockResolvedValue([baseUser]);
       mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
 
-      const result = await service.getUsers('test', 1, true, 1, 20);
+      const result = await service.getUsers('EMP-001', 'test', 1, true, 1, 20);
 
       expect(result.data).toHaveLength(1);
       expect(result.meta.totalItems).toBe(1);
       expect(result.meta.totalPages).toBe(1);
       expect(mockQb.andWhere).toHaveBeenCalled();
+    });
+
+    it('should normalize numeric employee numbers by adding EMP- prefix', async () => {
+      const mockQb = createMockQueryBuilder();
+      mockQb.getCount.mockResolvedValue(1);
+      mockQb.getMany.mockResolvedValue([baseUser]);
+      mockUserRepo.createQueryBuilder.mockReturnValue(mockQb);
+
+      await service.getUsers(
+        '2024-001',
+        undefined,
+        undefined,
+        undefined,
+        1,
+        20,
+      );
+
+      expect(mockQb.andWhere).toHaveBeenCalledWith(
+        'user.employee_number = :employeeNumber',
+        { employeeNumber: 'EMP-2024-001' },
+      );
     });
 
     it('should return paginated users without filters', async () => {

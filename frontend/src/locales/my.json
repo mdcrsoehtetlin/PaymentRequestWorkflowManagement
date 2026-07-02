@@ -125,10 +125,10 @@
       "rejected_approver": "အတည်ပြုသူမှ ပယ်ချပြီး",
       "paid": "ငွေပေးပြီး"
     },
-    "action": {
+    "actions": {
       "created": "ဖန်တီးပြီး",
       "edited": "ပြင်ဆင်ပြီး",
-      "submitted": "မန်နေဂျာထံ တင်ပြပြီး",
+      "submitted": "တင်ပြပြီး",
       "mgr_review_start": "မန်နေဂျာ စစ်ဆေးနေဆဲ",
       "mgr_verified": "မန်နေဂျာ စစ်ဆေးပြီး",
       "mgr_rejected": "မန်နေဂျာမှ ပယ်ချပြီး",
