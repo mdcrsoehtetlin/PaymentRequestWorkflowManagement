@@ -315,7 +315,8 @@ export function ManagerRequestDetail() {
   const formatDate = (dateStr: string | Date) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
-    return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
   if (isLoading) {
