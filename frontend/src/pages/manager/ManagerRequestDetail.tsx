@@ -10,8 +10,6 @@ import {
   CURRENCY_CODES,
   PAYMENT_TYPE_LABELS_EN,
   PAYMENT_METHOD_LABELS_EN,
-  ACTION_LABELS_EN,
-  ACTION_BADGE_COLORS,
   type PaymentRequestDetailView,
   type UserSummary,
 } from '../../types';
@@ -27,6 +25,7 @@ import {
   RotateCcw,
   Download,
 } from 'lucide-react';
+import { ApprovalTimeline } from '../../components/shared/ApprovalTimeline';
 
 interface AxiosErrorResponse {
   response?: {
@@ -378,22 +377,15 @@ export function ManagerRequestDetail() {
           {/* Detail Header */}
           <div className="flex items-start justify-between pb-4 border-b border-slate-100">
             <div>
-              <h2 className="text-xl font-bold font-mono text-indigo-600 tracking-tight">
-                {request.requestNumber}
-              </h2>
-              <span className="text-xs text-slate-400 mt-0.5 block">
-                {t('dashboard.manager.last_updated')} {new Date(request.modifiedDate).toLocaleString('ja-JP')}
-              </span>
+              <h2 className="text-xl font-bold font-mono text-indigo-600 tracking-tight">{request.requestNumber}</h2>
+              <span className="text-xs text-slate-400 mt-0.5 block">{t('dashboard.manager.last_updated')} {new Date(request.modifiedDate).toLocaleString('ja-JP')}</span>
             </div>
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${STATUS_COLORS[request.statusId as PaymentStatus]
-                }`}
-            >
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${STATUS_COLORS[request.statusId as PaymentStatus]}`}>
               {STATUS_LABELS_EN[request.statusId as PaymentStatus]}
             </span>
           </div>
 
-          {/* Details Section */}
+          {/* Top Details */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-xs">
               <div>
@@ -405,34 +397,23 @@ export function ManagerRequestDetail() {
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">{t('dashboard.manager.employee_number')}</span>
-                <span className="text-slate-900 font-bold">
-                  {request.applicant?.employeeNumber || '-'}
-                </span>
+                <span className="text-slate-900 font-bold">{request.applicant?.employeeNumber || '-'}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">{t('dashboard.manager.department_branch')}</span>
-                <span className="text-slate-950 font-bold">
-                  {request.applicant?.branch || t('dashboard.manager.no_branch')}
-                  {request.applicant?.department ? ` (${request.applicant.department})` : ''}
-                </span>
+                <span className="text-slate-950 font-bold">{request.applicant?.branch || t('dashboard.manager.no_branch')}{request.applicant?.department ? ` (${request.applicant.department})` : ''}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">{t('dashboard.manager.desired_payment_date')}</span>
-                <span className="text-slate-900 font-bold text-rose-600">
-                  {formatDate(request.desiredPaymentDate)}
-                </span>
+                <span className="text-slate-900 font-bold text-rose-600">{formatDate(request.desiredPaymentDate)}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">{t('dashboard.manager.payment_type')}</span>
-                <span className="text-slate-900 font-semibold">
-                  {PAYMENT_TYPE_LABELS_EN[request.paymentTypeId as keyof typeof PAYMENT_TYPE_LABELS_EN] || t('dashboard.manager.other')}
-                </span>
+                <span className="text-slate-900 font-semibold">{PAYMENT_TYPE_LABELS_EN[request.paymentTypeId as keyof typeof PAYMENT_TYPE_LABELS_EN] || t('dashboard.manager.other')}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-0.5">{t('dashboard.manager.payment_method')}</span>
-                <span className="text-slate-900 font-semibold">
-                  {PAYMENT_METHOD_LABELS_EN[request.paymentMethodId as keyof typeof PAYMENT_METHOD_LABELS_EN] || t('dashboard.manager.bank_transfer')}
-                </span>
+                <span className="text-slate-900 font-semibold">{PAYMENT_METHOD_LABELS_EN[request.paymentMethodId as keyof typeof PAYMENT_METHOD_LABELS_EN] || t('dashboard.manager.bank_transfer')}</span>
               </div>
             </div>
 
@@ -447,188 +428,170 @@ export function ManagerRequestDetail() {
             {/* Purpose */}
             <div className="text-xs">
               <span className="text-slate-400 block mb-1">{t('dashboard.manager.purpose')}</span>
-              <p className="text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-wrap leading-relaxed">
-                {request.purpose}
-              </p>
+              <p className="text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-wrap leading-relaxed">{request.purpose}</p>
             </div>
           </div>
 
-          {/* Breakdown items table */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wider">
-              <FileText className="h-3.5 w-3.5 text-slate-400" />
-              {t('dashboard.manager.payment_breakdown')}
-            </h3>
-            <div className="border border-slate-100 rounded-xl overflow-hidden text-xs">
-              <table className="min-w-full divide-y divide-slate-100">
-                <thead className="bg-slate-50 text-slate-500">
-                  <tr>
-                    <th className="px-3 py-2 w-12">No</th>
-                    <th className="px-3 py-2">{t('dashboard.manager.date')}</th>
-                    <th className="px-3 py-2">{t('dashboard.manager.description')}</th>
-                    <th className="px-3 py-2 text-right">{t('dashboard.manager.amount')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {request.breakdownItems?.map((item) => (
-                    <tr key={item.paymentBreakdownItemId}>
-                      <td className="px-3 py-2 text-slate-400 text-center">{item.lineNumber}</td>
-                      <td className="px-3 py-2 text-slate-500">{formatDate(item.itemDate)}</td>
-                      <td className="px-3 py-2 text-slate-800 font-medium">{item.description}</td>
-                      <td className="px-3 py-2 text-slate-900 font-semibold text-right">
-                        {formatCurrency(item.amount, request.currencyId)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot className="bg-slate-50/70 border-t border-slate-100 font-bold">
-                  <tr>
-                    <td colSpan={3} className="px-3 py-2 text-slate-600 text-right">{t('dashboard.manager.total_amount')}</td>
-                    <td className="px-3 py-2 text-indigo-700 text-right">
-                      {formatCurrency(request.totalAmount, request.currencyId)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-          {/* Attachments Section */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wider">
-              <Paperclip className="h-3.5 w-3.5 text-slate-400" />
-              {t('dashboard.manager.receipt_attachments')}
-            </h3>
-            {request.receiptFiles?.length === 0 ? (
-              <div className="p-3 bg-slate-50 rounded-xl text-center text-xs text-slate-400 border border-slate-100">
-                {t('dashboard.manager.no_receipts')}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-2">
-                {request.receiptFiles?.map((file) => (
-                  <div key={file.receiptFileId} className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl transition text-xs">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <FileText className="h-4 w-4 text-indigo-500 shrink-0" />
-                      <span className="text-slate-700 font-medium truncate" title={file.originalFileName}>
-                        {file.originalFileName}
-                      </span>
-                      <span className="text-[10px] text-slate-400 shrink-0">
-                        ({file.fileSize ? (parseInt(String(file.fileSize), 10) / 1024).toFixed(1) : '0'} KB)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <a
-                        href={file.fileStoragePath}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 font-semibold"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        {t('dashboard.manager.preview')}
-                      </a>
-                      <button
-                        onClick={() => handleDownloadReceipt(request.paymentRequestId, file.receiptFileId, file.originalFileName)}
-                        className="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 font-semibold"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        {t('dashboard.manager.download')}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Timeline / Approval History */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wider">
-              <Clock className="h-3.5 w-3.5 text-slate-400" />
-              {t('dashboard.manager.approval_history')}
-            </h3>
-            <div className="space-y-3 pl-3 border-l-2 border-slate-100 ml-1">
-              {request.approvalLogs?.map((log) => (
-                <div key={log.approvalLogId} className="relative text-xs">
-                  <div className="absolute -left-[19px] top-1.5 bg-white border-2 border-indigo-400 rounded-full h-3 w-3"></div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 mb-0.5">
-                    <div>
-                      <span className="font-semibold text-slate-700">{log.actionTakenByUser?.fullName}</span>
-                      {log.actionTakenByUser?.employeeNumber && (
-                        <span className="ml-1.5 text-slate-400">({log.actionTakenByUser.employeeNumber})</span>
-                      )}
-                    </div>
-                    <span>{new Date(log.timestamp).toLocaleString('ja-JP')}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_BADGE_COLORS[log.actionTypeId as keyof typeof ACTION_BADGE_COLORS] || 'bg-slate-100 text-slate-800'
-                      }`}>
-                      {ACTION_LABELS_EN[log.actionTypeId as keyof typeof ACTION_LABELS_EN]}
-                    </span>
-                    {log.comment && (
-                      <span className="text-slate-500 italic block mt-0.5">
-                        &quot;{log.comment}&quot;
-                      </span>
-                    )}
-                  </div>
+          {/* Main content + Action Panel layout (matches Approver design) */}
+          <div className="grid gap-6 xl:grid-cols-[1fr_320px] mt-2">
+            <div className="space-y-6">
+              {/* Breakdown items table */}
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wider">
+                  <FileText className="h-3.5 w-3.5 text-slate-400" />
+                  {t('dashboard.manager.payment_breakdown')}
+                </h3>
+                <div className="border border-slate-100 rounded-xl overflow-hidden text-xs">
+                  <table className="min-w-full divide-y divide-slate-100">
+                    <thead className="bg-slate-50 text-slate-500">
+                      <tr>
+                        <th className="px-3 py-2 w-12">No</th>
+                        <th className="px-3 py-2">{t('dashboard.manager.date')}</th>
+                        <th className="px-3 py-2">{t('dashboard.manager.description')}</th>
+                        <th className="px-3 py-2 text-right">{t('dashboard.manager.amount')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {request.breakdownItems?.map((item) => (
+                        <tr key={item.paymentBreakdownItemId}>
+                          <td className="px-3 py-2 text-slate-400 text-center">{item.lineNumber}</td>
+                          <td className="px-3 py-2 text-slate-500">{formatDate(item.itemDate)}</td>
+                          <td className="px-3 py-2 text-slate-800 font-medium">{item.description}</td>
+                          <td className="px-3 py-2 text-slate-900 font-semibold text-right">{formatCurrency(item.amount, request.currencyId)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-slate-50/70 border-t border-slate-100 font-bold">
+                      <tr>
+                        <td colSpan={3} className="px-3 py-2 text-slate-600 text-right">{t('dashboard.manager.total_amount')}</td>
+                        <td className="px-3 py-2 text-indigo-700 text-right">{formatCurrency(request.totalAmount, request.currencyId)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          {/* Verification Decision Form Area */}
-          {(request.statusId === PaymentStatus.SUBMITTED_MANAGER ||
-            request.statusId === PaymentStatus.MANAGER_REVIEWING) && (
-              <div className="pt-4 border-t border-slate-100 space-y-3">
-                <div className="relative">
-                  <span className="text-xs font-bold text-slate-600 block mb-1">
-                    {t('dashboard.manager.comment_label')}
-                  </span>
-                  <textarea
-                    rows={3}
-                    value={comment}
-                    onChange={(e) => {
-                      setComment(e.target.value);
-                      if (validationError) setValidationError(null);
-                    }}
-                    placeholder={t('dashboard.manager.comment_placeholder')}
-                    className="w-full p-3 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-slate-700"
-                  />
-                  <div className="flex justify-between items-center mt-1">
-                    <span className="text-[10px] text-slate-400">{t('dashboard.manager.max_chars')}</span>
-                    <span className={`text-[10px] ${comment.length > 500 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
-                      {comment.length} / 500
-                    </span>
-                  </div>
-                </div>
-
-                {validationError && (
-                  <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    <span>{validationError}</span>
+              {/* Attachments Section */}
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Paperclip className="h-3.5 w-3.5 text-slate-400" />
+                  {t('dashboard.manager.receipt_attachments')}
+                </h3>
+                {request.receiptFiles?.length === 0 ? (
+                  <div className="p-3 bg-slate-50 rounded-xl text-center text-xs text-slate-400 border border-slate-100">{t('dashboard.manager.no_receipts')}</div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {request.receiptFiles?.map((file) => (
+                      <div key={file.receiptFileId} className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl transition text-xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 text-indigo-500 shrink-0" />
+                          <span className="text-slate-700 font-medium truncate" title={file.originalFileName}>{file.originalFileName}</span>
+                          <span className="text-[10px] text-slate-400 shrink-0">({file.fileSize ? (parseInt(String(file.fileSize), 10) / 1024).toFixed(1) : '0'} KB)</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <a href={file.fileStoragePath} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 font-semibold">
+                            <Eye className="h-3.5 w-3.5" />
+                            {t('dashboard.manager.preview')}
+                          </a>
+                          <button onClick={() => handleDownloadReceipt(request.paymentRequestId, file.receiptFileId, file.originalFileName)} className="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 font-semibold">
+                            <Download className="h-3.5 w-3.5" />
+                            {t('dashboard.manager.download')}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button
-                    onClick={handleReject}
-                    disabled={isActionSubmitting}
-                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 text-rose-700 bg-rose-50/30 hover:bg-rose-50 active:bg-rose-100 transition text-xs font-bold disabled:opacity-50"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {t('dashboard.manager.reject')}
-                  </button>
-
-                  <button
-                    onClick={handleApprove}
-                    disabled={isActionSubmitting}
-                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition text-xs font-bold shadow-md shadow-indigo-600/10 disabled:opacity-50"
-                  >
-                    <Check className="h-4 w-4" />
-                    {t('dashboard.manager.approve')}
-                  </button>
-                </div>
               </div>
-            )}
+
+              {/* Timeline / Approval History */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Clock className="h-3.5 w-3.5 text-slate-400" />
+                  {t('dashboard.manager.approval_history')}
+                </h3>
+                <ApprovalTimeline logs={request.approvalLogs} />
+              </div>
+            </div>
+
+            {/* Action Panel (right column) - preserved functionality but moved to sidebar */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              {/* compute once for clarity */}
+              {(() => {
+                const isActionEnabled =
+                  request.statusId === PaymentStatus.SUBMITTED_MANAGER ||
+                  request.statusId === PaymentStatus.MANAGER_REVIEWING;
+
+                return (
+                  <>
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-slate-900">
+                        {t('dashboard.manager.action_panel_title') || t('dashboard.manager.comment_label')}
+                      </h3>
+                      <p className="text-sm text-slate-500">{t('dashboard.manager.action_panel_description') ?? ''}</p>
+                    </div>
+
+                    <div className={`relative ${!isActionEnabled ? 'opacity-60' : ''}`}>
+                      <span className="text-xs font-bold text-slate-600 block mb-1">
+                        {t('dashboard.manager.comment_label')}
+                      </span>
+                      <textarea
+                        rows={4}
+                        value={comment}
+                        onChange={(e) => {
+                          setComment(e.target.value);
+                          if (validationError) setValidationError(null);
+                        }}
+                        placeholder={t('dashboard.manager.comment_placeholder')}
+                        readOnly={!isActionEnabled}
+                        disabled={!isActionEnabled}
+                        aria-disabled={!isActionEnabled}
+                        className={`w-full p-3 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-slate-700 ${!isActionEnabled ? 'cursor-not-allowed bg-slate-50' : ''
+                          }`}
+                      />
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-[10px] text-slate-400">{t('dashboard.manager.max_chars')}</span>
+                        <span
+                          className={`text-[10px] ${comment.length > 500 ? 'text-rose-500 font-bold' : 'text-slate-400'
+                            }`}
+                        >
+                          {comment.length} / 500
+                        </span>
+                      </div>
+                    </div>
+
+                    {validationError && (
+                      <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5 mt-3">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span>{validationError}</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-3 pt-4">
+                      <button
+                        onClick={handleReject}
+                        disabled={!isActionEnabled || isActionSubmitting}
+                        className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 text-rose-700 bg-rose-50/30 hover:bg-rose-50 active:bg-rose-100 transition text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        {t('dashboard.manager.reject')}
+                      </button>
+
+                      <button
+                        onClick={handleApprove}
+                        disabled={!isActionEnabled || isActionSubmitting}
+                        className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition text-xs font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Check className="h-4 w-4" />
+                        {t('dashboard.manager.approve')}
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+          </div>
         </div>
       </div>
     </DashboardLayout>

@@ -1,4 +1,6 @@
 <!-- SPECKIT START -->
+**Current Plan**: specs/011-admin-user-search-update/plan.md
+
 ## Development Rules (BINDING — read before any code generation)
 
 All code MUST comply with the full development rules specification:

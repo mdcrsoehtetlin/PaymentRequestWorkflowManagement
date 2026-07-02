@@ -15,6 +15,7 @@ export interface FilterField {
   options?: { value: string | number; label: string }[];
   colSpan?: number;
   prefix?: string;
+  maxWidth?: string;
 }
 
 export interface SearchFilterBarProps {
@@ -117,7 +118,7 @@ export function SearchFilterBar({
                     type="text"
                     value={String(localValues[field.key] ?? '')}
                     placeholder={field.placeholder}
-                    className={`${inputClasses} ${field.prefix ? 'rounded-l-none' : ''}`}
+                    className={`${inputClasses} ${field.maxWidth ?? 'w-full'} ${field.prefix ? 'rounded-l-none' : ''}`}
                     onChange={(e) => handleChange(field.key, e.target.value)}
                   />
                 </div>

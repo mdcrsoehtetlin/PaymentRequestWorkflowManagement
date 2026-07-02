@@ -5,10 +5,11 @@ import { ArrowLeft, Send, FileText, AlertCircle, Trash2, Download } from 'lucide
 import { fetchPaymentRequestDetail, submitToManager, submitToApprover, updatePaymentRequest, deleteReceipt, downloadReceipt } from './services/api';
 import apiClient from '../../services/api-client';
 import ReceiptUpload from './components/ReceiptUpload';
-import { EDITABLE_STATUSES, CURRENCY_CODES } from '../../types';
+import { EDITABLE_STATUSES, CURRENCY_CODES, type ApprovalLogWithUser } from '../../types';
+import { ApprovalTimeline } from '../../components/shared/ApprovalTimeline';
 
 interface Breakdown { description: string; amount: number | string; }
-interface Log { id: string; comment: string; new_status_id: number; action_type_id: number; timestamp: string; }
+interface Log { id: string; comment: string; new_status_id: number; action_type_id: number; paymentRequestId: number; actionTakenByUserId: number; ipAddress: string; userAgent: string; timestamp: string; actionTakenByUser?: { userId: number; fullName: string; employeeNumber: string; branch: string; roleId?: number | null; } | null; }
 interface Receipt { id: string; file_name: string; file_size: number; }
 interface DetailData {
   id: string;
@@ -35,6 +36,30 @@ import { StatusBadge, ConfirmDialog } from '../../components/shared';
 import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/format';
 
+function toApprovalLogWithUser(logs: Log[]): ApprovalLogWithUser[] {
+  return logs.map((log) => ({
+    approvalLogId: log.id,
+    actionTypeId: log.action_type_id,
+    paymentRequestId: log.paymentRequestId,
+    actionTakenByUserId: log.actionTakenByUserId,
+    previousStatusId: null,
+    newStatusId: log.new_status_id,
+    comment: log.comment,
+    ipAddress: log.ipAddress,
+    userAgent: log.userAgent,
+    timestamp: log.timestamp,
+    actionTakenByUser: log.actionTakenByUser
+      ? {
+          userId: log.actionTakenByUser.userId,
+          fullName: log.actionTakenByUser.fullName,
+          employeeNumber: log.actionTakenByUser.employeeNumber,
+          branch: log.actionTakenByUser.branch,
+          roleId: log.actionTakenByUser.roleId ?? null,
+        }
+      : { userId: 0, fullName: '', employeeNumber: '', branch: '', roleId: null },
+  }));
+}
+
 const PaymentRequestDetail: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
@@ -49,23 +74,6 @@ const PaymentRequestDetail: React.FC = () => {
   const { success: showSuccess, error: showError } = useToast();
   const [receiptToDelete, setReceiptToDelete] = useState<string | null>(null);
   const [managers, setManagers] = useState<{ userId: number; fullName: string; department: string }[]>([]);
-
-  const getStatusLabel = (statusId: number) => {
-    const statusMap: Record<number, string> = {
-      1: 'draft',
-      2: 'submitted_manager',
-      3: 'manager_reviewing',
-      4: 'manager_verified',
-      5: 'rejected_manager',
-      6: 'submitted_approver',
-      7: 'approver_reviewing',
-      8: 'approved',
-      9: 'rejected_approver',
-      10: 'paid',
-    };
-    const key = statusMap[statusId];
-    return key ? t(`common.statuses.${key}`) : `Status ${statusId}`;
-  };
 
   useEffect(() => {
     // Fetch managers for the dropdown
@@ -409,29 +417,8 @@ const PaymentRequestDetail: React.FC = () => {
               <div className="p-5 border-b border-slate-100 bg-slate-50/50">
                 <h2 className="text-base font-semibold text-slate-800">{t('applicant.detail.activity_log')}</h2>
               </div>
-              <div className="p-5 space-y-6">
-                {data.logs?.map((log, i: number) => (
-                  <div key={log.id} className="relative pl-6 pb-6 last:pb-0">
-                    {i !== (data.logs?.length ?? 0) - 1 && (
-                      <div className="absolute left-2.5 top-5 bottom-0 w-px bg-slate-200"></div>
-                    )}
-                    <div className="absolute left-1.5 top-1.5 w-2 h-2 rounded-full bg-blue-500 ring-4 ring-white"></div>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">{log.comment}</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {t('applicant.detail.status_changed_to')}{' '}
-                          <span className="font-medium">
-                            {getStatusLabel(log.new_status_id)}
-                          </span>
-                        </p>
-                      </div>
-                      <span className="text-xs text-slate-400 font-medium">
-                        {new Date(log.timestamp).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              <div className="p-5">
+                <ApprovalTimeline logs={toApprovalLogWithUser(data.logs || [])} />
               </div>
               {rejectionLog && data.status_id === 5 && (
                 <div className="p-5 border-t border-slate-100 bg-slate-50/50">

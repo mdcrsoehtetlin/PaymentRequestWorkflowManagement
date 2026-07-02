@@ -41,6 +41,8 @@
       "status_paid": "Paid",
       "search_placeholder": "Search by Request No or applicant name...",
       "search": "Search",
+      "action_panel_title": "Action",
+      "action_panel_description": "Approve or reject this request.",
       "all_statuses": "All Statuses",
       "all_branches": "All Branches",
       "request_no": "Request No.",
@@ -125,7 +127,7 @@
     "actions": {
       "created": "Created",
       "edited": "Edited",
-      "submitted": "Submitted to Manager",
+      "submitted": "Submitted",
       "mgr_review_start": "Manager Reviewing",
       "mgr_verified": "Manager Verified",
       "mgr_rejected": "Rejected by Manager",
@@ -274,7 +276,7 @@
         "no_description": "No description",
         "total_amount": "Total Amount"
       },
-      "activity_log": "Activity Log",
+      "activity_log": "Activity History",
       "status_changed_to": "Status changed to",
       "reply_to_rejection": {
         "title": "Reply to Rejection",

@@ -15,12 +15,13 @@ import {
 import { BranchAlertBanner } from './components/BranchAlertBanner';
 import { PaymentCompletionDialog } from './components/PaymentCompletionDialog';
 import { ReadOnlyBreakdownGrid } from './components/ReadOnlyBreakdownGrid';
+import { ApprovalTimeline } from '../../components/shared/ApprovalTimeline';
 import {
   completePayment,
   getPaymentRequestDetails,
   type AccountingPaymentDetail,
 } from './services/accounting.service';
-import { ACTION_LABELS_EN, type ApprovalActionType } from '../../types';
+import type { ApprovalLogWithUser } from '../../types';
 
 interface Props {
   requestId: number;
@@ -29,8 +30,6 @@ interface Props {
 }
 
 const formatDate = (value: string): string => new Date(value).toLocaleDateString();
-
-const formatDateTime = (value: string): string => new Date(value).toLocaleString();
 
 const formatFileSize = (value: string): string => {
   const bytes = Number(value);
@@ -118,6 +117,31 @@ export const PaymentDetailModal: FC<Props> = ({
   const isMismatched = details !== null && Math.abs(gridSum - totalAmount) > 0.01;
   const isMissingReceipts =
     details !== null && details.hasReceipt && details.receiptFiles.length === 0;
+
+  /** Map accounting timeline items to the ApprovalLogWithUser shape expected by ApprovalTimeline. */
+  const approvalLogs = useMemo<ApprovalLogWithUser[]>(
+    () =>
+      (details?.approvalTimeline ?? []).map((item) => ({
+        approvalLogId: item.id,
+        paymentRequestId: 0,
+        actionTakenByUserId: item.user.userId,
+        actionTypeId: item.actionTypeId,
+        previousStatusId: item.previousStatusId,
+        newStatusId: item.newStatusId,
+        comment: item.comment,
+        ipAddress: '',
+        userAgent: '',
+        timestamp: item.timestamp,
+        actionTakenByUser: {
+          userId: item.user.userId,
+          fullName: item.user.fullName,
+          employeeNumber: item.user.employeeNumber,
+          branch: '',
+          roleId: item.user.roleId ?? null,
+        },
+      })),
+    [details],
+  );
 
   const handleConfirmComplete = async (): Promise<void> => {
     try {
@@ -351,34 +375,11 @@ export const PaymentDetailModal: FC<Props> = ({
 
             <section>
               <h3 className="mb-3 text-sm font-semibold uppercase text-slate-800">
-                {t('accounting.detail.sections.approval_timeline')}
+                {t('approver.detail.approval_history')}
               </h3>
-              <ol className="space-y-3 rounded-lg border border-slate-200 p-4">
-                {details.approvalTimeline.length === 0 ? (
-                  <li className="text-sm text-slate-500">{t('accounting.detail.timeline.empty')}</li>
-                ) : (
-                  details.approvalTimeline.map((item) => (
-                    <li key={item.id} className="border-l-2 border-blue-200 pl-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {ACTION_LABELS_EN[item.actionTypeId as ApprovalActionType] ?? t('accounting.detail.timeline.action_label', { actionTypeId: item.actionTypeId })}
-                        </p>
-                        <time className="text-xs text-slate-500" dateTime={item.timestamp}>
-                          {formatDateTime(item.timestamp)}
-                        </time>
-                      </div>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {item.user.fullName} ({item.user.employeeNumber})
-                      </p>
-                      {item.comment && (
-                        <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">
-                          {item.comment}
-                        </p>
-                      )}
-                    </li>
-                  ))
-                )}
-              </ol>
+              <div className="rounded-lg border border-slate-200 p-4">
+                <ApprovalTimeline logs={approvalLogs} />
+              </div>
             </section>
 
             <section>

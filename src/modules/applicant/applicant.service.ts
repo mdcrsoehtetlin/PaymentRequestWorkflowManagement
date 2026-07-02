@@ -202,7 +202,12 @@ export class ApplicantService {
         applicantUserId: applicantId,
         isDeleted: false,
       },
-      relations: ['breakdowns', 'receipts', 'approvalLogs'],
+      relations: [
+        'breakdowns',
+        'receipts',
+        'approvalLogs',
+        'approvalLogs.action_taken_by_user',
+      ],
     });
 
     if (!request) {
@@ -214,7 +219,7 @@ export class ApplicantService {
       request.breakdowns.sort((a, b) => b.amount - a.amount);
     if (request.approvalLogs)
       request.approvalLogs.sort(
-        (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
+        (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
       );
 
     return request;
@@ -298,7 +303,12 @@ export class ApplicantService {
           applicantUserId: applicantId,
           isDeleted: false,
         },
-        relations: ['breakdowns', 'receipts', 'approvalLogs'],
+        relations: [
+          'breakdowns',
+          'receipts',
+          'approvalLogs',
+          'approvalLogs.action_taken_by_user',
+        ],
       });
 
       if (!request) throw new NotFoundException('Payment request not found');
@@ -314,17 +324,24 @@ export class ApplicantService {
         }
         request.approvalLogs.sort(
           (a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
         );
-        const lastRejectionIndex = request.approvalLogs.findIndex(
+        const reversedLogs = [...request.approvalLogs].reverse();
+        const rawRejectionIdx = reversedLogs.findIndex(
           (log) => log.actionTypeId === 6 || log.actionTypeId === 9,
         );
-        const lastEditIndex = request.approvalLogs.findIndex(
+        const rawEditIdx = reversedLogs.findIndex(
           (log) => log.actionTypeId === 2,
         );
+        const lastRejectionIndex =
+          rawRejectionIdx === -1
+            ? -1
+            : request.approvalLogs.length - 1 - rawRejectionIdx;
+        const lastEditIndex =
+          rawEditIdx === -1 ? -1 : request.approvalLogs.length - 1 - rawEditIdx;
 
         if (lastRejectionIndex !== -1) {
-          if (lastEditIndex === -1 || lastEditIndex > lastRejectionIndex) {
+          if (lastEditIndex === -1 || lastEditIndex < lastRejectionIndex) {
             throw new BadRequestException(
               'Request must have been modified before resubmitting',
             );

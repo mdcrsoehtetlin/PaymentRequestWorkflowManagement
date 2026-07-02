@@ -64,7 +64,8 @@ export class AdminController {
 
   /**
    * @description Fetches a paginated list of system users.
-   * @param keyword Search filter for employee number or full name.
+   * @param employeeNumber Search filter for employee number.
+   * @param employeeName Search filter for employee full name.
    * @param roleId Filter by role ID.
    * @param isActive Filter by active status.
    * @param page Page number (default 1).
@@ -73,14 +74,16 @@ export class AdminController {
    */
   @Get('users')
   async getUsers(
-    @Query('keyword') keyword?: string,
+    @Query('employeeNumber') employeeNumber?: string,
+    @Query('employeeName') employeeName?: string,
     @Query('roleId') roleId?: number,
     @Query('isActive') isActive?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ): Promise<PaginatedResponse<UserResponse>> {
     return this.adminService.getUsers(
-      keyword,
+      employeeNumber,
+      employeeName,
       roleId,
       isActive !== undefined ? isActive === 'true' : undefined,
       page ? parseInt(page, 10) : 1,

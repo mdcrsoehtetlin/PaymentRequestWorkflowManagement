@@ -53,9 +53,23 @@ describe('AdminController', () => {
       };
       mockService.getUsers.mockResolvedValue(expectedResult);
 
-      const result = await controller.getUsers('test', 1, 'true', '1', '20');
+      const result = await controller.getUsers(
+        'EMP-001',
+        'test',
+        1,
+        'true',
+        '1',
+        '20',
+      );
 
-      expect(mockService.getUsers).toHaveBeenCalledWith('test', 1, true, 1, 20);
+      expect(mockService.getUsers).toHaveBeenCalledWith(
+        'EMP-001',
+        'test',
+        1,
+        true,
+        1,
+        20,
+      );
       expect(result).toEqual(expectedResult);
     });
 
@@ -71,9 +85,11 @@ describe('AdminController', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
       );
 
       expect(mockService.getUsers).toHaveBeenCalledWith(
+        undefined,
         undefined,
         undefined,
         undefined,

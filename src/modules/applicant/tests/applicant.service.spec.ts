@@ -941,7 +941,7 @@ describe('ApplicantService', () => {
       };
       const res = await service.getPaymentRequestDetail(1, 1);
       expect(res.breakdowns[0].amount).toBe(20);
-      expect(res.approvalLogs[0].timestamp.getTime()).toBeGreaterThan(
+      expect(res.approvalLogs[0].timestamp.getTime()).toBeLessThan(
         res.approvalLogs[1].timestamp.getTime(),
       );
     });
