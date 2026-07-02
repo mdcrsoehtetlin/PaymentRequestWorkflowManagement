@@ -76,6 +76,7 @@ export class ManagerService {
               fullName: log.action_taken_by_user.fullName,
               employeeNumber: log.action_taken_by_user.employeeNumber,
               branch: log.action_taken_by_user.branch,
+              roleId: log.action_taken_by_user.roleId,
             }
           : null,
       })),
