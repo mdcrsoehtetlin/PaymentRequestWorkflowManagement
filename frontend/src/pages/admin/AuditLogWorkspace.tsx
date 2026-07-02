@@ -96,16 +96,16 @@ export function AuditLogWorkspace() {
 
   const actionOptions = [
     { value: '', label: t('common.all') },
-    { value: '1', label: t('common.actions.created') },
-    { value: '2', label: t('common.actions.edited') },
-    { value: '3', label: t('common.actions.submitted') },
-    { value: '4', label: t('common.actions.mgr_review_start') },
-    { value: '5', label: t('common.actions.mgr_verified') },
-    { value: '6', label: t('common.actions.mgr_rejected') },
-    { value: '7', label: t('common.actions.appr_review_start') },
-    { value: '8', label: t('common.actions.approved') },
-    { value: '9', label: t('common.actions.appr_rejected') },
-    { value: '10', label: t('common.actions.payment_completed') },
+    { value: '1', label: t('common.action.created') },
+    { value: '2', label: t('common.action.edited') },
+    { value: '3', label: t('common.action.submitted') },
+    { value: '4', label: t('common.action.mgr_review_start') },
+    { value: '5', label: t('common.action.mgr_verified') },
+    { value: '6', label: t('common.action.mgr_rejected') },
+    { value: '7', label: t('common.action.appr_review_start') },
+    { value: '8', label: t('common.action.approved') },
+    { value: '9', label: t('common.action.appr_rejected') },
+    { value: '10', label: t('common.action.payment_completed') },
   ];
 
   const handleSearch = () => {
@@ -205,7 +205,7 @@ export function AuditLogWorkspace() {
       key: 'actionTypeId',
       header: t('admin.audit_log.columns.action'),
       sortable: true,
-      render: (_val, row) => t(`common.actions.${ACTION_TYPE_MAP[row.actionTypeId] ?? 'unknown'}`),
+      render: (_val, row) => t(`common.action.${ACTION_TYPE_MAP[row.actionTypeId] ?? 'unknown'}`),
     },
     {
       key: 'ipAddress',
@@ -220,7 +220,7 @@ export function AuditLogWorkspace() {
       render: (_val, row) => new Date(row.timestamp).toLocaleString('ja-JP'),
     },
     {
-      key: 'actions',
+      key: 'action',
       header: t('admin.audit_log.columns.view_detail'),
       render: (_val, row) => (
         <button

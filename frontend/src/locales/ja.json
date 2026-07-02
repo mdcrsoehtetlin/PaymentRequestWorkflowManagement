@@ -125,7 +125,7 @@
       "rejected_approver": "承認者により差し戻し",
       "paid": "支払済み"
     },
-    "actions": {
+    "action": {
       "created": "作成",
       "edited": "編集",
       "submitted": "提出済み",

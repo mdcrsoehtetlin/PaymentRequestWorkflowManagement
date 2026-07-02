@@ -124,7 +124,7 @@
       "rejected_approver": "Rejected by Approver",
       "paid": "Paid"
     },
-    "actions": {
+    "action": {
       "created": "Created",
       "edited": "Edited",
       "submitted": "Submitted",

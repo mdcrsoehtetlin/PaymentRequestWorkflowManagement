@@ -125,7 +125,7 @@
       "rejected_approver": "အတည်ပြုသူမှ ပယ်ချပြီး",
       "paid": "ငွေပေးပြီး"
     },
-    "actions": {
+    "action": {
       "created": "ဖန်တီးပြီး",
       "edited": "ပြင်ဆင်ပြီး",
       "submitted": "တင်ပြပြီး",
