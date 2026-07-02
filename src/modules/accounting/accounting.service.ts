@@ -335,6 +335,7 @@ export class AccountingService {
             : 0,
           fullName: log.action_taken_by_user?.fullName ?? 'Unknown',
           employeeNumber: log.action_taken_by_user?.employeeNumber ?? 'N/A',
+          roleId: log.action_taken_by_user?.roleId ?? null,
         },
       })),
     };

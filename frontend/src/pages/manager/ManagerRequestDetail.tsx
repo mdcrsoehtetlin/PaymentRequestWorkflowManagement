@@ -10,8 +10,6 @@ import {
   CURRENCY_CODES,
   PAYMENT_TYPE_LABELS_EN,
   PAYMENT_METHOD_LABELS_EN,
-  ACTION_LABELS_EN,
-  ACTION_BADGE_COLORS,
   type PaymentRequestDetailView,
   type UserSummary,
 } from '../../types';
@@ -518,54 +516,81 @@ export function ManagerRequestDetail() {
 
             {/* Action Panel (right column) - preserved functionality but moved to sidebar */}
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              {(request.statusId === PaymentStatus.SUBMITTED_MANAGER || request.statusId === PaymentStatus.MANAGER_REVIEWING) ? (
-                <>
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-slate-900">{t('dashboard.manager.action_panel_title') || t('dashboard.manager.comment_label')}</h3>
-                    <p className="text-sm text-slate-500">{t('dashboard.manager.action_panel_description') ?? ''}</p>
-                  </div>
+              {/* compute once for clarity */}
+              {(() => {
+                const isActionEnabled =
+                  request.statusId === PaymentStatus.SUBMITTED_MANAGER ||
+                  request.statusId === PaymentStatus.MANAGER_REVIEWING;
 
-                  <div className="relative">
-                    <span className="text-xs font-bold text-slate-600 block mb-1">{t('dashboard.manager.comment_label')}</span>
-                    <textarea
-                      rows={4}
-                      value={comment}
-                      onChange={(e) => {
-                        setComment(e.target.value);
-                        if (validationError) setValidationError(null);
-                      }}
-                      placeholder={t('dashboard.manager.comment_placeholder')}
-                      className="w-full p-3 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-slate-700"
-                    />
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-[10px] text-slate-400">{t('dashboard.manager.max_chars')}</span>
-                      <span className={`text-[10px] ${comment.length > 500 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>{comment.length} / 500</span>
+                return (
+                  <>
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-slate-900">
+                        {t('dashboard.manager.action_panel_title') || t('dashboard.manager.comment_label')}
+                      </h3>
+                      <p className="text-sm text-slate-500">{t('dashboard.manager.action_panel_description') ?? ''}</p>
                     </div>
-                  </div>
 
-                  {validationError && (
-                    <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5 mt-3">
-                      <AlertCircle className="h-4 w-4 shrink-0" />
-                      <span>{validationError}</span>
+                    <div className={`relative ${!isActionEnabled ? 'opacity-60' : ''}`}>
+                      <span className="text-xs font-bold text-slate-600 block mb-1">
+                        {t('dashboard.manager.comment_label')}
+                      </span>
+                      <textarea
+                        rows={4}
+                        value={comment}
+                        onChange={(e) => {
+                          setComment(e.target.value);
+                          if (validationError) setValidationError(null);
+                        }}
+                        placeholder={t('dashboard.manager.comment_placeholder')}
+                        readOnly={!isActionEnabled}
+                        disabled={!isActionEnabled}
+                        aria-disabled={!isActionEnabled}
+                        className={`w-full p-3 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-slate-700 ${!isActionEnabled ? 'cursor-not-allowed bg-slate-50' : ''
+                          }`}
+                      />
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-[10px] text-slate-400">{t('dashboard.manager.max_chars')}</span>
+                        <span
+                          className={`text-[10px] ${comment.length > 500 ? 'text-rose-500 font-bold' : 'text-slate-400'
+                            }`}
+                        >
+                          {comment.length} / 500
+                        </span>
+                      </div>
                     </div>
-                  )}
 
-                  <div className="grid grid-cols-2 gap-3 pt-4">
-                    <button onClick={handleReject} disabled={isActionSubmitting} className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 text-rose-700 bg-rose-50/30 hover:bg-rose-50 active:bg-rose-100 transition text-xs font-medium">
-                      <RotateCcw className="h-4 w-4" />
-                      {t('dashboard.manager.reject')}
-                    </button>
+                    {validationError && (
+                      <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5 mt-3">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span>{validationError}</span>
+                      </div>
+                    )}
 
-                    <button onClick={handleApprove} disabled={isActionSubmitting} className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition text-xs font-bold shadow-md">
-                      <Check className="h-4 w-4" />
-                      {t('dashboard.manager.approve')}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="text-sm text-slate-500">{t('dashboard.manager.no_actions_available')}</div>
-              )}
+                    <div className="grid grid-cols-2 gap-3 pt-4">
+                      <button
+                        onClick={handleReject}
+                        disabled={!isActionEnabled || isActionSubmitting}
+                        className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 text-rose-700 bg-rose-50/30 hover:bg-rose-50 active:bg-rose-100 transition text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        {t('dashboard.manager.reject')}
+                      </button>
+
+                      <button
+                        onClick={handleApprove}
+                        disabled={!isActionEnabled || isActionSubmitting}
+                        className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition text-xs font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Check className="h-4 w-4" />
+                        {t('dashboard.manager.approve')}
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
+
           </div>
         </div>
       </div>
