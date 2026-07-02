@@ -619,7 +619,7 @@
     },
     "filters": {
       "search": "検索",
-      "search_placeholder": "リクエスト番号、申請者、目的",
+      "search_placeholder": "リクエスト番号、申請者",
       "branch": "支店",
       "all_branches": "すべての支店",
       "desired_date": "希望日",
