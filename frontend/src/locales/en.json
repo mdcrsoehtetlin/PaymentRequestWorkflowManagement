@@ -612,7 +612,7 @@
     },
     "filters": {
       "search": "Search",
-      "search_placeholder": "Request number, applicant, purpose",
+      "search_placeholder": "Request number, applicant",
       "branch": "Branch",
       "all_branches": "All Branches",
       "desired_date": "Desired Date",

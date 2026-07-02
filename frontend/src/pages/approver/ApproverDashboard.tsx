@@ -219,10 +219,10 @@ export function ApproverDashboard() {
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); handleRowClick(row); }}
-          className="rounded-md p-1.5 text-blue-600 hover:bg-blue-50 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           title={t('approver.table.view_details')}
         >
-          <Eye className="w-5 h-5" />
+          <Eye className="h-4 w-4" />
         </button>
       ),
     },
